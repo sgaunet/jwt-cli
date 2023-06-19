@@ -1,0 +1,22 @@
+# https://taskfile.dev
+version: '3'
+vars:
+  BINFILE: jwt-cli
+
+tasks:
+  default:
+    cmds:
+      - CGO_ENABLED=0 go build .
+      - upx -q {{.BINFILE}}
+    # silent: true
+    method: checksum
+    generates:
+      - "{{.BINFILE}}"
+
+  snapshot:
+    cmds:
+      - GITLAB_TOKEN="" goreleaser --clean --snapshot
+    
+  release:
+    cmds:
+      - GITLAB_TOKEN="" goreleaser --clean

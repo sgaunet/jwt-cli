@@ -1,0 +1,145 @@
+before:
+  hooks:
+    - go get
+builds:
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -X github.com/sgaunet/jwt-cli/cmd.version={{.Version}}
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - "6"
+      - "7"
+    id: lin
+    hooks:
+      post:
+        - upx "{{ .Path }}"
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -X main.version={{.Version}}
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - "6"
+      - "7"
+    id: win
+
+archives:
+  - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    format: binary
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+brews:
+  - homepage: 'https://github.com/sgaunet/homebrew-tools'
+    folder: Formula
+    commit_author:
+      name: sgaunet
+      email: sgaunet@gmail.com
+    tap:
+      owner: sgaunet
+      name: homebrew-tools
+
+
+dockers:
+  # https://goreleaser.com/customization/docker/
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "sgaunet/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "sgaunet/{{ .ProjectName }}:latest-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    # extra_files:
+    # - src
+    # - resources
+
+  - use: buildx
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "sgaunet/{{ .ProjectName }}:{{ .Version }}-arm64v8"
+      - "sgaunet/{{ .ProjectName }}:latest-arm64v8"
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    # extra_files:
+    # - src
+    # - resources
+
+  - use: buildx
+    goos: linux
+    goarch: arm
+    goarm: "6"
+    image_templates:
+      - "sgaunet/{{ .ProjectName }}:{{ .Version }}-armv6"
+      - "sgaunet/{{ .ProjectName }}:latest-armv6"
+    build_flag_templates:
+      - "--platform=linux/arm/v6"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    # extra_files:
+    # - src
+    # - resources
+
+  - use: buildx
+    goos: linux
+    goarch: arm
+    goarm: "7"
+    image_templates:
+      - "sgaunet/{{ .ProjectName }}:{{ .Version }}-armv7"
+      - "sgaunet/{{ .ProjectName }}:latest-armv7"
+    build_flag_templates:
+      - "--platform=linux/arm/v7"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    # extra_files:
+    # - src
+    # - resources
+
+docker_manifests:
+  # https://goreleaser.com/customization/docker_manifest/
+  - name_template: sgaunet/{{ .ProjectName }}:{{ .Version }}
+    image_templates:
+      - sgaunet/{{ .ProjectName }}:{{ .Version }}-amd64
+      - sgaunet/{{ .ProjectName }}:{{ .Version }}-arm64v8
+      - sgaunet/{{ .ProjectName }}:{{ .Version }}-armv6
+      - sgaunet/{{ .ProjectName }}:{{ .Version }}-armv7
+  - name_template: sgaunet/{{ .ProjectName }}:latest
+    image_templates:
+      - sgaunet/{{ .ProjectName }}:latest-amd64
+      - sgaunet/{{ .ProjectName }}:latest-arm64v8
+      - sgaunet/{{ .ProjectName }}:latest-armv6
+      - sgaunet/{{ .ProjectName }}:latest-armv7
