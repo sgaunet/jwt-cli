@@ -13,6 +13,15 @@ tasks:
     generates:
       - "{{.BINFILE}}"
 
+  install:
+    cmds:
+      - go get golang.org/x/tools/cmd/godoc
+
+  doc:
+    cmds:
+      - echo http://localhost:6060
+      - godoc -http=:6060
+  
   snapshot:
     cmds:
       - GITLAB_TOKEN="" goreleaser --clean --snapshot
@@ -20,3 +29,8 @@ tasks:
   release:
     cmds:
       - GITLAB_TOKEN="" goreleaser --clean
+
+  tests:
+    dir: tests
+    cmds:
+      - venom run testsuite.yml --output-dir="log" --stop-on-failure

@@ -1,0 +1,316 @@
+name: Exec testsuite
+vars:
+  EMAIL: test@test.com
+
+testcases:
+
+- name: init
+  steps:
+  - type: exec
+    script: |
+      rm *.key *.pub *.pem
+
+- name: create RS256 RS384 RS512 keys
+  steps:
+  - type: exec
+    script: |
+      # RS256
+      ssh-keygen -t rsa -b 4096 -E SHA256 -m PEM -P "" -f RS256.key
+      # openssl genrsa -out RS256.key 2048
+      openssl rsa -in RS256.key -pubout -outform PEM -out RS256.key.pub
+
+      # RS384
+      ssh-keygen -t rsa -b 4096 -E SHA384 -m PEM -P "" -f RS384.key
+      openssl rsa -in RS384.key -pubout -outform PEM -out RS384.key.pub
+
+      # RS512
+      ssh-keygen -t rsa -b 4096 -E SHA512 -m PEM -P "" -f RS512.key
+      openssl rsa -in RS512.key -pubout -outform PEM -out RS512.key.pub
+
+- name: create ES256 ES384 ES512 keys
+  steps:
+  - type: exec
+    script: |
+      # ES256
+      openssl ecparam -genkey -name prime256v1  -noout -out ecdsa-p256-private.pem
+      openssl ec -in ecdsa-p256-private.pem -pubout -out ecdsa-p256-public.pem 
+
+      # ES384
+      openssl ecparam -name secp384r1 -genkey -noout -out jwtES384key.pem
+      openssl ec -in jwtES384key.pem -pubout -out jwtES384pubkey.pem
+
+      # ES512
+      openssl ecparam -genkey -name secp521r1 -noout -out ecdsa-p521-private.pem
+      openssl ec -in ecdsa-p521-private.pem -pubout -out ecdsa-p521-public.pem 
+
+
+- name: encode_JWT_with_RS256
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode rs256 --pk tests/RS256.key --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with RS256 with private key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs256 --pk tests/RS256.key --t '{{.encode_JWT_with_RS256.token}}'
+    # info: go run . decode rs256 --pk tests/RS256.key --t '{{.encode_JWT_with_RS256.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode JWT with RS256 with public key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs256 --pubk tests/RS256.key.pub --t '{{.encode_JWT_with_RS256.token}}'
+    # info: go run . decode rs256 --pubk tests/RS256.key.pub --t '{{.encode_JWT_with_RS256.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_JWT_with_RS384
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode rs384 --pk tests/RS384.key --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with RS384 with private key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs384 --pk tests/RS384.key --t '{{.encode_JWT_with_RS384.token}}'
+    # info: go run . decode rs384 --pk tests/RS384.key --t '{{.encode_JWT_with_RS384.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode JWT with RS384 with public key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
+    # info: go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+
+- name: encode_JWT_with_RS512
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode rs512 --pk tests/RS512.key --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with RS512 with private key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs512 --pk tests/RS512.key --t '{{.encode_JWT_with_RS512.token}}'
+    # info: go run . decode rs512 --pk tests/RS512.key --t '{{.encode_JWT_with_RS512.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode JWT with RS384 with public key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
+    # info: go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_JWT_with_ES256
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode es256 --pk tests/ecdsa-p256-private.pem --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with ES256 with private key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode es256 --pk tests/ecdsa-p256-private.pem --t '{{.encode_JWT_with_ES256.token}}'
+    # info: go run . decode es256 --pk tests/ecdsa-p256-private.pem --t '{{.encode_JWT_with_ES256.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode JWT with ES256 with public key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode es256 --pubk tests/ecdsa-p256-public.pem --t '{{.encode_JWT_with_ES256.token}}'
+    # info: go run . decode es256 --pubk tests/ecdsa-p256-public.pem --t '{{.encode_JWT_with_ES256.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_JWT_with_ES384
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode es384 --pk tests/jwtES384key.pem --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with ES384 with private key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode es384 --pk tests/jwtES384key.pem --t '{{.encode_JWT_with_ES384.token}}'
+    # info: go run . decode es384 --pk tests/jwtES384key.pem --t '{{.encode_JWT_with_ES384.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode JWT with ES384 with public key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode es384 --pubk tests/jwtES384pubkey.pem --t '{{.encode_JWT_with_ES384.token}}'
+    # info: go run . decode es384 --pubk tests/jwtES384pubkey.pem --t '{{.encode_JWT_with_ES384.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_JWT_with_ES512
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode es512 --pk tests/ecdsa-p521-private.pem --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with ES512 with private key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode es512 --pk tests/ecdsa-p521-private.pem --t '{{.encode_JWT_with_ES512.token}}'
+    # info: go run . decode es256 --pk tests/ecdsa-p521-private.pem --t '{{.encode_JWT_with_ES512.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode JWT with ES512 with public key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode es512 --pubk tests/ecdsa-p521-public.pem --t '{{.encode_JWT_with_ES512.token}}'
+    # info: go run . decode es512 --pubk tests/ecdsa-p521-public.pem --t '{{.encode_JWT_with_ES512.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_JWT_with_HS256
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode hs256 --s "secret" --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with HS256
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs256 --s secret  --t '{{.encode_JWT_with_HS256.token}}'
+    # info: go run . decode hs256 --s secret --t '{{.encode_JWT_with_HS256.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+
+- name: encode_JWT_with_HS384
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode hs384 --s "secret" --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with HS384
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs384 --s secret  --t '{{.encode_JWT_with_HS384.token}}'
+    # info: go run . decode hs384 --s secret --t '{{.encode_JWT_with_HS384.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+
+- name: encode_JWT_with_HS512
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode hs512 --s "secret" --p '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      token:
+        from: result.systemout
+        # regex: foo with a ([a-z]+) here
+
+- name: decode JWT with HS512
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs512 --s secret  --t '{{.encode_JWT_with_HS512.token}}'
+    # info: go run . decode hs512 --s secret --t '{{.encode_JWT_with_HS512.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
