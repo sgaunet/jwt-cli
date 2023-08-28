@@ -1,6 +1,6 @@
 before:
   hooks:
-    - go get
+    - go mod download
 builds:
   - env:
       - CGO_ENABLED=0
@@ -9,22 +9,6 @@ builds:
     goos:
       - linux
       - darwin
-    goarch:
-      - amd64
-      - arm
-      - arm64
-    goarm:
-      - "6"
-      - "7"
-    id: lin
-    hooks:
-      post:
-        - upx "{{ .Path }}"
-  - env:
-      - CGO_ENABLED=0
-    ldflags:
-      - -X main.version={{.Version}}
-    goos:
       - windows
     goarch:
       - amd64
@@ -33,7 +17,10 @@ builds:
     goarm:
       - "6"
       - "7"
-    id: win
+    id: lin
+    # hooks:
+    #   post:
+    #     - upx "{{ .Path }}"
 
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'

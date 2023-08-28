@@ -7,7 +7,7 @@ tasks:
   default:
     cmds:
       - CGO_ENABLED=0 go build .
-      - upx -q {{.BINFILE}}
+      # - upx -q {{.BINFILE}}
     # silent: true
     method: checksum
     generates:
