@@ -1,7 +1,7 @@
 package cryptojwt
 
 import (
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type hsjwtEncoderDecoder struct {
