@@ -5,32 +5,38 @@ vars:
 
 tasks:
   default:
+    desc: "List tasks"
+    cmds:
+      - task -a
+
+  binary:
+    desc: "Build binary"
     cmds:
       - CGO_ENABLED=0 go build .
-      # - upx -q {{.BINFILE}}
-    # silent: true
-    method: checksum
-    generates:
-      - "{{.BINFILE}}"
 
   install:
+    desc: "Install godoc binary"
     cmds:
       - go get golang.org/x/tools/cmd/godoc
 
   doc:
+    desc: "Run godoc server"
     cmds:
       - echo http://localhost:6060
       - godoc -http=:6060
   
   snapshot:
+    desc: "Create a snapshot"
     cmds:
       - GITLAB_TOKEN="" goreleaser --clean --snapshot
     
   release:
+    desc: "Create a release"
     cmds:
       - GITLAB_TOKEN="" goreleaser --clean
 
   tests:
+    desc: "Run tests"
     dir: tests
     cmds:
       - venom run testsuite.yml --output-dir="log" --stop-on-failure
