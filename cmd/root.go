@@ -28,6 +28,7 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(encodeCmd)
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	encodeCmd.PersistentFlags().StringVar(&payload, "p", "", "payload")
 	encodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "private key file")
 	encodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret")
