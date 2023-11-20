@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/sgaunet/jwt-cli)](https://goreportcard.com/report/github.com/sgaunet/jwt-cli)
+
 # jwt-cli
 
 jwt-cli is a utility to encode/decode JWT token.
