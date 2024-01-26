@@ -19,6 +19,11 @@ tasks:
     cmds:
       - go get golang.org/x/tools/cmd/godoc
 
+  demo:
+    desc: "Generate demo.gif"
+    cmds:
+      - vhs doc/demo.tape
+
   doc:
     desc: "Run godoc server"
     cmds:

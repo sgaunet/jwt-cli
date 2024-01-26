@@ -11,7 +11,6 @@ Usage:
   jwt-cli [command]
 
 Available Commands:
-  completion  Generate the autocompletion script for the specified shell
   decode      decode JWT token
   encode      encode JWT token
   genkeys     print commands example to generate keys for ES256, ES384, ES512, RS256, RS384, RS512
@@ -36,6 +35,9 @@ Supported methods are actually:
 * RS384
 * RS512
 
+# Demo
+
+![demo](doc/demo.gif)
 
 # Install
 
