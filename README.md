@@ -1,6 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/sgaunet/jwt-cli)](https://goreportcard.com/report/github.com/sgaunet/jwt-cli)
 [![GitHub release](https://img.shields.io/github/release/sgaunet/jwt-cli.svg)](https://github.com/sgaunet/jwt-cli/releases/latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/sgaunet/jwt-cli)](https://goreportcard.com/report/github.com/sgaunet/jwt-cli)
 ![GitHub Downloads](https://img.shields.io/github/downloads/sgaunet/jwt-cli/total)
 [![Maintainability](https://api.codeclimate.com/v1/badges/f5a67145b82f28869435/maintainability)](https://codeclimate.com/github/sgaunet/jwt-cli/maintainability)
 [![GoDoc](https://godoc.org/github.com/sgaunet/jwt-cli?status.svg)](https://godoc.org/github.com/sgaunet/jwt-cli)
