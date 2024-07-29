@@ -1,3 +1,4 @@
+version: 2
 before:
   hooks:
     - go mod download
@@ -39,11 +40,10 @@ changelog:
 
 brews:
   - homepage: 'https://github.com/sgaunet/homebrew-tools'
-    folder: Formula
     commit_author:
       name: sgaunet
       email: sgaunet@gmail.com
-    tap:
+    repository:
       owner: sgaunet
       name: homebrew-tools
 
