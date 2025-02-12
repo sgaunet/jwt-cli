@@ -54,8 +54,8 @@ Supported methods are actually:
 ## Option 2: With brew
 
 ```
-brew tap sgaunet/tools
-brew install jwt-cli
+brew tap sgaunet/homebrew-tools
+brew install sgaunet/tools/jwt-cli
 ```
 
 ## Option 3: Docker image
