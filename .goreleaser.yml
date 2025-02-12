@@ -25,7 +25,7 @@ builds:
 
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    format: binary
+    formats: ["binary"]
 
 checksum:
   name_template: 'checksums.txt'
@@ -39,9 +39,10 @@ changelog:
 
 brews:
   - homepage: 'https://github.com/sgaunet/homebrew-tools'
+    directory: Formula
     commit_author:
       name: sgaunet
-      email: sgaunet@gmail.com
+      email: 1552102+sgaunet@users.noreply.github.com
     repository:
       owner: sgaunet
       name: homebrew-tools
