@@ -8,7 +8,7 @@ testcases:
   steps:
   - type: exec
     script: |
-      rm *.key *.pub *.pem
+      rm *.key *.pub *.pem || true
 
 - name: create RS256 RS384 RS512 keys
   steps:

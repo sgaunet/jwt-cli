@@ -8,78 +8,55 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var encodeRS256Cmd = &cobra.Command{
-	Use:   "rs256",
-	Short: "encode RS256 JWT token",
-	Long:  `encode RS256 JWT token`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if privateKeyFile == "" {
-			fmt.Println("private key file is mandatory")
-			fmt.Println(cmd.UsageString())
-			os.Exit(1)
-		}
-		if payload == "" {
-			fmt.Println("payload is mandatory")
-			fmt.Println(cmd.UsageString())
-			os.Exit(1)
-		}
-		j := cryptojwt.NewRS256Encoder(privateKeyFile)
-		t, err := j.Encode(payload)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		fmt.Println(t)
-	},
+//nolint:dupl // Similar structure needed for different algorithms
+func createRSEncodeCommand(_ /* alg */, use, short, long string, encoder func(string) cryptojwt.Encoder) *cobra.Command {
+	return &cobra.Command{
+		Use:   use,
+		Short: short,
+		Long:  long,
+		Run: func(cmd *cobra.Command, _ []string) {
+			if privateKeyFile == "" {
+				fmt.Println("private key file is mandatory")
+				fmt.Println(cmd.UsageString())
+				os.Exit(1)
+			}
+			if payload == "" {
+				fmt.Println("payload is mandatory")
+				fmt.Println(cmd.UsageString())
+				os.Exit(1)
+			}
+			
+			j := encoder(privateKeyFile)
+			t, err := j.Encode(payload)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			fmt.Println(t)
+		},
+	}
 }
 
-var encodeRS384Cmd = &cobra.Command{
-	Use:   "rs384",
-	Short: "encode RS384 JWT token",
-	Long:  `encode RS384 JWT token`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if privateKeyFile == "" {
-			fmt.Println("private key file is mandatory")
-			fmt.Println(cmd.UsageString())
-			os.Exit(1)
-		}
-		if payload == "" {
-			fmt.Println("payload is mandatory")
-			fmt.Println(cmd.UsageString())
-			os.Exit(1)
-		}
-		j := cryptojwt.NewRS384Encoder(privateKeyFile)
-		t, err := j.Encode(payload)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		fmt.Println(t)
-	},
-}
+var encodeRS256Cmd = createRSEncodeCommand(
+	"RS256",
+	"rs256",
+	"encode RS256 JWT token",
+	`encode RS256 JWT token`,
+	cryptojwt.NewRS256Encoder,
+)
 
-var encodeRS512Cmd = &cobra.Command{
-	Use:   "rs512",
-	Short: "encode RS512 JWT token",
-	Long:  `encode RS512 JWT token`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if privateKeyFile == "" {
-			fmt.Println("private key file is mandatory")
-			fmt.Println(cmd.UsageString())
-			os.Exit(1)
-		}
-		if payload == "" {
-			fmt.Println("payload is mandatory")
-			fmt.Println(cmd.UsageString())
-			os.Exit(1)
-		}
+var encodeRS384Cmd = createRSEncodeCommand(
+	"RS384",
+	"rs384",
+	"encode RS384 JWT token",
+	`encode RS384 JWT token`,
+	cryptojwt.NewRS384Encoder,
+)
 
-		j := cryptojwt.NewRS512Encoder(privateKeyFile)
-		t, err := j.Encode(payload)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		fmt.Println(t)
-	},
-}
+var encodeRS512Cmd = createRSEncodeCommand(
+	"RS512",
+	"rs512",
+	"encode RS512 JWT token",
+	`encode RS512 JWT token`,
+	cryptojwt.NewRS512Encoder,
+)

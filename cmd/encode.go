@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// encodeCmd represents the encode command
+// encodeCmd represents the encode command.
 var encodeCmd = &cobra.Command{
 	Use:   "encode",
 	Short: "encode JWT token",

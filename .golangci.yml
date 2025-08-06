@@ -1,0 +1,26 @@
+---
+version: "2"
+# Configure which files to skip during linting
+run:
+  tests: false
+
+linters:
+  default: all
+
+  disable:
+    - wsl
+    - wsl_v5
+    - nlreturn
+    - depguard
+    - gochecknoinits
+    - gochecknoglobals
+    - forbidigo
+    - varnamelen
+    - exhaustruct
+    - tagliatelle
+    - noinlineerr
+    - dupl         # Duplication is expected for similar command structures
+    - ireturn      # Returning interfaces is intentional for our design
+    - err113       # We use formatted errors throughout
+    - lll          # Line length limit is too restrictive for function signatures
+    - nolintlint   # We use nolint directives where needed
