@@ -9,7 +9,7 @@ import (
 var secret, token, payload string
 var privateKeyFile, publicKeyFile string
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "jwt-cli",
 	Short: "Tool to encode/decode JWT token",
@@ -19,6 +19,7 @@ var rootCmd = &cobra.Command{
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
+// Execute runs the root command.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package cryptojwt provides JWT encoding and decoding functionality.
 package cryptojwt
 
 import (
@@ -7,14 +8,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Encoder is the interface for encoding JWT tokens.
 type Encoder interface {
 	Encode(payload string) (string, error)
 }
 
+// Decoder is the interface for decoding JWT tokens.
 type Decoder interface {
 	Decode(token string) (string, error)
 }
 
+// EncoderDecoder is the interface for encoding and decoding JWT tokens.
 type EncoderDecoder interface {
 	Encoder
 	Decoder
@@ -36,20 +40,23 @@ func (e *encoder) EncodeJWT(secret interface{}, signingMethod jwt.SigningMethod,
 	token := jwt.NewWithClaims(signingMethod, claims)
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString(secret)
-	return t, err
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+	return t, nil
 }
 
 func (d *decoder) DecodeJWT(secret interface{}, token string) (string, error) {
 	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.ParseWithClaims(token, claims, func(_ *jwt.Token) (interface{}, error) {
 		return secret, nil
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to parse token: %w", err)
 	}
 	res, err := json.MarshalIndent(claims, "", "  ")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to marshal claims: %w", err)
 	}
 	return string(res), nil
 }
