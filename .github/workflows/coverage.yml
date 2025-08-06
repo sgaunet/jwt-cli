@@ -1,0 +1,50 @@
+name: Generate coverage badges
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  generate-badges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup go environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24.x
+  
+      - name: coverage
+        id: coverage
+        run: |
+          go mod download
+          go generate ./...
+          go test -coverpkg=./... -coverprofile=profile.cov ./...
+          sed -i '/cmd/d' profile.cov    # remove cmd package from coverage
+          total=$(go tool cover -func profile.cov | grep '^total:' | awk '{print $3}' | sed "s/%//")
+          rm profile.cov
+          echo "COVERAGE_VALUE=${total}" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+        with:
+          repository: sgaunet/gh-action-badge
+          path: gh-action-badge
+          ref: main
+          fetch-depth: 1
+
+      - name: Generate coverage badge
+        id: coverage-badge
+        uses: ./gh-action-badge/.github/actions/gh-action-coverage
+        with:
+          limit-coverage: "70"
+          badge-label: "coverage"
+          badge-filename: "coverage-badge.svg"
+          badge-value: "${COVERAGE_VALUE}"
+
+      - name: Print url of badge
+        run: |
+          echo "Badge URL: ${{ steps.coverage-badge.outputs.badge-url }}"
