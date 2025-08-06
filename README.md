@@ -2,6 +2,9 @@
 [![GitHub release](https://img.shields.io/github/release/sgaunet/jwt-cli.svg)](https://github.com/sgaunet/jwt-cli/releases/latest)
 ![GitHub Downloads](https://img.shields.io/github/downloads/sgaunet/jwt-cli/total)
 ![Coverage](https://raw.githubusercontent.com/wiki/sgaunet/jwt-cli/coverage-badge.svg)
+[![Linter](https://github.com/sgaunet/jwt-cli/actions/workflows/linter.yml/badge.svg)](https://github.com/sgaunet/jwt-cli/actions/workflows/linter.yml)
+[![Coverage](https://github.com/sgaunet/jwt-cli/actions/workflows/coverage.yml/badge.svg)](https://github.com/sgaunet/jwt-cli/actions/workflows/coverage.yml)
+[![Release](https://github.com/sgaunet/jwt-cli/actions/workflows/release.yml/badge.svg)](https://github.com/sgaunet/jwt-cli/actions/workflows/release.yml)
 [![GoDoc](https://godoc.org/github.com/sgaunet/jwt-cli?status.svg)](https://godoc.org/github.com/sgaunet/jwt-cli)
 [![License](https://img.shields.io/github/license/sgaunet/jwt-cli.svg)](LICENSE)
 
