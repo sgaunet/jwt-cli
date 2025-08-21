@@ -51,7 +51,7 @@ brews:
       token: '{{ .Env.HOMEBREW_TAP_TOKEN }}'
     url_template: 'https://github.com/sgaunet/jwt-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
     install: |
-      bin.install "jwt-cli"
+      bin.install "{{ .ArtifactName }}" => "jwt-cli"
     test: |
       system "#{bin}/jwt-cli", "--help"
 
