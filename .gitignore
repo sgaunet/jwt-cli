@@ -1,7 +1,7 @@
-.task
-dist
+/.task
+/dist
 log
-jwt-cli
+/jwt-cli
 *pem
 *.pub
 *.key
