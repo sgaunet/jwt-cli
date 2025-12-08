@@ -8,7 +8,7 @@ import (
 )
 
 func TestHS256EncoderDecoder(t *testing.T) {
-	secret := []byte("test-secret-key")
+	secret := []byte("test-secret-key-for-hs256-32bytes")
 	encoder := cryptojwt.NewHS256Encoder(secret)
 	decoder := cryptojwt.NewHS256Decoder(secret)
 
@@ -56,7 +56,7 @@ func TestHS256EncoderDecoder(t *testing.T) {
 			t.Fatalf("Failed to encode: %v", err)
 		}
 
-		wrongDecoder := cryptojwt.NewHS256Decoder([]byte("wrong-secret"))
+		wrongDecoder := cryptojwt.NewHS256Decoder([]byte("wrong-secret-but-valid-length-32b"))
 		_, err = wrongDecoder.Decode(token)
 		if err == nil {
 			t.Fatal("Expected error for wrong secret")
@@ -66,17 +66,59 @@ func TestHS256EncoderDecoder(t *testing.T) {
 		}
 	})
 
-	t.Run("empty secret", func(t *testing.T) {
+	t.Run("empty secret with validation", func(t *testing.T) {
 		emptyEncoder := cryptojwt.NewHS256Encoder([]byte(""))
-		token, err := emptyEncoder.Encode(validPayload)
+		_, err := emptyEncoder.Encode(validPayload)
+		if err == nil {
+			t.Fatal("Expected error for empty secret")
+		}
+		if !strings.Contains(err.Error(), "weak secret") {
+			t.Errorf("Expected weak secret error, got: %v", err)
+		}
+	})
+
+	t.Run("weak secret (less than 32 bytes)", func(t *testing.T) {
+		weakSecret := []byte("tooshort")
+		encoder := cryptojwt.NewHS256Encoder(weakSecret)
+		_, err := encoder.Encode(validPayload)
+		if err == nil {
+			t.Fatal("Expected error for weak secret")
+		}
+		if !strings.Contains(err.Error(), "weak secret") || !strings.Contains(err.Error(), "minimum of 32 bytes") {
+			t.Errorf("Expected weak secret error with minimum length, got: %v", err)
+		}
+	})
+
+	t.Run("allow weak secret with flag", func(t *testing.T) {
+		weakSecret := []byte("short")
+		encoder := cryptojwt.NewHS256EncoderWithOptions(weakSecret, true)
+		token, err := encoder.Encode(validPayload)
 		if err != nil {
-			t.Fatalf("Failed to encode with empty secret: %v", err)
+			t.Fatalf("Failed to encode with allow-weak-secret flag: %v", err)
 		}
 
-		emptyDecoder := cryptojwt.NewHS256Decoder([]byte(""))
-		decoded, err := emptyDecoder.Decode(token)
+		decoder := cryptojwt.NewHS256DecoderWithOptions(weakSecret, true)
+		decoded, err := decoder.Decode(token)
 		if err != nil {
-			t.Fatalf("Failed to decode with empty secret: %v", err)
+			t.Fatalf("Failed to decode with allow-weak-secret flag: %v", err)
+		}
+		if !strings.Contains(decoded, "John Doe") {
+			t.Errorf("Expected decoded payload to contain 'John Doe', got: %s", decoded)
+		}
+	})
+
+	t.Run("valid secret (32 bytes)", func(t *testing.T) {
+		validSecret := []byte("this-is-a-valid-32-byte-secret!!")
+		encoder := cryptojwt.NewHS256Encoder(validSecret)
+		token, err := encoder.Encode(validPayload)
+		if err != nil {
+			t.Fatalf("Failed to encode with valid secret: %v", err)
+		}
+
+		decoder := cryptojwt.NewHS256Decoder(validSecret)
+		decoded, err := decoder.Decode(token)
+		if err != nil {
+			t.Fatalf("Failed to decode with valid secret: %v", err)
 		}
 		if !strings.Contains(decoded, "John Doe") {
 			t.Errorf("Expected decoded payload to contain 'John Doe', got: %s", decoded)
@@ -85,7 +127,7 @@ func TestHS256EncoderDecoder(t *testing.T) {
 }
 
 func TestHS384EncoderDecoder(t *testing.T) {
-	secret := []byte("test-secret-key-384")
+	secret := []byte("test-secret-key-384-this-is-a-valid-secret-48bytes!")
 	encoder := cryptojwt.NewHS384Encoder(secret)
 	decoder := cryptojwt.NewHS384Decoder(secret)
 
@@ -130,7 +172,7 @@ func TestHS384EncoderDecoder(t *testing.T) {
 	t.Run("decode with wrong algorithm token", func(t *testing.T) {
 		// JWT doesn't enforce algorithm checking at decode time for HMAC
 		// This test verifies behavior rather than expecting failure
-		hs256Encoder := cryptojwt.NewHS256Encoder(secret)
+		hs256Encoder := cryptojwt.NewHS256EncoderWithOptions(secret, true)
 		hs256Token, err := hs256Encoder.Encode(validPayload)
 		if err != nil {
 			t.Fatalf("Failed to encode with HS256: %v", err)
@@ -147,10 +189,40 @@ func TestHS384EncoderDecoder(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("weak secret (less than 48 bytes)", func(t *testing.T) {
+		weakSecret := []byte("short-secret")
+		encoder := cryptojwt.NewHS384Encoder(weakSecret)
+		_, err := encoder.Encode(validPayload)
+		if err == nil {
+			t.Fatal("Expected error for weak secret")
+		}
+		if !strings.Contains(err.Error(), "weak secret") || !strings.Contains(err.Error(), "minimum of 48 bytes") {
+			t.Errorf("Expected weak secret error with minimum length, got: %v", err)
+		}
+	})
+
+	t.Run("allow weak secret with flag", func(t *testing.T) {
+		weakSecret := []byte("weak")
+		encoder := cryptojwt.NewHS384EncoderWithOptions(weakSecret, true)
+		token, err := encoder.Encode(validPayload)
+		if err != nil {
+			t.Fatalf("Failed to encode with allow-weak-secret flag: %v", err)
+		}
+
+		decoder := cryptojwt.NewHS384DecoderWithOptions(weakSecret, true)
+		decoded, err := decoder.Decode(token)
+		if err != nil {
+			t.Fatalf("Failed to decode with allow-weak-secret flag: %v", err)
+		}
+		if !strings.Contains(decoded, "John Doe") {
+			t.Errorf("Expected decoded payload to contain 'John Doe', got: %s", decoded)
+		}
+	})
 }
 
 func TestHS512EncoderDecoder(t *testing.T) {
-	secret := []byte("test-secret-key-512")
+	secret := []byte("test-secret-key-512-this-is-a-valid-secret-for-hs512-exactly64!!")
 	encoder := cryptojwt.NewHS512Encoder(secret)
 	decoder := cryptojwt.NewHS512Decoder(secret)
 
@@ -192,17 +264,41 @@ func TestHS512EncoderDecoder(t *testing.T) {
 		}
 	})
 
-	t.Run("nil secret handling", func(t *testing.T) {
+	t.Run("nil secret validation", func(t *testing.T) {
 		nilEncoder := cryptojwt.NewHS512Encoder(nil)
-		token, err := nilEncoder.Encode(validPayload)
+		_, err := nilEncoder.Encode(validPayload)
+		if err == nil {
+			t.Fatal("Expected error for nil secret")
+		}
+		if !strings.Contains(err.Error(), "weak secret") {
+			t.Errorf("Expected weak secret error, got: %v", err)
+		}
+	})
+
+	t.Run("weak secret (less than 64 bytes)", func(t *testing.T) {
+		weakSecret := []byte("too-short-for-hs512")
+		encoder := cryptojwt.NewHS512Encoder(weakSecret)
+		_, err := encoder.Encode(validPayload)
+		if err == nil {
+			t.Fatal("Expected error for weak secret")
+		}
+		if !strings.Contains(err.Error(), "weak secret") || !strings.Contains(err.Error(), "minimum of 64 bytes") {
+			t.Errorf("Expected weak secret error with minimum length, got: %v", err)
+		}
+	})
+
+	t.Run("allow weak secret with flag", func(t *testing.T) {
+		weakSecret := []byte("weak-hs512")
+		encoder := cryptojwt.NewHS512EncoderWithOptions(weakSecret, true)
+		token, err := encoder.Encode(validPayload)
 		if err != nil {
-			t.Fatalf("Failed to encode with nil secret: %v", err)
+			t.Fatalf("Failed to encode with allow-weak-secret flag: %v", err)
 		}
 
-		nilDecoder := cryptojwt.NewHS512Decoder(nil)
-		decoded, err := nilDecoder.Decode(token)
+		decoder := cryptojwt.NewHS512DecoderWithOptions(weakSecret, true)
+		decoded, err := decoder.Decode(token)
 		if err != nil {
-			t.Fatalf("Failed to decode with nil secret: %v", err)
+			t.Fatalf("Failed to decode with allow-weak-secret flag: %v", err)
 		}
 		if !strings.Contains(decoded, "John Doe") {
 			t.Errorf("Expected decoded payload to contain 'John Doe', got: %s", decoded)
@@ -211,7 +307,8 @@ func TestHS512EncoderDecoder(t *testing.T) {
 }
 
 func TestHSAlgorithmInteroperability(t *testing.T) {
-	secret := []byte("shared-secret")
+	// Use a secret that meets HS512 requirements (64 bytes) so it works for all algorithms
+	secret := []byte("this-is-a-shared-secret-for-all-algorithms-hs512-requirements!!!")
 	payload := `{"alg":"test","data":"interop"}`
 
 	tests := []struct {
@@ -273,6 +370,8 @@ func TestHSAlgorithmInteroperability(t *testing.T) {
 }
 
 func TestHSEdgeCases(t *testing.T) {
+	validSecret := []byte("this-is-a-valid-secret-exactly-32-bytes!")
+
 	t.Run("complex JSON payload", func(t *testing.T) {
 		complexPayload := `{
 			"sub": "1234567890",
@@ -285,14 +384,14 @@ func TestHSEdgeCases(t *testing.T) {
 				"array": [1, 2, 3]
 			}
 		}`
-		
-		encoder := cryptojwt.NewHS256Encoder([]byte("secret"))
+
+		encoder := cryptojwt.NewHS256Encoder(validSecret)
 		token, err := encoder.Encode(complexPayload)
 		if err != nil {
 			t.Fatalf("Failed to encode complex payload: %v", err)
 		}
 
-		decoder := cryptojwt.NewHS256Decoder([]byte("secret"))
+		decoder := cryptojwt.NewHS256Decoder(validSecret)
 		decoded, err := decoder.Decode(token)
 		if err != nil {
 			t.Fatalf("Failed to decode: %v", err)
@@ -303,13 +402,13 @@ func TestHSEdgeCases(t *testing.T) {
 	})
 
 	t.Run("empty payload object", func(t *testing.T) {
-		encoder := cryptojwt.NewHS256Encoder([]byte("secret"))
+		encoder := cryptojwt.NewHS256Encoder(validSecret)
 		token, err := encoder.Encode("{}")
 		if err != nil {
 			t.Fatalf("Failed to encode empty object: %v", err)
 		}
 
-		decoder := cryptojwt.NewHS256Decoder([]byte("secret"))
+		decoder := cryptojwt.NewHS256Decoder(validSecret)
 		decoded, err := decoder.Decode(token)
 		if err != nil {
 			t.Fatalf("Failed to decode: %v", err)

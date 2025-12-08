@@ -8,6 +8,7 @@ import (
 
 var secret, token, payload string
 var privateKeyFile, publicKeyFile string
+var allowWeakSecret bool
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
@@ -32,7 +33,8 @@ func init() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	encodeCmd.PersistentFlags().StringVar(&payload, "p", "", "payload")
 	encodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "private key file")
-	encodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret")
+	encodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret (for HMAC algorithms: HS256 requires 32+ bytes, HS384 requires 48+ bytes, HS512 requires 64+ bytes)")
+	encodeCmd.PersistentFlags().BoolVar(&allowWeakSecret, "allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
 
 	// encode subcommands
 	encodeCmd.AddCommand(encodeRS256Cmd)
@@ -49,7 +51,8 @@ func init() {
 	decodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "private key file")
 	decodeCmd.PersistentFlags().StringVar(&publicKeyFile, "pubk", "", "public key file")
 	decodeCmd.PersistentFlags().StringVar(&token, "t", "", "token")
-	decodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret")
+	decodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret (for HMAC algorithms: HS256 requires 32+ bytes, HS384 requires 48+ bytes, HS512 requires 64+ bytes)")
+	decodeCmd.PersistentFlags().BoolVar(&allowWeakSecret, "allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
 
 	// decode subcommands
 	decodeCmd.AddCommand(decodeRS256Cmd)

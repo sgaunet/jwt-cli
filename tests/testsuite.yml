@@ -248,7 +248,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode hs256 --s "secret" --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode hs256 --s "this-is-a-valid-32-byte-secret!!" --p '{ "email": "{{.EMAIL}}" }'
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -261,8 +261,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode hs256 --s secret  --t '{{.encode_JWT_with_HS256.token}}'
-    # info: go run . decode hs256 --s secret --t '{{.encode_JWT_with_HS256.token}}'
+      go run . decode hs256 --s "this-is-a-valid-32-byte-secret!!"  --t '{{.encode_JWT_with_HS256.token}}'
+    # info: go run . decode hs256 --s "this-is-a-valid-32-byte-secret!!" --t '{{.encode_JWT_with_HS256.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -272,7 +272,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode hs384 --s "secret" --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode hs384 --s "this-is-a-valid-48-byte-secret-for-hs384-algo!!!" --p '{ "email": "{{.EMAIL}}" }'
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -285,8 +285,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode hs384 --s secret  --t '{{.encode_JWT_with_HS384.token}}'
-    # info: go run . decode hs384 --s secret --t '{{.encode_JWT_with_HS384.token}}'
+      go run . decode hs384 --s "this-is-a-valid-48-byte-secret-for-hs384-algo!!!"  --t '{{.encode_JWT_with_HS384.token}}'
+    # info: go run . decode hs384 --s "this-is-a-valid-48-byte-secret-for-hs384-algo!!!" --t '{{.encode_JWT_with_HS384.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -296,7 +296,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode hs512 --s "secret" --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode hs512 --s "this-is-a-valid-64-byte-secret-for-hs512-algorithm-very-long!!!!" --p '{ "email": "{{.EMAIL}}" }'
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -309,8 +309,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode hs512 --s secret  --t '{{.encode_JWT_with_HS512.token}}'
-    # info: go run . decode hs512 --s secret --t '{{.encode_JWT_with_HS512.token}}'
+      go run . decode hs512 --s "this-is-a-valid-64-byte-secret-for-hs512-algorithm-very-long!!!!"  --t '{{.encode_JWT_with_HS512.token}}'
+    # info: go run . decode hs512 --s "this-is-a-valid-64-byte-secret-for-hs512-algorithm-very-long!!!!" --t '{{.encode_JWT_with_HS512.token}}'
     assertions:
     - result.code ShouldEqual 0
 
