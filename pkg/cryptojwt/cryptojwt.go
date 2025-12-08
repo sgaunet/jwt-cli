@@ -30,7 +30,7 @@ type encoder struct {
 type decoder struct {
 }
 
-func (e *encoder) EncodeJWT(secret interface{}, signingMethod jwt.SigningMethod, payload string) (string, error) {
+func (e *encoder) EncodeJWT(secret any, signingMethod jwt.SigningMethod, payload string) (string, error) {
 	claims := jwt.MapClaims{}
 	err := json.Unmarshal([]byte(payload), &claims)
 	if err != nil {
@@ -46,9 +46,9 @@ func (e *encoder) EncodeJWT(secret interface{}, signingMethod jwt.SigningMethod,
 	return t, nil
 }
 
-func (d *decoder) DecodeJWT(secret interface{}, token string) (string, error) {
+func (d *decoder) DecodeJWT(secret any, token string) (string, error) {
 	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(token, claims, func(_ *jwt.Token) (interface{}, error) {
+	_, err := jwt.ParseWithClaims(token, claims, func(_ *jwt.Token) (any, error) {
 		return secret, nil
 	})
 	if err != nil {
