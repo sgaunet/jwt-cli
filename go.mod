@@ -6,7 +6,7 @@ toolchain go1.23.2
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 )
 
 require (
