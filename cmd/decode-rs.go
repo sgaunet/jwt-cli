@@ -16,13 +16,13 @@ func createRSDecodeCommand(_ /* alg */, use string, pubKeyDecoder, privKeyDecode
 		Long:  `decode JWT token`,
 		Run: func(cmd *cobra.Command, _ []string) {
 			if privateKeyFile == "" && publicKeyFile == "" {
-				fmt.Println("private key file or public key file is mandatory")
-				fmt.Println(cmd.UsageString())
+				fmt.Fprintln(os.Stderr, "private key file or public key file is mandatory")
+				fmt.Fprintln(os.Stderr, cmd.UsageString())
 				os.Exit(1)
 			}
 			if token == "" {
-				fmt.Println("token is mandatory")
-				fmt.Println(cmd.UsageString())
+				fmt.Fprintln(os.Stderr, "token is mandatory")
+				fmt.Fprintln(os.Stderr, cmd.UsageString())
 				os.Exit(1)
 			}
 
@@ -32,10 +32,10 @@ func createRSDecodeCommand(_ /* alg */, use string, pubKeyDecoder, privKeyDecode
 			} else {
 				j = privKeyDecoder(privateKeyFile)
 			}
-			
+
 			t, err := j.Decode(token)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
 			}
 			fmt.Println(t)
