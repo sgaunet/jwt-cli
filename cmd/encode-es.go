@@ -16,20 +16,20 @@ func createESEncodeCommand(_ /* alg */, use, short, long string, encoder func(st
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
 			if privateKeyFile == "" {
-				fmt.Println("private key file is mandatory")
-				fmt.Println(cmd.UsageString())
+				fmt.Fprintln(os.Stderr, "private key file is mandatory")
+				fmt.Fprintln(os.Stderr, cmd.UsageString())
 				os.Exit(1)
 			}
 			if payload == "" {
-				fmt.Println("payload is mandatory")
-				fmt.Println(cmd.UsageString())
+				fmt.Fprintln(os.Stderr, "payload is mandatory")
+				fmt.Fprintln(os.Stderr, cmd.UsageString())
 				os.Exit(1)
 			}
-			
+
 			j := encoder(privateKeyFile)
 			t, err := j.Encode(payload)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
 			}
 			fmt.Println(t)

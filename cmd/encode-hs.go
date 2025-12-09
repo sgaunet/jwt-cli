@@ -16,20 +16,20 @@ func createHSEncodeCommand(_ /* alg */, use, short, long string, encoderWithOpts
 		Long:  long,
 		Run: func(cmd *cobra.Command, _ []string) {
 			if secret == "" {
-				fmt.Println("secret is mandatory")
-				fmt.Println(cmd.UsageString())
+				fmt.Fprintln(os.Stderr, "secret is mandatory")
+				fmt.Fprintln(os.Stderr, cmd.UsageString())
 				os.Exit(1)
 			}
 			if payload == "" {
-				fmt.Println("payload is mandatory")
-				fmt.Println(cmd.UsageString())
+				fmt.Fprintln(os.Stderr, "payload is mandatory")
+				fmt.Fprintln(os.Stderr, cmd.UsageString())
 				os.Exit(1)
 			}
 
 			j := encoderWithOpts([]byte(secret), allowWeakSecret)
 			t, err := j.Encode(payload)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Fprintln(os.Stderr, err)
 				os.Exit(1)
 			}
 			fmt.Println(t)
