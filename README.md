@@ -166,7 +166,7 @@ For more information: `jwt-cli completion --help`
 
 This project is using :
 
-* golang 1.19+
+* golang 1.23+
 * [task for development](https://taskfile.dev/#/)
 * docker
 * [docker buildx](https://github.com/docker/buildx)
