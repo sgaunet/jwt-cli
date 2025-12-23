@@ -34,16 +34,16 @@ var genkeysES256Cmd = &cobra.Command{
 	Long: `Print OpenSSL commands to generate ECDSA key pair using P-256 curve for ES256 algorithm.
 
 The generated keys will be in PEM format:
-  - ecdsa-p256-private.pem: Private key for signing
-  - ecdsa-p256-public.pem: Public key for verification`,
+  - ES256-private.pem: Private key for signing
+  - ES256-public.pem: Public key for verification`,
 	Example: `  # Show the commands
   jwt-cli genkeys es256
 
   # Execute the commands directly
   $(jwt-cli genkeys es256)`,
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("openssl ecparam -genkey -name prime256v1  -noout -out ecdsa-p256-private.pem")
-		fmt.Println("openssl ec -in ecdsa-p256-private.pem -pubout -out ecdsa-p256-public.pem")
+		fmt.Println("openssl ecparam -genkey -name prime256v1  -noout -out ES256-private.pem")
+		fmt.Println("openssl ec -in ES256-private.pem -pubout -out ES256-public.pem")
 	},
 }
 
@@ -53,16 +53,16 @@ var genkeysES384Cmd = &cobra.Command{
 	Long: `Print OpenSSL commands to generate ECDSA key pair using P-384 curve for ES384 algorithm.
 
 The generated keys will be in PEM format:
-  - jwtES384key.pem: Private key for signing
-  - jwtES384pubkey.pem: Public key for verification`,
+  - ES384-private.pem: Private key for signing
+  - ES384-public.pem: Public key for verification`,
 	Example: `  # Show the commands
   jwt-cli genkeys es384
 
   # Execute the commands directly
   $(jwt-cli genkeys es384)`,
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("openssl ecparam -name secp384r1 -genkey -noout -out jwtES384key.pem")
-		fmt.Println("openssl ec -in jwtES384key.pem -pubout -out jwtES384pubkey.pem")
+		fmt.Println("openssl ecparam -name secp384r1 -genkey -noout -out ES384-private.pem")
+		fmt.Println("openssl ec -in ES384-private.pem -pubout -out ES384-public.pem")
 	},
 }
 
@@ -72,16 +72,16 @@ var genkeysES512Cmd = &cobra.Command{
 	Long: `Print OpenSSL commands to generate ECDSA key pair using P-521 curve for ES512 algorithm.
 
 The generated keys will be in PEM format:
-  - ecdsa-p521-private.pem: Private key for signing
-  - ecdsa-p521-public.pem: Public key for verification`,
+  - ES512-private.pem: Private key for signing
+  - ES512-public.pem: Public key for verification`,
 	Example: `  # Show the commands
   jwt-cli genkeys es512
 
   # Execute the commands directly
   $(jwt-cli genkeys es512)`,
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("openssl ecparam -genkey -name secp521r1 -noout -out ecdsa-p521-private.pem")
-		fmt.Println("openssl ec -in ecdsa-p521-private.pem -pubout -out ecdsa-p521-public.pem")
+		fmt.Println("openssl ecparam -genkey -name secp521r1 -noout -out ES512-private.pem")
+		fmt.Println("openssl ec -in ES512-private.pem -pubout -out ES512-public.pem")
 	},
 }
 
@@ -91,16 +91,16 @@ var genkeysRS256Cmd = &cobra.Command{
 	Long: `Print commands to generate RSA key pair (4096-bit) for RS256 algorithm.
 
 The generated keys will be in PEM format:
-  - RS256.key: Private key for signing
-  - RS256.key.pub: Public key for verification`,
+  - RS256-private.pem: Private key for signing
+  - RS256-public.pem: Public key for verification`,
 	Example: `  # Show the commands
   jwt-cli genkeys rs256
 
   # Execute the commands directly
   $(jwt-cli genkeys rs256)`,
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("ssh-keygen -t rsa -b 4096 -E SHA256 -m PEM -P '' -f RS256.key")
-		fmt.Println("openssl rsa -in RS256.key -pubout -outform PEM -out RS256.key.pub")
+		fmt.Println("ssh-keygen -t rsa -b 4096 -E SHA256 -m PEM -P '' -f RS256-private.pem")
+		fmt.Println("openssl rsa -in RS256-private.pem -pubout -outform PEM -out RS256-public.pem")
 	},
 }
 
@@ -110,16 +110,16 @@ var genkeysRS384Cmd = &cobra.Command{
 	Long: `Print commands to generate RSA key pair (4096-bit) for RS384 algorithm.
 
 The generated keys will be in PEM format:
-  - RS384.key: Private key for signing
-  - RS384.key.pub: Public key for verification`,
+  - RS384-private.pem: Private key for signing
+  - RS384-public.pem: Public key for verification`,
 	Example: `  # Show the commands
   jwt-cli genkeys rs384
 
   # Execute the commands directly
   $(jwt-cli genkeys rs384)`,
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("ssh-keygen -t rsa -b 4096 -E SHA384 -m PEM -P '' -f RS384.key")
-		fmt.Println("openssl rsa -in RS384.key -pubout -outform PEM -out RS384.key.pub")
+		fmt.Println("ssh-keygen -t rsa -b 4096 -E SHA384 -m PEM -P '' -f RS384-private.pem")
+		fmt.Println("openssl rsa -in RS384-private.pem -pubout -outform PEM -out RS384-public.pem")
 	},
 }
 
@@ -129,15 +129,15 @@ var genkeysRS512Cmd = &cobra.Command{
 	Long: `Print commands to generate RSA key pair (4096-bit) for RS512 algorithm.
 
 The generated keys will be in PEM format:
-  - RS512.key: Private key for signing
-  - RS512.key.pub: Public key for verification`,
+  - RS512-private.pem: Private key for signing
+  - RS512-public.pem: Public key for verification`,
 	Example: `  # Show the commands
   jwt-cli genkeys rs512
 
   # Execute the commands directly
   $(jwt-cli genkeys rs512)`,
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("ssh-keygen -t rsa -b 4096 -E SHA512 -m PEM -P '' -f RS512.key")
-		fmt.Println("openssl rsa -in RS512.key -pubout -outform PEM -out RS512.key.pub")
+		fmt.Println("ssh-keygen -t rsa -b 4096 -E SHA512 -m PEM -P '' -f RS512-private.pem")
+		fmt.Println("openssl rsa -in RS512-private.pem -pubout -outform PEM -out RS512-public.pem")
 	},
 }
