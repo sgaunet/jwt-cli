@@ -9,11 +9,12 @@ import (
 )
 
 //nolint:dupl // Similar structure needed for different algorithms
-func createHSEncodeCommand(_ /* alg */, use, short, long string, encoderWithOpts func([]byte, bool) cryptojwt.EncoderDecoder) *cobra.Command {
+func createHSEncodeCommand(_ /* alg */, use, short, long, example string, encoderWithOpts func([]byte, bool) cryptojwt.EncoderDecoder) *cobra.Command {
 	return &cobra.Command{
-		Use:   use,
-		Short: short,
-		Long:  long,
+		Use:     use,
+		Short:   short,
+		Long:    long,
+		Example: example,
 		Run: func(cmd *cobra.Command, _ []string) {
 			if secret == "" {
 				fmt.Fprintln(os.Stderr, "secret is mandatory")
@@ -40,44 +41,77 @@ func createHSEncodeCommand(_ /* alg */, use, short, long string, encoderWithOpts
 var encodeHS256Cmd = createHSEncodeCommand(
 	"HS256",
 	"hs256",
-	"encode HS256 JWT token (requires 32+ byte secret)",
-	`encode HS256 JWT token
+	"Encode JWT token using HS256 (HMAC-SHA256) algorithm",
+	`Encode a JSON payload into a JWT token signed with HS256.
+
+HS256 uses HMAC with SHA-256 for signing. It requires a shared secret
+that must be kept confidential. The same secret is used for both
+encoding and decoding.
 
 Secret Requirements:
-  HS256 requires a minimum of 32 bytes (256 bits) for the secret according to RFC 7518 Section 3.2.
-  Use --allow-weak-secret flag to bypass validation for testing purposes only.
+  HS256 requires a minimum of 32 bytes (256 bits) for the secret according
+  to RFC 7518 Section 3.2. Use --allow-weak-secret flag to bypass validation
+  for testing purposes only.`,
+	`  # Encode a simple payload
+  jwt-cli encode hs256 --payload '{"user":"alice","role":"admin"}' --secret "my-32-byte-secret-key-for-hs256"
 
-Example:
-  jwt-cli encode hs256 -s "this-is-a-valid-secret-32byt" -p '{"sub":"user123"}'`,
+  # Encode with expiration (Unix timestamp)
+  jwt-cli encode hs256 --payload '{"user":"alice","exp":1735689600}' --secret "my-32-byte-secret-key-for-hs256"
+
+  # Encode from file
+  jwt-cli encode hs256 --payload "$(cat payload.json)" --secret "my-32-byte-secret-key-for-hs256"
+
+  # Store token in variable
+  TOKEN=$(jwt-cli encode hs256 --payload '{"user":"alice"}' --secret "my-32-byte-secret-key-for-hs256")`,
 	cryptojwt.NewHS256EncoderWithOptions,
 )
 
 var encodeHS384Cmd = createHSEncodeCommand(
 	"HS384",
 	"hs384",
-	"encode HS384 JWT token (requires 48+ byte secret)",
-	`encode HS384 JWT token
+	"Encode JWT token using HS384 (HMAC-SHA384) algorithm",
+	`Encode a JSON payload into a JWT token signed with HS384.
+
+HS384 uses HMAC with SHA-384 for signing. It requires a shared secret
+that must be kept confidential. The same secret is used for both
+encoding and decoding.
 
 Secret Requirements:
-  HS384 requires a minimum of 48 bytes (384 bits) for the secret according to RFC 7518 Section 3.2.
-  Use --allow-weak-secret flag to bypass validation for testing purposes only.
+  HS384 requires a minimum of 48 bytes (384 bits) for the secret according
+  to RFC 7518 Section 3.2. Use --allow-weak-secret flag to bypass validation
+  for testing purposes only.`,
+	`  # Encode a simple payload
+  jwt-cli encode hs384 --payload '{"user":"alice","role":"admin"}' --secret "my-48-byte-secret-key-for-hs384-authentication"
 
-Example:
-  jwt-cli encode hs384 -s "this-is-a-valid-secret-for-hs384-48bytes" -p '{"sub":"user123"}'`,
+  # Encode with expiration
+  jwt-cli encode hs384 --payload '{"user":"alice","exp":1735689600}' --secret "my-48-byte-secret-key-for-hs384-authentication"
+
+  # Store token in variable
+  TOKEN=$(jwt-cli encode hs384 --payload '{"user":"alice"}' --secret "my-48-byte-secret-key-for-hs384-authentication")`,
 	cryptojwt.NewHS384EncoderWithOptions,
 )
 
 var encodeHS512Cmd = createHSEncodeCommand(
 	"HS512",
 	"hs512",
-	"encode HS512 JWT token (requires 64+ byte secret)",
-	`encode HS512 JWT token
+	"Encode JWT token using HS512 (HMAC-SHA512) algorithm",
+	`Encode a JSON payload into a JWT token signed with HS512.
+
+HS512 uses HMAC with SHA-512 for signing. It requires a shared secret
+that must be kept confidential. The same secret is used for both
+encoding and decoding.
 
 Secret Requirements:
-  HS512 requires a minimum of 64 bytes (512 bits) for the secret according to RFC 7518 Section 3.2.
-  Use --allow-weak-secret flag to bypass validation for testing purposes only.
+  HS512 requires a minimum of 64 bytes (512 bits) for the secret according
+  to RFC 7518 Section 3.2. Use --allow-weak-secret flag to bypass validation
+  for testing purposes only.`,
+	`  # Encode a simple payload
+  jwt-cli encode hs512 --payload '{"user":"alice","role":"admin"}' --secret "my-64-byte-secret-key-for-hs512-that-meets-minimum-requirement"
 
-Example:
-  jwt-cli encode hs512 -s "this-is-a-valid-secret-for-hs512-that-meets-64-byte-requirement" -p '{"sub":"user123"}'`,
+  # Encode with expiration
+  jwt-cli encode hs512 --payload '{"user":"alice","exp":1735689600}' --secret "my-64-byte-secret-key-for-hs512-that-meets-minimum-requirement"
+
+  # Store token in variable
+  TOKEN=$(jwt-cli encode hs512 --payload '{"user":"alice"}' --secret "my-64-byte-secret-key-for-hs512-that-meets-minimum-requirement")`,
 	cryptojwt.NewHS512EncoderWithOptions,
 )
