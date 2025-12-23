@@ -13,8 +13,27 @@ var allowWeakSecret bool
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "jwt-cli",
-	Short: "Tool to encode/decode JWT token",
-	Long:  `Tool to encode/decode JWT token`,
+	Short: "Tool to encode/decode JWT tokens",
+	Long: `jwt-cli is a command-line utility for creating and validating JSON Web Tokens (JWT).
+
+Supports multiple signing algorithms:
+  - HMAC: HS256, HS384, HS512 (symmetric)
+  - RSA: RS256, RS384, RS512 (asymmetric)
+  - ECDSA: ES256, ES384, ES512 (asymmetric)
+
+Use HMAC algorithms for simple use cases where both parties share a secret.
+Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
+	Example: `  # Encode a token with HS256
+  jwt-cli encode hs256 --payload '{"user":"alice"}' --secret "my-32-byte-secret-key-for-hs256"
+
+  # Decode and verify a token
+  jwt-cli decode hs256 --token "$TOKEN" --secret "my-32-byte-secret-key-for-hs256"
+
+  # Generate keys for RSA or ECDSA
+  jwt-cli genkeys rs256
+
+  # Encode with RS256 using private key
+  jwt-cli encode rs256 --payload '{"user":"alice"}' --private-key-file RS256.key`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
