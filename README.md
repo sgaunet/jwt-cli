@@ -181,41 +181,41 @@ The docker image is only created to simplify the copy of jwt-cli in another dock
 ## RS256
 
 ```
-ssh-keygen -t rsa -b 4096 -E SHA256 -m PEM -P "" -f RS256.key
-openssl rsa -in RS256.key -pubout -outform PEM -out RS256.key.pub
+ssh-keygen -t rsa -b 4096 -E SHA256 -m PEM -P "" -f RS256-private.pem
+openssl rsa -in RS256-private.pem -pubout -outform PEM -out RS256-public.pem
 ```
 
 ## RS384
 
 ```
-ssh-keygen -t rsa -b 4096 -E SHA384 -m PEM -P "" -f RS384.key
-openssl rsa -in RS384.key -pubout -outform PEM -out RS384.key.pub
+ssh-keygen -t rsa -b 4096 -E SHA384 -m PEM -P "" -f RS384-private.pem
+openssl rsa -in RS384-private.pem -pubout -outform PEM -out RS384-public.pem
 ```
 
 ## RS512
 
 ```
-ssh-keygen -t rsa -b 4096 -E SHA512 -m PEM -P "" -f RS512.key
-openssl rsa -in RS512.key -pubout -outform PEM -out RS512.key.pub
+ssh-keygen -t rsa -b 4096 -E SHA512 -m PEM -P "" -f RS512-private.pem
+openssl rsa -in RS512-private.pem -pubout -outform PEM -out RS512-public.pem
 ```
 
 ## ES256
 
 ```
-openssl ecparam -genkey -name prime256v1  -noout -out ecdsa-p256-private.pem
-openssl ec -in ecdsa-p256-private.pem -pubout -out ecdsa-p256-public.pem 
+openssl ecparam -genkey -name prime256v1  -noout -out ES256-private.pem
+openssl ec -in ES256-private.pem -pubout -out ES256-public.pem
 ```
 
 ## ES384
 
 ```
-openssl ecparam -name secp384r1 -genkey -noout -out jwtES384key.pem
-openssl ec -in jwtES384key.pem -pubout -out jwtES384pubkey.pem
+openssl ecparam -name secp384r1 -genkey -noout -out ES384-private.pem
+openssl ec -in ES384-private.pem -pubout -out ES384-public.pem
 ```
 
 ## ES512
 
 ```
-openssl ecparam -genkey -name secp521r1 -noout -out ecdsa-p521-private.pem
-openssl ec -in ecdsa-p521-private.pem -pubout -out ecdsa-p521-public.pem 
+openssl ecparam -genkey -name secp521r1 -noout -out ES512-private.pem
+openssl ec -in ES512-private.pem -pubout -out ES512-public.pem
 ```

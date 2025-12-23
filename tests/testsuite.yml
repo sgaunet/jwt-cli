@@ -15,33 +15,32 @@ testcases:
   - type: exec
     script: |
       # RS256
-      ssh-keygen -t rsa -b 4096 -E SHA256 -m PEM -P "" -f RS256.key
-      # openssl genrsa -out RS256.key 2048
-      openssl rsa -in RS256.key -pubout -outform PEM -out RS256.key.pub
+      ssh-keygen -t rsa -b 4096 -E SHA256 -m PEM -P "" -f RS256-private.pem
+      openssl rsa -in RS256-private.pem -pubout -outform PEM -out RS256-public.pem
 
       # RS384
-      ssh-keygen -t rsa -b 4096 -E SHA384 -m PEM -P "" -f RS384.key
-      openssl rsa -in RS384.key -pubout -outform PEM -out RS384.key.pub
+      ssh-keygen -t rsa -b 4096 -E SHA384 -m PEM -P "" -f RS384-private.pem
+      openssl rsa -in RS384-private.pem -pubout -outform PEM -out RS384-public.pem
 
       # RS512
-      ssh-keygen -t rsa -b 4096 -E SHA512 -m PEM -P "" -f RS512.key
-      openssl rsa -in RS512.key -pubout -outform PEM -out RS512.key.pub
+      ssh-keygen -t rsa -b 4096 -E SHA512 -m PEM -P "" -f RS512-private.pem
+      openssl rsa -in RS512-private.pem -pubout -outform PEM -out RS512-public.pem
 
 - name: create ES256 ES384 ES512 keys
   steps:
   - type: exec
     script: |
       # ES256
-      openssl ecparam -genkey -name prime256v1  -noout -out ecdsa-p256-private.pem
-      openssl ec -in ecdsa-p256-private.pem -pubout -out ecdsa-p256-public.pem 
+      openssl ecparam -genkey -name prime256v1  -noout -out ES256-private.pem
+      openssl ec -in ES256-private.pem -pubout -out ES256-public.pem
 
       # ES384
-      openssl ecparam -name secp384r1 -genkey -noout -out jwtES384key.pem
-      openssl ec -in jwtES384key.pem -pubout -out jwtES384pubkey.pem
+      openssl ecparam -name secp384r1 -genkey -noout -out ES384-private.pem
+      openssl ec -in ES384-private.pem -pubout -out ES384-public.pem
 
       # ES512
-      openssl ecparam -genkey -name secp521r1 -noout -out ecdsa-p521-private.pem
-      openssl ec -in ecdsa-p521-private.pem -pubout -out ecdsa-p521-public.pem 
+      openssl ecparam -genkey -name secp521r1 -noout -out ES512-private.pem
+      openssl ec -in ES512-private.pem -pubout -out ES512-public.pem 
 
 
 - name: encode_JWT_with_RS256
@@ -49,7 +48,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode rs256 --pk tests/RS256.key --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode rs256 --pk tests/RS256-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -62,8 +61,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode rs256 --pk tests/RS256.key --t '{{.encode_JWT_with_RS256.token}}'
-    # info: go run . decode rs256 --pk tests/RS256.key --t '{{.encode_JWT_with_RS256.token}}'
+      go run . decode rs256 --pk tests/RS256-private.pem --t '{{.encode_JWT_with_RS256.token}}'
+    # info: go run . decode rs256 --pk tests/RS256-private.pem --t '{{.encode_JWT_with_RS256.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -72,8 +71,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode rs256 --pubk tests/RS256.key.pub --t '{{.encode_JWT_with_RS256.token}}'
-    # info: go run . decode rs256 --pubk tests/RS256.key.pub --t '{{.encode_JWT_with_RS256.token}}'
+      go run . decode rs256 --pubk tests/RS256-public.pem --t '{{.encode_JWT_with_RS256.token}}'
+    # info: go run . decode rs256 --pubk tests/RS256-public.pem --t '{{.encode_JWT_with_RS256.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -82,7 +81,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode rs384 --pk tests/RS384.key --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode rs384 --pk tests/RS384-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -95,8 +94,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode rs384 --pk tests/RS384.key --t '{{.encode_JWT_with_RS384.token}}'
-    # info: go run . decode rs384 --pk tests/RS384.key --t '{{.encode_JWT_with_RS384.token}}'
+      go run . decode rs384 --pk tests/RS384-private.pem --t '{{.encode_JWT_with_RS384.token}}'
+    # info: go run . decode rs384 --pk tests/RS384-private.pem --t '{{.encode_JWT_with_RS384.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -105,8 +104,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
-    # info: go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
+      go run . decode rs384 --pubk tests/RS384-public.pem --t '{{.encode_JWT_with_RS384.token}}'
+    # info: go run . decode rs384 --pubk tests/RS384-public.pem --t '{{.encode_JWT_with_RS384.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -116,7 +115,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode rs512 --pk tests/RS512.key --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode rs512 --pk tests/RS512-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -129,8 +128,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode rs512 --pk tests/RS512.key --t '{{.encode_JWT_with_RS512.token}}'
-    # info: go run . decode rs512 --pk tests/RS512.key --t '{{.encode_JWT_with_RS512.token}}'
+      go run . decode rs512 --pk tests/RS512-private.pem --t '{{.encode_JWT_with_RS512.token}}'
+    # info: go run . decode rs512 --pk tests/RS512-private.pem --t '{{.encode_JWT_with_RS512.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -139,8 +138,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
-    # info: go run . decode rs384 --pubk tests/RS384.key.pub --t '{{.encode_JWT_with_RS384.token}}'
+      go run . decode rs384 --pubk tests/RS384-public.pem --t '{{.encode_JWT_with_RS384.token}}'
+    # info: go run . decode rs384 --pubk tests/RS384-public.pem --t '{{.encode_JWT_with_RS384.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -149,7 +148,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode es256 --pk tests/ecdsa-p256-private.pem --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode es256 --pk tests/ES256-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -162,8 +161,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode es256 --pk tests/ecdsa-p256-private.pem --t '{{.encode_JWT_with_ES256.token}}'
-    # info: go run . decode es256 --pk tests/ecdsa-p256-private.pem --t '{{.encode_JWT_with_ES256.token}}'
+      go run . decode es256 --pk tests/ES256-private.pem --t '{{.encode_JWT_with_ES256.token}}'
+    # info: go run . decode es256 --pk tests/ES256-private.pem --t '{{.encode_JWT_with_ES256.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -172,8 +171,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode es256 --pubk tests/ecdsa-p256-public.pem --t '{{.encode_JWT_with_ES256.token}}'
-    # info: go run . decode es256 --pubk tests/ecdsa-p256-public.pem --t '{{.encode_JWT_with_ES256.token}}'
+      go run . decode es256 --pubk tests/ES256-public.pem --t '{{.encode_JWT_with_ES256.token}}'
+    # info: go run . decode es256 --pubk tests/ES256-public.pem --t '{{.encode_JWT_with_ES256.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -182,7 +181,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode es384 --pk tests/jwtES384key.pem --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode es384 --pk tests/ES384-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -195,8 +194,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode es384 --pk tests/jwtES384key.pem --t '{{.encode_JWT_with_ES384.token}}'
-    # info: go run . decode es384 --pk tests/jwtES384key.pem --t '{{.encode_JWT_with_ES384.token}}'
+      go run . decode es384 --pk tests/ES384-private.pem --t '{{.encode_JWT_with_ES384.token}}'
+    # info: go run . decode es384 --pk tests/ES384-private.pem --t '{{.encode_JWT_with_ES384.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -205,8 +204,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode es384 --pubk tests/jwtES384pubkey.pem --t '{{.encode_JWT_with_ES384.token}}'
-    # info: go run . decode es384 --pubk tests/jwtES384pubkey.pem --t '{{.encode_JWT_with_ES384.token}}'
+      go run . decode es384 --pubk tests/ES384-public.pem --t '{{.encode_JWT_with_ES384.token}}'
+    # info: go run . decode es384 --pubk tests/ES384-public.pem --t '{{.encode_JWT_with_ES384.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -215,7 +214,7 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . encode es512 --pk tests/ecdsa-p521-private.pem --p '{ "email": "{{.EMAIL}}" }' 
+      go run . encode es512 --pk tests/ES512-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
     vars:
@@ -228,8 +227,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode es512 --pk tests/ecdsa-p521-private.pem --t '{{.encode_JWT_with_ES512.token}}'
-    # info: go run . decode es256 --pk tests/ecdsa-p521-private.pem --t '{{.encode_JWT_with_ES512.token}}'
+      go run . decode es512 --pk tests/ES512-private.pem --t '{{.encode_JWT_with_ES512.token}}'
+    # info: go run . decode es256 --pk tests/ES512-private.pem --t '{{.encode_JWT_with_ES512.token}}'
     assertions:
     - result.code ShouldEqual 0
 
@@ -238,8 +237,8 @@ testcases:
   - type: exec
     script: |
       cd ..
-      go run . decode es512 --pubk tests/ecdsa-p521-public.pem --t '{{.encode_JWT_with_ES512.token}}'
-    # info: go run . decode es512 --pubk tests/ecdsa-p521-public.pem --t '{{.encode_JWT_with_ES512.token}}'
+      go run . decode es512 --pubk tests/ES512-public.pem --t '{{.encode_JWT_with_ES512.token}}'
+    # info: go run . decode es512 --pubk tests/ES512-public.pem --t '{{.encode_JWT_with_ES512.token}}'
     assertions:
     - result.code ShouldEqual 0
 
