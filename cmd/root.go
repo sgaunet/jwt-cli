@@ -50,9 +50,6 @@ Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
 
   # Encode with RS256 using private key
   jwt-cli encode rs256 --payload '{"user":"alice"}' --private-key-file RS256.key`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute runs the root command.
