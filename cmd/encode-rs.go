@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
 	"github.com/spf13/cobra"
@@ -15,25 +14,21 @@ func createRSEncodeCommand(_ /* alg */, use, short, long, example string, encode
 		Short:   short,
 		Long:    long,
 		Example: example,
-		Run: func(cmd *cobra.Command, _ []string) {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			if privateKeyFile == "" {
-				fmt.Fprintln(os.Stderr, "private key file is mandatory")
-				fmt.Fprintln(os.Stderr, cmd.UsageString())
-				os.Exit(1)
+				return fmt.Errorf("private key file is mandatory\n\n%s", cmd.UsageString())
 			}
 			if payload == "" {
-				fmt.Fprintln(os.Stderr, "payload is mandatory")
-				fmt.Fprintln(os.Stderr, cmd.UsageString())
-				os.Exit(1)
+				return fmt.Errorf("payload is mandatory\n\n%s", cmd.UsageString())
 			}
 
 			j := encoder(privateKeyFile)
 			t, err := j.Encode(payload)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
+				return fmt.Errorf("encoding failed: %w", err)
 			}
 			fmt.Println(t)
+			return nil
 		},
 	}
 }
