@@ -28,13 +28,16 @@ func Execute() {
 	}
 }
 
+//nolint:funlen // init function requires many statements for command setup
 func init() {
 	rootCmd.AddCommand(encodeCmd)
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.CompletionOptions.DisableDefaultCmd = false
 	encodeCmd.PersistentFlags().StringVar(&payload, "p", "", "payload")
 	encodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "private key file")
 	encodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret (for HMAC algorithms: HS256 requires 32+ bytes, HS384 requires 48+ bytes, HS512 requires 64+ bytes)")
 	encodeCmd.PersistentFlags().BoolVar(&allowWeakSecret, "allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
+	_ = encodeCmd.MarkPersistentFlagFilename("pk", "pem", "key")
+	_ = encodeCmd.MarkPersistentFlagFilename("p", "json")
 
 	// encode subcommands
 	encodeCmd.AddCommand(encodeRS256Cmd)
@@ -53,6 +56,9 @@ func init() {
 	decodeCmd.PersistentFlags().StringVar(&token, "t", "", "token")
 	decodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret (for HMAC algorithms: HS256 requires 32+ bytes, HS384 requires 48+ bytes, HS512 requires 64+ bytes)")
 	decodeCmd.PersistentFlags().BoolVar(&allowWeakSecret, "allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
+	_ = decodeCmd.MarkPersistentFlagFilename("pk", "pem", "key")
+	_ = decodeCmd.MarkPersistentFlagFilename("pubk", "pem", "key")
+	_ = decodeCmd.MarkPersistentFlagFilename("t", "jwt", "txt")
 
 	// decode subcommands
 	decodeCmd.AddCommand(decodeRS256Cmd)
