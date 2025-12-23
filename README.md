@@ -91,6 +91,77 @@ $ jwt-cli decode hs512 --s "myAwesomeSecret" --t "eyJhbGciOiJIUzUxMiIsInR
 }
 ```
 
+# Shell Completion
+
+jwt-cli supports shell completion for bash, zsh, fish, and PowerShell. This enables TAB completion for commands, subcommands, and flags.
+
+## Installation
+
+### Bash
+
+**On macOS (using Homebrew):**
+```bash
+jwt-cli completion bash > $(brew --prefix)/etc/bash_completion.d/jwt-cli
+source ~/.bashrc
+```
+
+**On Linux:**
+```bash
+sudo jwt-cli completion bash > /etc/bash_completion.d/jwt-cli
+source ~/.bashrc
+```
+
+### Zsh
+
+```bash
+# Create completions directory if it doesn't exist
+mkdir -p ~/.zsh/completions
+
+# Generate completion file
+jwt-cli completion zsh > ~/.zsh/completions/_jwt-cli
+
+# Add to .zshrc if not already present:
+# fpath=(~/.zsh/completions $fpath)
+# autoload -Uz compinit && compinit
+```
+
+### Fish
+
+```bash
+jwt-cli completion fish > ~/.config/fish/completions/jwt-cli.fish
+```
+
+### PowerShell
+
+```powershell
+# For current session
+jwt-cli completion powershell | Out-String | Invoke-Expression
+
+# For persistent installation, add to your PowerShell profile:
+jwt-cli completion powershell >> $PROFILE
+```
+
+## Usage Examples
+
+After installation and restarting your shell:
+
+```bash
+jwt-cli <TAB>              # Shows: encode, decode, genkeys, version, help
+jwt-cli encode <TAB>       # Shows: hs256, hs384, hs512, rs256, rs384, rs512, es256, es384, es512
+jwt-cli encode hs256 -<TAB> # Shows available flags
+jwt-cli decode rs256 --private-key-file <TAB>  # Shows .pem and .key files
+```
+
+## Troubleshooting
+
+If completion doesn't work:
+1. Verify jwt-cli is in your PATH: `which jwt-cli`
+2. Restart your shell or open a new terminal window
+3. For Zsh, ensure fpath includes your completions directory
+4. Check that completion files are in the correct location
+
+For more information: `jwt-cli completion --help`
+
 # Development
 
 This project is using :
