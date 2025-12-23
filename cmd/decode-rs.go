@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
 	"github.com/spf13/cobra"
@@ -15,16 +14,12 @@ func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKey
 		Short:   short,
 		Long:    long,
 		Example: example,
-		Run: func(cmd *cobra.Command, _ []string) {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			if privateKeyFile == "" && publicKeyFile == "" {
-				fmt.Fprintln(os.Stderr, "private key file or public key file is mandatory")
-				fmt.Fprintln(os.Stderr, cmd.UsageString())
-				os.Exit(1)
+				return fmt.Errorf("private key file or public key file is mandatory\n\n%s", cmd.UsageString())
 			}
 			if token == "" {
-				fmt.Fprintln(os.Stderr, "token is mandatory")
-				fmt.Fprintln(os.Stderr, cmd.UsageString())
-				os.Exit(1)
+				return fmt.Errorf("token is mandatory\n\n%s", cmd.UsageString())
 			}
 
 			var j cryptojwt.Decoder
@@ -36,10 +31,10 @@ func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKey
 
 			t, err := j.Decode(token)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				os.Exit(1)
+				return fmt.Errorf("decoding failed: %w", err)
 			}
 			fmt.Println(t)
+			return nil
 		},
 	}
 }

@@ -56,9 +56,9 @@ Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
 }
 
 // Execute runs the root command.
+// When a command returns an error via RunE, we exit with code 1.
 func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
