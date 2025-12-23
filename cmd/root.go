@@ -1,3 +1,19 @@
+// Package cmd implements the command-line interface for jwt-cli.
+//
+// The package provides Cobra commands for encoding and decoding JWT tokens
+// with support for multiple algorithms: HS256/384/512, RS256/384/512, and ES256/384/512.
+//
+// Each algorithm type has dedicated subcommands under encode and decode:
+//   - encode hs256/hs384/hs512: HMAC-based encoding with shared secrets
+//   - encode rs256/rs384/rs512: RSA-based encoding with private keys
+//   - encode es256/es384/es512: ECDSA-based encoding with private keys
+//   - decode hs256/hs384/hs512: HMAC-based decoding with shared secrets
+//   - decode rs256/rs384/rs512: RSA-based decoding with public/private keys
+//   - decode es256/es384/es512: ECDSA-based decoding with public/private keys
+//
+// Additional commands include:
+//   - genkeys: Generate example key pairs for testing
+//   - version: Display version information
 package cmd
 
 import (
