@@ -49,7 +49,7 @@ Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
   jwt-cli genkeys rs256
 
   # Encode with RS256 using private key
-  jwt-cli encode rs256 --payload '{"user":"alice"}' --private-key-file RS256.key`,
+  jwt-cli encode rs256 --payload '{"user":"alice"}' --private-key RS256.key`,
 }
 
 // Execute runs the root command.
@@ -64,12 +64,19 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(encodeCmd)
 	rootCmd.CompletionOptions.DisableDefaultCmd = false
-	encodeCmd.PersistentFlags().StringVar(&payload, "p", "", "payload")
-	encodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "private key file")
-	encodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret (for HMAC algorithms: HS256 requires 32+ bytes, HS384 requires 48+ bytes, HS512 requires 64+ bytes)")
+	encodeCmd.PersistentFlags().StringVarP(&payload, "payload", "p", "", "JSON payload to encode into JWT (e.g., '{\"user\":\"alice\"}')")
+	encodeCmd.PersistentFlags().StringVar(&privateKeyFile, "private-key", "", "path to RSA/ECDSA private key file in PEM format")
+	encodeCmd.PersistentFlags().StringVarP(&secret, "secret", "s", "", "HMAC secret for signing (minimum 32 bytes for HS256, 48 bytes for HS384, 64 bytes for HS512)")
 	encodeCmd.PersistentFlags().BoolVar(&allowWeakSecret, "allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
-	_ = encodeCmd.MarkPersistentFlagFilename("pk", "pem", "key")
-	_ = encodeCmd.MarkPersistentFlagFilename("p", "json")
+	_ = encodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
+	_ = encodeCmd.MarkPersistentFlagFilename("payload", "json")
+	// Backward compatibility: add deprecated aliases for old flag names
+	encodeCmd.PersistentFlags().StringVar(&payload, "p", "", "")
+	_ = encodeCmd.PersistentFlags().MarkDeprecated("p", "use --payload or -p instead")
+	encodeCmd.PersistentFlags().StringVar(&secret, "s", "", "")
+	_ = encodeCmd.PersistentFlags().MarkDeprecated("s", "use --secret or -s instead")
+	encodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "")
+	_ = encodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
 
 	// encode subcommands
 	encodeCmd.AddCommand(encodeRS256Cmd)
@@ -83,14 +90,23 @@ func init() {
 	encodeCmd.AddCommand(encodeHS512Cmd)
 
 	rootCmd.AddCommand(decodeCmd)
-	decodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "private key file")
-	decodeCmd.PersistentFlags().StringVar(&publicKeyFile, "pubk", "", "public key file")
-	decodeCmd.PersistentFlags().StringVar(&token, "t", "", "token")
-	decodeCmd.PersistentFlags().StringVar(&secret, "s", "", "secret (for HMAC algorithms: HS256 requires 32+ bytes, HS384 requires 48+ bytes, HS512 requires 64+ bytes)")
+	decodeCmd.PersistentFlags().StringVar(&privateKeyFile, "private-key", "", "path to RSA/ECDSA private key file in PEM format")
+	decodeCmd.PersistentFlags().StringVar(&publicKeyFile, "public-key", "", "path to RSA/ECDSA public key file in PEM format")
+	decodeCmd.PersistentFlags().StringVarP(&token, "token", "t", "", "JWT token to decode and verify")
+	decodeCmd.PersistentFlags().StringVarP(&secret, "secret", "s", "", "HMAC secret for verification (minimum 32 bytes for HS256, 48 bytes for HS384, 64 bytes for HS512)")
 	decodeCmd.PersistentFlags().BoolVar(&allowWeakSecret, "allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
-	_ = decodeCmd.MarkPersistentFlagFilename("pk", "pem", "key")
-	_ = decodeCmd.MarkPersistentFlagFilename("pubk", "pem", "key")
-	_ = decodeCmd.MarkPersistentFlagFilename("t", "jwt", "txt")
+	_ = decodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
+	_ = decodeCmd.MarkPersistentFlagFilename("public-key", "pem", "key")
+	_ = decodeCmd.MarkPersistentFlagFilename("token", "jwt", "txt")
+	// Backward compatibility: add deprecated aliases for old flag names
+	decodeCmd.PersistentFlags().StringVar(&privateKeyFile, "pk", "", "")
+	_ = decodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
+	decodeCmd.PersistentFlags().StringVar(&publicKeyFile, "pubk", "", "")
+	_ = decodeCmd.PersistentFlags().MarkDeprecated("pubk", "use --public-key instead")
+	decodeCmd.PersistentFlags().StringVar(&token, "t", "", "")
+	_ = decodeCmd.PersistentFlags().MarkDeprecated("t", "use --token or -t instead")
+	decodeCmd.PersistentFlags().StringVar(&secret, "s", "", "")
+	_ = decodeCmd.PersistentFlags().MarkDeprecated("s", "use --secret or -s instead")
 
 	// decode subcommands
 	decodeCmd.AddCommand(decodeRS256Cmd)

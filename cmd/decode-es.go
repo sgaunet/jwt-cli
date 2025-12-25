@@ -52,13 +52,13 @@ Key Requirements:
   - Public or private key in PEM format using P-256 curve
   - Key must match the one used for encoding`,
 	`  # Decode with public key (recommended)
-  jwt-cli decode es256 --token "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9..." --public-key-file ecdsa-p256-public.pem
+  jwt-cli decode es256 --token "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9..." --public-key ecdsa-p256-public.pem
 
   # Decode with private key
-  jwt-cli decode es256 --token "$TOKEN" --private-key-file ecdsa-p256-private.pem
+  jwt-cli decode es256 --token "$TOKEN" --private-key ecdsa-p256-private.pem
 
   # Decode and extract specific field
-  jwt-cli decode es256 --token "$TOKEN" --public-key-file ecdsa-p256-public.pem | jq -r '.user'`,
+  jwt-cli decode es256 --token "$TOKEN" --public-key ecdsa-p256-public.pem | jq -r '.user'`,
 	cryptojwt.NewES256DecoderWithPublicKeyFile,
 	cryptojwt.NewES256DecoderWithPrivateKeyFile,
 )
@@ -72,10 +72,10 @@ var decodeES384Cmd = createESDecodeCommand(
 ES384 uses ECDSA with SHA-384 hash and P-384 curve for verification.
 You can provide either the public key (recommended) or the private key.`,
 	`  # Decode with public key
-  jwt-cli decode es384 --token "eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCJ9..." --public-key-file jwtES384pubkey.pem
+  jwt-cli decode es384 --token "eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCJ9..." --public-key jwtES384pubkey.pem
 
   # Decode with private key
-  jwt-cli decode es384 --token "$TOKEN" --private-key-file jwtES384key.pem`,
+  jwt-cli decode es384 --token "$TOKEN" --private-key jwtES384key.pem`,
 	cryptojwt.NewES384DecoderWithPublicKeyFile,
 	cryptojwt.NewES384DecoderWithPrivateKeyFile,
 )
@@ -89,10 +89,10 @@ var decodeES512Cmd = createESDecodeCommand(
 ES512 uses ECDSA with SHA-512 hash and P-521 curve for verification.
 You can provide either the public key (recommended) or the private key.`,
 	`  # Decode with public key
-  jwt-cli decode es512 --token "eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9..." --public-key-file ecdsa-p521-public.pem
+  jwt-cli decode es512 --token "eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9..." --public-key ecdsa-p521-public.pem
 
   # Decode with private key
-  jwt-cli decode es512 --token "$TOKEN" --private-key-file ecdsa-p521-private.pem`,
+  jwt-cli decode es512 --token "$TOKEN" --private-key ecdsa-p521-private.pem`,
 	cryptojwt.NewES512DecoderWithPublicKeyFile,
 	cryptojwt.NewES512DecoderWithPrivateKeyFile,
 )

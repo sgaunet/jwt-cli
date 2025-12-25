@@ -54,13 +54,13 @@ Key Requirements:
   - Public or private key in PEM format
   - Key must match the one used for encoding`,
 	`  # Decode with public key (recommended)
-  jwt-cli decode rs256 --token "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..." --public-key-file RS256.key.pub
+  jwt-cli decode rs256 --token "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..." --public-key RS256.key.pub
 
   # Decode with private key
-  jwt-cli decode rs256 --token "$TOKEN" --private-key-file RS256.key
+  jwt-cli decode rs256 --token "$TOKEN" --private-key RS256.key
 
   # Decode and extract specific field
-  jwt-cli decode rs256 --token "$TOKEN" --public-key-file RS256.key.pub | jq -r '.user'`,
+  jwt-cli decode rs256 --token "$TOKEN" --public-key RS256.key.pub | jq -r '.user'`,
 	cryptojwt.NewRS256DecoderWithPublicKeyFile,
 	cryptojwt.NewRS256DecoderWithPrivateKeyFile,
 )
@@ -74,10 +74,10 @@ var decodeRS384Cmd = createRSDecodeCommand(
 RS384 uses RSA signature with SHA-384 hash for verification. You can
 provide either the public key (recommended) or the private key.`,
 	`  # Decode with public key
-  jwt-cli decode rs384 --token "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9..." --public-key-file RS384.key.pub
+  jwt-cli decode rs384 --token "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9..." --public-key RS384.key.pub
 
   # Decode with private key
-  jwt-cli decode rs384 --token "$TOKEN" --private-key-file RS384.key`,
+  jwt-cli decode rs384 --token "$TOKEN" --private-key RS384.key`,
 	cryptojwt.NewRS384DecoderWithPublicKeyFile,
 	cryptojwt.NewRS384DecoderWithPrivateKeyFile,
 )
@@ -91,10 +91,10 @@ var decodeRS512Cmd = createRSDecodeCommand(
 RS512 uses RSA signature with SHA-512 hash for verification. You can
 provide either the public key (recommended) or the private key.`,
 	`  # Decode with public key
-  jwt-cli decode rs512 --token "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9..." --public-key-file RS512.key.pub
+  jwt-cli decode rs512 --token "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9..." --public-key RS512.key.pub
 
   # Decode with private key
-  jwt-cli decode rs512 --token "$TOKEN" --private-key-file RS512.key`,
+  jwt-cli decode rs512 --token "$TOKEN" --private-key RS512.key`,
 	cryptojwt.NewRS512DecoderWithPublicKeyFile,
 	cryptojwt.NewRS512DecoderWithPrivateKeyFile,
 )
