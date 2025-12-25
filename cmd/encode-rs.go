@@ -49,13 +49,13 @@ Key Requirements:
   - Minimum 2048-bit RSA key recommended for security
   - Generate keys with: jwt-cli genkeys rs256`,
 	`  # Encode with private key
-  jwt-cli encode rs256 --payload '{"user":"alice","role":"admin"}' --private-key-file RS256.key
+  jwt-cli encode rs256 --payload '{"user":"alice","role":"admin"}' --private-key RS256.key
 
   # Encode with expiration
-  jwt-cli encode rs256 --payload '{"user":"alice","exp":1735689600}' --private-key-file RS256.key
+  jwt-cli encode rs256 --payload '{"user":"alice","exp":1735689600}' --private-key RS256.key
 
   # Encode from file and store token
-  TOKEN=$(jwt-cli encode rs256 --payload "$(cat payload.json)" --private-key-file RS256.key)`,
+  TOKEN=$(jwt-cli encode rs256 --payload "$(cat payload.json)" --private-key RS256.key)`,
 	cryptojwt.NewRS256Encoder,
 )
 
@@ -73,10 +73,10 @@ Key Requirements:
   - Minimum 2048-bit RSA key recommended
   - Generate keys with: jwt-cli genkeys rs384`,
 	`  # Encode with private key
-  jwt-cli encode rs384 --payload '{"user":"alice","role":"admin"}' --private-key-file RS384.key
+  jwt-cli encode rs384 --payload '{"user":"alice","role":"admin"}' --private-key RS384.key
 
   # Store token in variable
-  TOKEN=$(jwt-cli encode rs384 --payload '{"user":"alice"}' --private-key-file RS384.key)`,
+  TOKEN=$(jwt-cli encode rs384 --payload '{"user":"alice"}' --private-key RS384.key)`,
 	cryptojwt.NewRS384Encoder,
 )
 
@@ -94,9 +94,9 @@ Key Requirements:
   - Minimum 2048-bit RSA key recommended
   - Generate keys with: jwt-cli genkeys rs512`,
 	`  # Encode with private key
-  jwt-cli encode rs512 --payload '{"user":"alice","role":"admin"}' --private-key-file RS512.key
+  jwt-cli encode rs512 --payload '{"user":"alice","role":"admin"}' --private-key RS512.key
 
   # Store token in variable
-  TOKEN=$(jwt-cli encode rs512 --payload '{"user":"alice"}' --private-key-file RS512.key)`,
+  TOKEN=$(jwt-cli encode rs512 --payload '{"user":"alice"}' --private-key RS512.key)`,
 	cryptojwt.NewRS512Encoder,
 )

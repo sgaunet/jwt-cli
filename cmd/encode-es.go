@@ -47,13 +47,13 @@ Key Requirements:
   - Private key in PEM format using P-256 curve
   - Generate keys with: jwt-cli genkeys es256`,
 	`  # Encode with private key
-  jwt-cli encode es256 --payload '{"user":"alice","role":"admin"}' --private-key-file ecdsa-p256-private.pem
+  jwt-cli encode es256 --payload '{"user":"alice","role":"admin"}' --private-key ecdsa-p256-private.pem
 
   # Encode with expiration
-  jwt-cli encode es256 --payload '{"user":"alice","exp":1735689600}' --private-key-file ecdsa-p256-private.pem
+  jwt-cli encode es256 --payload '{"user":"alice","exp":1735689600}' --private-key ecdsa-p256-private.pem
 
   # Store token in variable
-  TOKEN=$(jwt-cli encode es256 --payload '{"user":"alice"}' --private-key-file ecdsa-p256-private.pem)`,
+  TOKEN=$(jwt-cli encode es256 --payload '{"user":"alice"}' --private-key ecdsa-p256-private.pem)`,
 	cryptojwt.NewES256Encoder,
 )
 
@@ -70,10 +70,10 @@ Key Requirements:
   - Private key in PEM format using P-384 curve
   - Generate keys with: jwt-cli genkeys es384`,
 	`  # Encode with private key
-  jwt-cli encode es384 --payload '{"user":"alice","role":"admin"}' --private-key-file jwtES384key.pem
+  jwt-cli encode es384 --payload '{"user":"alice","role":"admin"}' --private-key jwtES384key.pem
 
   # Store token in variable
-  TOKEN=$(jwt-cli encode es384 --payload '{"user":"alice"}' --private-key-file jwtES384key.pem)`,
+  TOKEN=$(jwt-cli encode es384 --payload '{"user":"alice"}' --private-key jwtES384key.pem)`,
 	cryptojwt.NewES384Encoder,
 )
 
@@ -90,9 +90,9 @@ Key Requirements:
   - Private key in PEM format using P-521 curve
   - Generate keys with: jwt-cli genkeys es512`,
 	`  # Encode with private key
-  jwt-cli encode es512 --payload '{"user":"alice","role":"admin"}' --private-key-file ecdsa-p521-private.pem
+  jwt-cli encode es512 --payload '{"user":"alice","role":"admin"}' --private-key ecdsa-p521-private.pem
 
   # Store token in variable
-  TOKEN=$(jwt-cli encode es512 --payload '{"user":"alice"}' --private-key-file ecdsa-p521-private.pem)`,
+  TOKEN=$(jwt-cli encode es512 --payload '{"user":"alice"}' --private-key ecdsa-p521-private.pem)`,
 	cryptojwt.NewES512Encoder,
 )

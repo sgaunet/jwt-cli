@@ -78,13 +78,13 @@ Quite easy, this tool will help you to encode/decode JWT tokens.
 
 ```
 # encode
-$ jwt-cli encode hs512 --p '{ "email": "myemail@me.com" }' --s "myAwesomeSecret"
+$ jwt-cli encode hs512 --payload '{ "email": "myemail@me.com" }' --secret "myAwesomeSecret"
 eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im15ZW1haWxAbWUuY29tIn0.SE0u1AWrDTHv67PnUALZl8VQ-7rnSXBNDTCVT_Dj12FStO6hL0ak0i4imcUHpWBEh-c5oSc-H90prGQ0oZx6ng
 # try to decode with a wrong secret
-$ jwt-cli decode hs512 --s "wrong secret" --t "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im15ZW1haWxAbWUuY29tIn0.SE0u1AWrDTHv67PnUALZl8VQ-7rnSXBNDTCVT_Dj12FStO6hL0ak0i4imcUHpWBEh-c5oSc-H90prGQ0oZx6ng"
+$ jwt-cli decode hs512 --secret "wrong secret" --token "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im15ZW1haWxAbWUuY29tIn0.SE0u1AWrDTHv67PnUALZl8VQ-7rnSXBNDTCVT_Dj12FStO6hL0ak0i4imcUHpWBEh-c5oSc-H90prGQ0oZx6ng"
 signature is invalid
 # decode with the good secret
-$ jwt-cli decode hs512 --s "myAwesomeSecret" --t "eyJhbGciOiJIUzUxMiIsInR
+$ jwt-cli decode hs512 --secret "myAwesomeSecret" --token "eyJhbGciOiJIUzUxMiIsInR
 5cCI6IkpXVCJ9.eyJlbWFpbCI6Im15ZW1haWxAbWUuY29tIn0.SE0u1AWrDTHv67PnUALZl8VQ-7rnSXBNDTCVT_Dj12FStO6hL0ak0i4imcUHpWBEh-c5oSc-H90prGQ0oZx6ng"
 {
   "email": "myemail@me.com"
@@ -149,7 +149,7 @@ After installation and restarting your shell:
 jwt-cli <TAB>              # Shows: encode, decode, genkeys, version, help
 jwt-cli encode <TAB>       # Shows: hs256, hs384, hs512, rs256, rs384, rs512, es256, es384, es512
 jwt-cli encode hs256 -<TAB> # Shows available flags
-jwt-cli decode rs256 --private-key-file <TAB>  # Shows .pem and .key files
+jwt-cli decode rs256 --private-key <TAB>  # Shows .pem and .key files
 ```
 
 ## Troubleshooting
