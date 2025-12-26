@@ -22,7 +22,9 @@ import (
 // Note: Since the actual commands use fmt.Println (which writes to os.Stdout)
 // instead of cmd.OutOrStdout(), we need to temporarily redirect os.Stdout
 // to capture the output.
-func executeCommand(cmd *cobra.Command, args ...string) (output string, err error) {
+//
+//nolint:unused // Shared test helper used across multiple test files
+func executeCommand(cmd *cobra.Command, args ...string) (string, error) {
 	// Create a pipe to capture stdout
 	oldStdout := os.Stdout
 	r, w, _ := os.Pipe()
@@ -35,7 +37,7 @@ func executeCommand(cmd *cobra.Command, args ...string) (output string, err erro
 	cmd.SetArgs(args)
 
 	// Execute the command
-	err = cmd.Execute()
+	err := cmd.Execute()
 
 	// Restore stdout
 	_ = w.Close()
@@ -54,6 +56,7 @@ func executeCommand(cmd *cobra.Command, args ...string) (output string, err erro
 
 // registerEncodeFlags registers all encoding-related flags on a command.
 // This mimics the flag registration done in root.go for encode commands.
+//nolint:unused // Shared test helper used across multiple test files
 func registerEncodeFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("payload", "p", "", "JSON payload")
 	cmd.Flags().StringP("secret", "s", "", "HMAC secret")
@@ -70,6 +73,7 @@ func registerEncodeFlags(cmd *cobra.Command) {
 
 // registerDecodeFlags registers all decoding-related flags on a command.
 // This mimics the flag registration done in root.go for decode commands.
+//nolint:unused // Shared test helper used across multiple test files
 func registerDecodeFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("token", "t", "", "JWT token to decode")
 	cmd.Flags().StringP("secret", "s", "", "HMAC secret")
@@ -89,6 +93,7 @@ func registerDecodeFlags(cmd *cobra.Command) {
 
 // createTempFile creates a temporary file with given content.
 // The file is created in t.TempDir() and will be automatically cleaned up.
+//nolint:unused // Shared test helper used across multiple test files
 func createTempFile(t *testing.T, content []byte) string {
 	t.Helper()
 	tmpFile, err := os.CreateTemp(t.TempDir(), "test-*.pem")
@@ -106,7 +111,8 @@ func createTempFile(t *testing.T, content []byte) string {
 
 // generateRSAKeyPair generates a test RSA key pair and returns file paths.
 // Both private and public keys are written to temporary files in PEM format.
-func generateRSAKeyPair(t *testing.T) (privateKeyPath, publicKeyPath string) {
+//nolint:unused // Shared test helper used across multiple test files
+func generateRSAKeyPair(t *testing.T) (string, string) {
 	t.Helper()
 	privateKey, err := rsa.GenerateKey(rand.Reader, testRSAKeySize)
 	if err != nil {
@@ -129,14 +135,15 @@ func generateRSAKeyPair(t *testing.T) (privateKeyPath, publicKeyPath string) {
 	}
 	publicKeyPEMBytes := pem.EncodeToMemory(publicKeyPEM)
 
-	privateKeyPath = createTempFile(t, privateKeyBytes)
-	publicKeyPath = createTempFile(t, publicKeyPEMBytes)
+	privateKeyPath := createTempFile(t, privateKeyBytes)
+	publicKeyPath := createTempFile(t, publicKeyPEMBytes)
 	return privateKeyPath, publicKeyPath
 }
 
 // generateECDSAKeyPair generates a test ECDSA key pair for the given curve.
 // Both private and public keys are written to temporary files in PEM format.
-func generateECDSAKeyPair(t *testing.T, curve elliptic.Curve) (privateKeyPath, publicKeyPath string) {
+//nolint:unused // Shared test helper used across multiple test files
+func generateECDSAKeyPair(t *testing.T, curve elliptic.Curve) (string, string) {
 	t.Helper()
 	privateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
@@ -163,18 +170,20 @@ func generateECDSAKeyPair(t *testing.T, curve elliptic.Curve) (privateKeyPath, p
 	}
 	publicKeyPEMBytes := pem.EncodeToMemory(publicKeyPEM)
 
-	privateKeyPath = createTempFile(t, privateKeyPEMBytes)
-	publicKeyPath = createTempFile(t, publicKeyPEMBytes)
+	privateKeyPath := createTempFile(t, privateKeyPEMBytes)
+	publicKeyPath := createTempFile(t, publicKeyPEMBytes)
 	return privateKeyPath, publicKeyPath
 }
 
 // createInvalidPEMFile creates a file with invalid PEM content for testing error handling.
+//nolint:unused // Shared test helper used across multiple test files
 func createInvalidPEMFile(t *testing.T) string {
 	t.Helper()
 	return createTempFile(t, []byte("invalid pem content"))
 }
 
 // createWrongTypePEMFile creates a PEM file with wrong type for testing error handling.
+//nolint:unused // Shared test helper used across multiple test files
 func createWrongTypePEMFile(t *testing.T, pemType string) string {
 	t.Helper()
 	block := &pem.Block{
@@ -185,6 +194,7 @@ func createWrongTypePEMFile(t *testing.T, pemType string) string {
 }
 
 // createMalformedRSAKeyFile creates a PEM file with malformed RSA key data.
+//nolint:unused // Shared test helper used across multiple test files
 func createMalformedRSAKeyFile(t *testing.T) string {
 	t.Helper()
 	block := &pem.Block{
@@ -195,6 +205,7 @@ func createMalformedRSAKeyFile(t *testing.T) string {
 }
 
 // createMalformedECKeyFile creates a PEM file with malformed EC key data.
+//nolint:unused // Shared test helper used across multiple test files
 func createMalformedECKeyFile(t *testing.T) string {
 	t.Helper()
 	block := &pem.Block{
@@ -205,12 +216,14 @@ func createMalformedECKeyFile(t *testing.T) string {
 }
 
 // getNonExistentPath returns a path that doesn't exist for testing file not found errors.
+//nolint:unused // Shared test helper used across multiple test files
 func getNonExistentPath(t *testing.T) string {
 	t.Helper()
 	return filepath.Join(t.TempDir(), "nonexistent.pem")
 }
 
 // Test constants used across multiple test files.
+//nolint:unused // Shared test constants used across multiple test files
 const (
 	// testRSAKeySize is the RSA key size used for test key generation (2048 bits).
 	testRSAKeySize = 2048
