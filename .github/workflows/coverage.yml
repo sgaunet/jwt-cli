@@ -24,7 +24,6 @@ jobs:
           go mod download
           go generate ./...
           go test -coverpkg=./... -coverprofile=profile.cov ./...
-          sed -i '/cmd/d' profile.cov    # remove cmd package from coverage
           total=$(go tool cover -func profile.cov | grep '^total:' | awk '{print $3}' | sed "s/%//")
           rm profile.cov
           echo "COVERAGE_VALUE=${total}" >> $GITHUB_ENV
