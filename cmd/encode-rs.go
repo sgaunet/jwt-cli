@@ -15,6 +15,15 @@ func createRSEncodeCommand(_ /* alg */, use, short, long, example string, encode
 		Long:    long,
 		Example: example,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			privateKeyFile, _ := cmd.Flags().GetString("private-key")
+			if privateKeyFile == "" {
+				privateKeyFile, _ = cmd.Flags().GetString("pk") // Check deprecated flag
+			}
+			payload, _ := cmd.Flags().GetString("payload")
+			if payload == "" {
+				payload, _ = cmd.Flags().GetString("p") // Check deprecated flag
+			}
+
 			if privateKeyFile == "" {
 				return fmt.Errorf("private key file is mandatory\n\n%s", cmd.UsageString())
 			}
