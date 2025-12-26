@@ -15,6 +15,16 @@ func createHSDecodeCommand(_ /* alg */, use, short, long, example string, decode
 		Long:    long,
 		Example: example,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			secret, _ := cmd.Flags().GetString("secret")
+			if secret == "" {
+				secret, _ = cmd.Flags().GetString("s") // Check deprecated flag
+			}
+			token, _ := cmd.Flags().GetString("token")
+			if token == "" {
+				token, _ = cmd.Flags().GetString("t") // Check deprecated flag
+			}
+			allowWeakSecret, _ := cmd.Flags().GetBool("allow-weak-secret")
+
 			if secret == "" {
 				return fmt.Errorf("secret is mandatory\n\n%s", cmd.UsageString())
 			}

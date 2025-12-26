@@ -15,6 +15,19 @@ func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKey
 		Long:    long,
 		Example: example,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			privateKeyFile, _ := cmd.Flags().GetString("private-key")
+			if privateKeyFile == "" {
+				privateKeyFile, _ = cmd.Flags().GetString("pk") // Check deprecated flag
+			}
+			publicKeyFile, _ := cmd.Flags().GetString("public-key")
+			if publicKeyFile == "" {
+				publicKeyFile, _ = cmd.Flags().GetString("pubk") // Check deprecated flag
+			}
+			token, _ := cmd.Flags().GetString("token")
+			if token == "" {
+				token, _ = cmd.Flags().GetString("t") // Check deprecated flag
+			}
+
 			if privateKeyFile == "" && publicKeyFile == "" {
 				return fmt.Errorf("private key file or public key file is mandatory\n\n%s", cmd.UsageString())
 			}
