@@ -26,10 +26,28 @@ func createHSDecodeCommand(_ /* alg */, use, short, long, example string, decode
 			allowWeakSecret, _ := cmd.Flags().GetBool("allow-weak-secret")
 
 			if secret == "" {
-				return fmt.Errorf("secret is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: secret is required
+
+The secret is used to verify the JWT token signature. It must match the secret used for encoding.
+
+Example usage:
+  jwt-cli decode %s --token "eyJhbGci..." --secret "your-secret-key"
+
+Tip: Use the same secret that was used to encode the token.
+     HS256 requires at least 32 bytes, HS384 requires 48 bytes, HS512 requires 64 bytes.`, use)
 			}
 			if token == "" {
-				return fmt.Errorf("token is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: token is required
+
+Provide the JWT token string to decode and verify.
+
+Example usage:
+  jwt-cli decode %s --token "eyJhbGci..." --secret "your-secret-key"
+  jwt-cli decode %s --token "$TOKEN" --secret "your-secret-key"
+
+Tip: The token is the three-part string (header.payload.signature) produced by the encode command.`, use, use)
 			}
 
 			j := decoderWithOpts([]byte(secret), allowWeakSecret)

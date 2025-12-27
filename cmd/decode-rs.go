@@ -29,10 +29,31 @@ func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKey
 			}
 
 			if privateKeyFile == "" && publicKeyFile == "" {
-				return fmt.Errorf("private key file or public key file is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: key file is required
+
+Provide either a public key file (recommended) or private key file in PEM format to verify the JWT token.
+
+Example usage with public key (recommended):
+  jwt-cli decode %s --token "eyJhbGci..." --public-key ./keys/public.pem
+
+Example usage with private key:
+  jwt-cli decode %s --token "eyJhbGci..." --private-key ./keys/private.pem
+
+Tip: Use the public key for verification to follow asymmetric cryptography best practices.
+     The key must match the one used to encode the token.`, use, use)
 			}
 			if token == "" {
-				return fmt.Errorf("token is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: token is required
+
+Provide the JWT token string to decode and verify.
+
+Example usage:
+  jwt-cli decode %s --token "eyJhbGci..." --public-key ./keys/public.pem
+  jwt-cli decode %s --token "$TOKEN" --public-key ./keys/public.pem
+
+Tip: The token is the three-part string (header.payload.signature) produced by the encode command.`, use, use)
 			}
 
 			var j cryptojwt.Decoder

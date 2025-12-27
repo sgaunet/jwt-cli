@@ -26,10 +26,27 @@ func createHSEncodeCommand(_ /* alg */, use, short, long, example string, encode
 			allowWeakSecret, _ := cmd.Flags().GetBool("allow-weak-secret")
 
 			if secret == "" {
-				return fmt.Errorf("secret is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: secret is required
+
+The secret is used to sign and verify HMAC-based JWT tokens. It must be kept confidential.
+
+Example usage:
+  jwt-cli encode %s --secret "your-secret-key" --payload '{"user":"alice","role":"admin"}'
+
+Tip: Use a strong secret. HS256 requires at least 32 bytes, HS384 requires 48 bytes, HS512 requires 64 bytes.
+     Use --allow-weak-secret flag only for testing purposes.`, use)
 			}
 			if payload == "" {
-				return fmt.Errorf("payload is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: payload is required
+
+The payload contains the claims (data) to be encoded in the JWT token.
+
+Example usage:
+  jwt-cli encode %s --secret "your-secret-key" --payload '{"user":"alice","role":"admin"}'
+
+Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (expiration), 'iat' (issued at).`, use)
 			}
 
 			j := encoderWithOpts([]byte(secret), allowWeakSecret)
