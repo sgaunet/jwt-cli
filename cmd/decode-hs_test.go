@@ -10,28 +10,32 @@ import (
 // TestHSDecodeCommand_Success tests successful JWT decoding for all HS algorithms
 func TestHSDecodeCommand_Success(t *testing.T) {
 	tests := []struct {
-		name        string
-		algorithm   string
-		constructor func([]byte, bool) cryptojwt.EncoderDecoder
-		secret      string
+		name            string
+		algorithm       string
+		encoderConstructor func([]byte, bool) cryptojwt.EncoderDecoder
+		decoderConstructor func([]byte, bool, cryptojwt.ValidationOptions) cryptojwt.EncoderDecoder
+		secret          string
 	}{
 		{
-			name:        "HS256 valid decoding",
-			algorithm:   "hs256",
-			constructor: cryptojwt.NewHS256DecoderWithOptions,
-			secret:      hs256Secret,
+			name:            "HS256 valid decoding",
+			algorithm:       "hs256",
+			encoderConstructor: cryptojwt.NewHS256EncoderWithOptions,
+			decoderConstructor: cryptojwt.NewHS256DecoderWithValidation,
+			secret:          hs256Secret,
 		},
 		{
-			name:        "HS384 valid decoding",
-			algorithm:   "hs384",
-			constructor: cryptojwt.NewHS384DecoderWithOptions,
-			secret:      hs384Secret,
+			name:            "HS384 valid decoding",
+			algorithm:       "hs384",
+			encoderConstructor: cryptojwt.NewHS384EncoderWithOptions,
+			decoderConstructor: cryptojwt.NewHS384DecoderWithValidation,
+			secret:          hs384Secret,
 		},
 		{
-			name:        "HS512 valid decoding",
-			algorithm:   "hs512",
-			constructor: cryptojwt.NewHS512DecoderWithOptions,
-			secret:      hs512Secret,
+			name:            "HS512 valid decoding",
+			algorithm:       "hs512",
+			encoderConstructor: cryptojwt.NewHS512EncoderWithOptions,
+			decoderConstructor: cryptojwt.NewHS512DecoderWithValidation,
+			secret:          hs512Secret,
 		},
 	}
 
@@ -44,7 +48,7 @@ func TestHSDecodeCommand_Success(t *testing.T) {
 				"Test",
 				"Test",
 				"Test",
-				tt.constructor,
+				tt.encoderConstructor,
 			)
 			registerEncodeFlags(encodeCmd)
 
@@ -64,7 +68,7 @@ func TestHSDecodeCommand_Success(t *testing.T) {
 				"Test",
 				"Test",
 				"Test",
-				tt.constructor,
+				tt.decoderConstructor,
 			)
 			registerDecodeFlags(decodeCmd)
 
@@ -98,7 +102,7 @@ func TestHSDecodeCommand_MissingToken(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewHS256DecoderWithOptions,
+		cryptojwt.NewHS256DecoderWithValidation,
 	)
 	registerDecodeFlags(cmd)
 
@@ -111,8 +115,8 @@ func TestHSDecodeCommand_MissingToken(t *testing.T) {
 		t.Fatal("Expected error for missing token, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "token is mandatory") {
-		t.Errorf("Expected 'token is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "token is required") {
+		t.Errorf("Expected 'token is required' error, got: %v", err)
 	}
 }
 
@@ -124,7 +128,7 @@ func TestHSDecodeCommand_MissingSecret(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewHS256DecoderWithOptions,
+		cryptojwt.NewHS256DecoderWithValidation,
 	)
 	registerDecodeFlags(cmd)
 
@@ -137,8 +141,8 @@ func TestHSDecodeCommand_MissingSecret(t *testing.T) {
 		t.Fatal("Expected error for missing secret, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "secret is mandatory") {
-		t.Errorf("Expected 'secret is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "secret is required") {
+		t.Errorf("Expected 'secret is required' error, got: %v", err)
 	}
 }
 
@@ -170,7 +174,7 @@ func TestHSDecodeCommand_InvalidToken(t *testing.T) {
 				"Test",
 				"Test",
 				"Test",
-				cryptojwt.NewHS256DecoderWithOptions,
+				cryptojwt.NewHS256DecoderWithValidation,
 			)
 			registerDecodeFlags(cmd)
 
@@ -215,7 +219,7 @@ func TestHSDecodeCommand_WrongSecret(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewHS256DecoderWithOptions,
+		cryptojwt.NewHS256DecoderWithValidation,
 	)
 	registerDecodeFlags(decodeCmd)
 
@@ -238,28 +242,32 @@ func TestHSDecodeCommand_WrongSecret(t *testing.T) {
 // TestHSDecodeCommand_WeakSecret tests secret length validation
 func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 	tests := []struct {
-		name        string
-		constructor func([]byte, bool) cryptojwt.EncoderDecoder
-		secret      string
-		expectError string
+		name            string
+		encoderConstructor func([]byte, bool) cryptojwt.EncoderDecoder
+		decoderConstructor func([]byte, bool, cryptojwt.ValidationOptions) cryptojwt.EncoderDecoder
+		secret          string
+		expectError     string
 	}{
 		{
-			name:        "HS256 requires 32 bytes",
-			constructor: cryptojwt.NewHS256DecoderWithOptions,
-			secret:      hs256Secret,
-			expectError: "secret must be at least 32 bytes",
+			name:            "HS256 requires 32 bytes",
+			encoderConstructor: cryptojwt.NewHS256EncoderWithOptions,
+			decoderConstructor: cryptojwt.NewHS256DecoderWithValidation,
+			secret:          hs256Secret,
+			expectError:     "secret must be at least 32 bytes",
 		},
 		{
-			name:        "HS384 requires 48 bytes",
-			constructor: cryptojwt.NewHS384DecoderWithOptions,
-			secret:      hs384Secret,
-			expectError: "secret must be at least 48 bytes",
+			name:            "HS384 requires 48 bytes",
+			encoderConstructor: cryptojwt.NewHS384EncoderWithOptions,
+			decoderConstructor: cryptojwt.NewHS384DecoderWithValidation,
+			secret:          hs384Secret,
+			expectError:     "secret must be at least 48 bytes",
 		},
 		{
-			name:        "HS512 requires 64 bytes",
-			constructor: cryptojwt.NewHS512DecoderWithOptions,
-			secret:      hs512Secret,
-			expectError: "secret must be at least 64 bytes",
+			name:            "HS512 requires 64 bytes",
+			encoderConstructor: cryptojwt.NewHS512EncoderWithOptions,
+			decoderConstructor: cryptojwt.NewHS512DecoderWithValidation,
+			secret:          hs512Secret,
+			expectError:     "secret must be at least 64 bytes",
 		},
 	}
 
@@ -272,7 +280,7 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				"Test",
 				"Test",
-				tt.constructor,
+				tt.encoderConstructor,
 			)
 			registerEncodeFlags(encodeCmd)
 
@@ -293,7 +301,7 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				"Test",
 				"Test",
-				tt.constructor,
+				tt.decoderConstructor,
 			)
 			registerDecodeFlags(decodeCmd)
 
@@ -315,7 +323,7 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				"Test",
 				"Test",
-				tt.constructor,
+				tt.encoderConstructor,
 			)
 			registerEncodeFlags(encodeCmd)
 
@@ -336,7 +344,7 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				"Test",
 				"Test",
-				tt.constructor,
+				tt.decoderConstructor,
 			)
 			registerDecodeFlags(decodeCmd)
 
@@ -388,7 +396,7 @@ func TestHSDecodeCommand_DeprecatedTokenFlag(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewHS256DecoderWithOptions,
+		cryptojwt.NewHS256DecoderWithValidation,
 	)
 	registerDecodeFlags(decodeCmd)
 
@@ -437,7 +445,7 @@ func TestHSDecodeCommand_DeprecatedSecretFlag(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewHS256DecoderWithOptions,
+		cryptojwt.NewHS256DecoderWithValidation,
 	)
 	registerDecodeFlags(decodeCmd)
 
@@ -464,7 +472,7 @@ func TestHSDecodeCommand_EmptyToken(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewHS256DecoderWithOptions,
+		cryptojwt.NewHS256DecoderWithValidation,
 	)
 	registerDecodeFlags(cmd)
 
@@ -477,8 +485,8 @@ func TestHSDecodeCommand_EmptyToken(t *testing.T) {
 		t.Fatal("Expected error for empty token, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "token is mandatory") {
-		t.Errorf("Expected 'token is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "token is required") {
+		t.Errorf("Expected 'token is required' error, got: %v", err)
 	}
 }
 
@@ -490,7 +498,7 @@ func TestHSDecodeCommand_EmptySecret(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewHS256DecoderWithOptions,
+		cryptojwt.NewHS256DecoderWithValidation,
 	)
 	registerDecodeFlags(cmd)
 
@@ -503,7 +511,7 @@ func TestHSDecodeCommand_EmptySecret(t *testing.T) {
 		t.Fatal("Expected error for empty secret, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "secret is mandatory") {
-		t.Errorf("Expected 'secret is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "secret is required") {
+		t.Errorf("Expected 'secret is required' error, got: %v", err)
 	}
 }

@@ -119,8 +119,8 @@ func TestRSEncodeCommand_MissingPrivateKey(t *testing.T) {
 		t.Fatal("Expected error for missing private key, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "private key file is mandatory") {
-		t.Errorf("Expected 'private key file is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "private key file is required") {
+		t.Errorf("Expected 'private key file is required' error, got: %v", err)
 	}
 }
 
@@ -147,8 +147,8 @@ func TestRSEncodeCommand_MissingPayload(t *testing.T) {
 		t.Fatal("Expected error for missing payload, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "payload is mandatory") {
-		t.Errorf("Expected 'payload is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "payload is required") {
+		t.Errorf("Expected 'payload is required' error, got: %v", err)
 	}
 }
 
@@ -409,8 +409,8 @@ func TestRSEncodeCommand_EmptyPayload(t *testing.T) {
 		t.Fatal("Expected error for empty payload, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "payload is mandatory") {
-		t.Errorf("Expected 'payload is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "payload is required") {
+		t.Errorf("Expected 'payload is required' error, got: %v", err)
 	}
 }
 
@@ -435,7 +435,7 @@ func TestRSEncodeCommand_EmptyPrivateKey(t *testing.T) {
 		t.Fatal("Expected error for empty private key, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "private key file is mandatory") {
-		t.Errorf("Expected 'private key file is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "private key file is required") {
+		t.Errorf("Expected 'private key file is required' error, got: %v", err)
 	}
 }
