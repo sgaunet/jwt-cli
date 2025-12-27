@@ -31,16 +31,46 @@ func validateSecretLength(secret []byte, minLength int, algorithm string) error 
 }
 
 // NewHS256Encoder creates a new HMAC-SHA256 JWT encoder/decoder.
+//
+// Security: The secret should be at least 256 bits (32 bytes) for HS256.
+// Weak secrets are vulnerable to brute-force attacks. By default, this function
+// enforces minimum secret length according to RFC 7518. Use NewHS256EncoderWithOptions
+// with allowWeakSecret=true only for testing purposes.
+//
+// Example:
+//
+//	secret := []byte("my-32-byte-secret-key-for-hs256")
+//	encoder := cryptojwt.NewHS256Encoder(secret)
+//	token, err := encoder.Encode(`{"user":"alice","exp":1735689600}`)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(token) // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 func NewHS256Encoder(secret []byte) EncoderDecoder {
 	return NewHS256EncoderWithOptions(secret, false)
 }
 
 // NewHS256EncoderWithOptions creates a new HMAC-SHA256 JWT encoder/decoder with options.
+//
+// Parameters:
+//   - secret: The shared secret key (minimum 32 bytes recommended)
+//   - allowWeakSecret: If true, allows secrets shorter than 32 bytes (TESTING ONLY)
+//
+// Security: Setting allowWeakSecret=true bypasses RFC 7518 security requirements.
+// Only use this for testing with non-production data.
 func NewHS256EncoderWithOptions(secret []byte, allowWeakSecret bool) EncoderDecoder {
 	return NewHS256EncoderWithValidation(secret, allowWeakSecret, ValidationOptions{})
 }
 
 // NewHS256EncoderWithValidation creates a new HMAC-SHA256 JWT encoder/decoder with validation options.
+//
+// Parameters:
+//   - secret: The shared secret key (minimum 32 bytes recommended)
+//   - allowWeakSecret: If true, allows secrets shorter than 32 bytes (TESTING ONLY)
+//   - validationOpts: Options for validating JWT claims (exp, nbf, iat)
+//
+// Note: By default, time-based claims (exp, nbf, iat) are NOT validated.
+// Set validationOpts.ValidateClaims=true to enable automatic expiration checking.
 func NewHS256EncoderWithValidation(secret []byte, allowWeakSecret bool, validationOpts ValidationOptions) EncoderDecoder {
 	return &hsjwtEncoderDecoder{
 		method:          jwt.SigningMethodHS256,
@@ -67,6 +97,10 @@ func NewHS256DecoderWithValidation(secret []byte, allowWeakSecret bool, validati
 }
 
 // NewHS384Encoder creates a new HMAC-SHA384 JWT encoder/decoder.
+//
+// Security: The secret should be at least 384 bits (48 bytes) for HS384.
+// Weak secrets are vulnerable to brute-force attacks. By default, this function
+// enforces minimum secret length according to RFC 7518.
 func NewHS384Encoder(secret []byte) EncoderDecoder {
 	return NewHS384EncoderWithOptions(secret, false)
 }
@@ -103,6 +137,10 @@ func NewHS384DecoderWithValidation(secret []byte, allowWeakSecret bool, validati
 }
 
 // NewHS512Encoder creates a new HMAC-SHA512 JWT encoder/decoder.
+//
+// Security: The secret should be at least 512 bits (64 bytes) for HS512.
+// Weak secrets are vulnerable to brute-force attacks. By default, this function
+// enforces minimum secret length according to RFC 7518.
 func NewHS512Encoder(secret []byte) EncoderDecoder {
 	return NewHS512EncoderWithOptions(secret, false)
 }
@@ -138,6 +176,17 @@ func NewHS512DecoderWithValidation(secret []byte, allowWeakSecret bool, validati
 	return NewHS512EncoderWithValidation(secret, allowWeakSecret, validationOpts)
 }
 
+// Decode validates and decodes a JWT token using HMAC algorithm.
+//
+// Security: This function validates that the token's algorithm matches the expected
+// HMAC algorithm to prevent algorithm confusion attacks. Tokens signed with different
+// algorithms will be rejected.
+//
+// Note: By default, time-based claims (exp, nbf, iat) are NOT validated. Use
+// NewHS*EncoderWithValidation with ValidationOptions.ValidateClaims=true to enable
+// automatic expiration checking.
+//
+// Returns: JSON string representation of the token's claims, or an error if validation fails.
 func (j *hsjwtEncoderDecoder) Decode(token string) (string, error) {
 	if !j.allowWeakSecret {
 		if err := j.validateSecret(); err != nil {
@@ -147,6 +196,19 @@ func (j *hsjwtEncoderDecoder) Decode(token string) (string, error) {
 	return j.decoder.DecodeJWT(j.secret, token)
 }
 
+// Encode creates and signs a JWT token using HMAC algorithm.
+//
+// The payload must be a valid JSON string that can be unmarshaled into jwt.MapClaims.
+//
+// Security: The returned token is signed but NOT encrypted. Do not include sensitive
+// data (passwords, API keys, PII) in the payload as it can be decoded by anyone.
+// Always transmit JWT tokens over HTTPS.
+//
+// Example payload:
+//
+//	`{"user_id":"12345","role":"admin","exp":1735689600}`
+//
+// Returns: Base64-encoded JWT token (header.payload.signature) or an error if signing fails.
 func (j *hsjwtEncoderDecoder) Encode(payload string) (string, error) {
 	if !j.allowWeakSecret {
 		if err := j.validateSecret(); err != nil {

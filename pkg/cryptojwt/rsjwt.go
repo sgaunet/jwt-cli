@@ -39,6 +39,21 @@ type rsjwtDecoderWithCachedPublicKey struct {
 }
 
 // NewRS256Encoder creates a new RSA-SHA256 JWT encoder with a private key file.
+//
+// Parameters:
+//   - privateKeyFile: Path to PEM-encoded RSA private key file
+//
+// Security: Private key files should be protected with strict file permissions (0600).
+// Never commit private keys to version control or expose them in logs. Consider using
+// environment variables or secure key management systems for production deployments.
+//
+// Example:
+//
+//	encoder := cryptojwt.NewRS256Encoder("private.pem")
+//	token, err := encoder.Encode(`{"user":"alice","exp":1735689600}`)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func NewRS256Encoder(privateKeyFile string) Encoder {
 	return &rsjwtEncoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodRS256,
@@ -61,6 +76,22 @@ func NewRS256DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, valid
 }
 
 // NewRS256DecoderWithPublicKeyFile creates a new RSA-SHA256 JWT decoder with a public key file.
+//
+// Parameters:
+//   - publicKeyFile: Path to PEM-encoded RSA public key file
+//
+// Note: Public keys can be safely distributed and do not require special protection,
+// unlike private keys. However, ensure you obtain public keys from trusted sources to
+// prevent man-in-the-middle attacks.
+//
+// Example:
+//
+//	decoder := cryptojwt.NewRS256DecoderWithPublicKeyFile("public.pem")
+//	claims, err := decoder.Decode(token)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(claims) // {"user":"alice","exp":1735689600}
 func NewRS256DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
 	return NewRS256DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
 }
@@ -75,7 +106,29 @@ func NewRS256DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 }
 
 // NewRS256EncoderWithCache creates a new RSA-SHA256 JWT encoder with cached private key.
-// The private key is loaded once at creation time, improving performance for repeated operations.
+//
+// The private key is loaded once at creation time, improving performance for repeated
+// operations. This is recommended for high-throughput scenarios where you need to encode
+// many tokens without repeated file I/O.
+//
+// Security: The cached key remains in memory for the lifetime of the encoder. Ensure
+// proper memory protection in production environments. Private key files should have
+// strict file permissions (0600).
+//
+// Performance: For applications encoding thousands of tokens, this can provide significant
+// performance improvements by eliminating repeated file reads and key parsing.
+//
+// Example:
+//
+//	encoder, err := cryptojwt.NewRS256EncoderWithCache("private.pem")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	// Encode many tokens efficiently
+//	for i := 0; i < 1000; i++ {
+//	    token, _ := encoder.Encode(fmt.Sprintf(`{"id":%d}`, i))
+//	    fmt.Println(token)
+//	}
 func NewRS256EncoderWithCache(privateKeyFile string) (Encoder, error) {
 	privateKey, _, err := readPrivateRSAKey(privateKeyFile)
 	if err != nil {

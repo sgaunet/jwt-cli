@@ -42,6 +42,21 @@ type esjwtDecoderWithCachedPublicKey struct {
 }
 
 // NewES256Encoder creates a new ECDSA-SHA256 JWT encoder with a private key file.
+//
+// Parameters:
+//   - privateKeyFile: Path to PEM-encoded ECDSA private key file (P-256 curve)
+//
+// Security: Private key files should be protected with strict file permissions (0600).
+// Never commit private keys to version control. ECDSA keys are typically smaller than
+// RSA keys while providing equivalent security (256-bit ECDSA ≈ 3072-bit RSA).
+//
+// Example:
+//
+//	encoder := cryptojwt.NewES256Encoder("ec-private.pem")
+//	token, err := encoder.Encode(`{"user":"alice","exp":1735689600}`)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func NewES256Encoder(privateKeyFile string) Encoder {
 	return &esjwtEncoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodES256,
@@ -108,6 +123,21 @@ func NewES512DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, valid
 }
 
 // NewES256DecoderWithPublicKeyFile creates a new ECDSA-SHA256 JWT decoder with a public key file.
+//
+// Parameters:
+//   - publicKeyFile: Path to PEM-encoded ECDSA public key file (P-256 curve)
+//
+// Note: Public keys can be safely distributed. Ensure you obtain public keys from
+// trusted sources to prevent signature validation bypasses.
+//
+// Example:
+//
+//	decoder := cryptojwt.NewES256DecoderWithPublicKeyFile("ec-public.pem")
+//	claims, err := decoder.Decode(token)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(claims) // {"user":"alice","exp":1735689600}
 func NewES256DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
 	return NewES256DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
 }
@@ -122,7 +152,25 @@ func NewES256DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 }
 
 // NewES256EncoderWithCache creates a new ECDSA-SHA256 JWT encoder with cached private key.
-// The private key is loaded once at creation time, improving performance for repeated operations.
+//
+// The private key is loaded once at creation time, improving performance for repeated
+// operations. This is recommended for high-throughput scenarios.
+//
+// Security: The cached key remains in memory for the lifetime of the encoder. Private
+// key files should have strict file permissions (0600).
+//
+// Performance: Eliminates repeated file reads and key parsing for encoding many tokens.
+//
+// Example:
+//
+//	encoder, err := cryptojwt.NewES256EncoderWithCache("ec-private.pem")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	for i := 0; i < 1000; i++ {
+//	    token, _ := encoder.Encode(fmt.Sprintf(`{"id":%d}`, i))
+//	    fmt.Println(token)
+//	}
 func NewES256EncoderWithCache(privateKeyFile string) (Encoder, error) {
 	privateKey, _, err := readECDSAPrivateKey(privateKeyFile)
 	if err != nil {
