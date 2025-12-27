@@ -6,7 +6,10 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
+      - -s -w
       - -X github.com/sgaunet/jwt-cli/cmd.version={{.Version}}
+      - -X github.com/sgaunet/jwt-cli/cmd.commit={{.Commit}}
+      - -X github.com/sgaunet/jwt-cli/cmd.buildDate={{.Date}}
     goos:
       - linux
       - darwin
