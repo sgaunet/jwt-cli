@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
@@ -53,9 +54,11 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 			j := encoder(privateKeyFile)
 			t, err := j.Encode(payload)
 			if err != nil {
-				return fmt.Errorf("encoding failed: %w", err)
+				errMsg := fmt.Sprintf("encoding failed: %v", err)
+				output(CommandOutput{Success: false, Error: errMsg})
+				return errors.New(errMsg)
 			}
-			fmt.Println(t)
+			output(CommandOutput{Success: true, Token: t})
 			return nil
 		},
 	}

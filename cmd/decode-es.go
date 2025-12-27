@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
@@ -71,11 +73,19 @@ Tip: The token is the three-part string (header.payload.signature) produced by t
 				j = privKeyDecoderWithValidation(privateKeyFile, validationOpts)
 			}
 
-			t, err := j.Decode(token)
+			claims, err := j.Decode(token)
 			if err != nil {
-				return fmt.Errorf("decoding failed: %w", err)
+				errMsg := fmt.Sprintf("decoding failed: %v", err)
+				output(CommandOutput{Success: false, Error: errMsg})
+				return errors.New(errMsg)
 			}
-			fmt.Println(t)
+			// Parse claims string as JSON for structured output
+			var claimsData any
+			if err := json.Unmarshal([]byte(claims), &claimsData); err != nil {
+				// If claims aren't valid JSON, treat as raw string
+				claimsData = claims
+			}
+			output(CommandOutput{Success: true, Claims: claimsData})
 			return nil
 		},
 	}

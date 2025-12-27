@@ -22,6 +22,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// jsonOutput controls whether to output in JSON format or human-readable format.
+var jsonOutput bool
+
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "jwt-cli",
@@ -46,6 +49,9 @@ Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
 
   # Encode with RS256 using private key
   jwt-cli encode rs256 --payload '{"user":"alice"}' --private-key RS256.key`,
+	// Silence errors because the output() function already prints them appropriately
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 // Execute runs the root command.
@@ -58,6 +64,9 @@ func Execute() {
 
 //nolint:funlen // init function requires many statements for command setup
 func init() {
+	// Global flags for all commands
+	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "output in JSON format")
+
 	rootCmd.AddCommand(encodeCmd)
 	rootCmd.CompletionOptions.DisableDefaultCmd = false
 	encodeCmd.PersistentFlags().StringP("payload", "p", "", "JSON payload to encode into JWT (e.g., '{\"user\":\"alice\"}')")
