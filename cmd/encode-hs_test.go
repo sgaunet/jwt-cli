@@ -118,8 +118,8 @@ func TestHSEncodeCommand_MissingSecret(t *testing.T) {
 		t.Fatal("Expected error for missing secret, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "secret is mandatory") {
-		t.Errorf("Expected 'secret is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "secret is required") {
+		t.Errorf("Expected 'secret is required' error, got: %v", err)
 	}
 }
 
@@ -144,8 +144,8 @@ func TestHSEncodeCommand_MissingPayload(t *testing.T) {
 		t.Fatal("Expected error for missing payload, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "payload is mandatory") {
-		t.Errorf("Expected 'payload is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "payload is required") {
+		t.Errorf("Expected 'payload is required' error, got: %v", err)
 	}
 }
 
@@ -369,8 +369,8 @@ func TestHSEncodeCommand_EmptyPayload(t *testing.T) {
 		t.Fatal("Expected error for empty payload, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "payload is mandatory") {
-		t.Errorf("Expected 'payload is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "payload is required") {
+		t.Errorf("Expected 'payload is required' error, got: %v", err)
 	}
 }
 
@@ -395,7 +395,7 @@ func TestHSEncodeCommand_EmptySecret(t *testing.T) {
 		t.Fatal("Expected error for empty secret, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "secret is mandatory") {
-		t.Errorf("Expected 'secret is mandatory' error, got: %v", err)
+	if !strings.Contains(err.Error(), "secret is required") {
+		t.Errorf("Expected 'secret is required' error, got: %v", err)
 	}
 }

@@ -13,29 +13,29 @@ func TestRSDecodeCommand_SuccessWithPublicKey(t *testing.T) {
 		name               string
 		algorithm          string
 		encoder            func(string) cryptojwt.Encoder
-		pubKeyDecoder      func(string) cryptojwt.Decoder
-		privKeyDecoder     func(string) cryptojwt.Decoder
+		pubKeyDecoder      func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
+		privKeyDecoder     func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
 	}{
 		{
 			name:           "RS256 decode with public key",
 			algorithm:      "rs256",
 			encoder:        cryptojwt.NewRS256Encoder,
-			pubKeyDecoder:  cryptojwt.NewRS256DecoderWithPublicKeyFile,
-			privKeyDecoder: cryptojwt.NewRS256DecoderWithPrivateKeyFile,
+			pubKeyDecoder:  cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation,
+			privKeyDecoder: cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation,
 		},
 		{
 			name:           "RS384 decode with public key",
 			algorithm:      "rs384",
 			encoder:        cryptojwt.NewRS384Encoder,
-			pubKeyDecoder:  cryptojwt.NewRS384DecoderWithPublicKeyFile,
-			privKeyDecoder: cryptojwt.NewRS384DecoderWithPrivateKeyFile,
+			pubKeyDecoder:  cryptojwt.NewRS384DecoderWithPublicKeyFileAndValidation,
+			privKeyDecoder: cryptojwt.NewRS384DecoderWithPrivateKeyFileAndValidation,
 		},
 		{
 			name:           "RS512 decode with public key",
 			algorithm:      "rs512",
 			encoder:        cryptojwt.NewRS512Encoder,
-			pubKeyDecoder:  cryptojwt.NewRS512DecoderWithPublicKeyFile,
-			privKeyDecoder: cryptojwt.NewRS512DecoderWithPrivateKeyFile,
+			pubKeyDecoder:  cryptojwt.NewRS512DecoderWithPublicKeyFileAndValidation,
+			privKeyDecoder: cryptojwt.NewRS512DecoderWithPrivateKeyFileAndValidation,
 		},
 	}
 
@@ -108,7 +108,7 @@ func TestRSDecodeCommand_SuccessWithPrivateKey(t *testing.T) {
 
 	// Decode with private key
 	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-		cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd, "--token", token, "--private-key", privateKey)
@@ -126,7 +126,7 @@ func TestRSDecodeCommand_SuccessWithPrivateKey(t *testing.T) {
 // TestRSDecodeCommand_MissingKeys tests error when both keys are missing
 func TestRSDecodeCommand_MissingKeys(t *testing.T) {
 	cmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-		cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.test")
@@ -135,8 +135,8 @@ func TestRSDecodeCommand_MissingKeys(t *testing.T) {
 		t.Fatal("Expected error for missing keys, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "private key file or public key file is mandatory") {
-		t.Errorf("Expected key mandatory error, got: %v", err)
+	if !strings.Contains(err.Error(), "key file is required") {
+		t.Errorf("Expected key required error, got: %v", err)
 	}
 }
 
@@ -145,7 +145,7 @@ func TestRSDecodeCommand_MissingToken(t *testing.T) {
 	_, publicKey := generateRSAKeyPair(t)
 
 	cmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-		cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--public-key", publicKey)
@@ -154,8 +154,8 @@ func TestRSDecodeCommand_MissingToken(t *testing.T) {
 		t.Fatal("Expected error for missing token, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "token is mandatory") {
-		t.Errorf("Expected token mandatory error, got: %v", err)
+	if !strings.Contains(err.Error(), "token is required") {
+		t.Errorf("Expected token required error, got: %v", err)
 	}
 }
 
@@ -164,7 +164,7 @@ func TestRSDecodeCommand_InvalidToken(t *testing.T) {
 	_, publicKey := generateRSAKeyPair(t)
 
 	cmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-		cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--token", "invalid.token", "--public-key", publicKey)
@@ -187,7 +187,7 @@ func TestRSDecodeCommand_WrongKey(t *testing.T) {
 
 	// Try to decode with second key
 	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-		cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
 	_, err := executeCommand(decodeCmd, "--token", token, "--public-key", publicKey2)
@@ -209,7 +209,7 @@ func TestRSDecodeCommand_PublicKeyPrecedence(t *testing.T) {
 
 	// Decode with both keys (public should take precedence)
 	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-		cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd, "--token", token, "--public-key", publicKey, "--private-key", privateKey)
@@ -236,7 +236,7 @@ func TestRSDecodeCommand_NonExistentPublicKey(t *testing.T) {
 
 	// Try to decode with nonexistent public key
 	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-		cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
 	nonExistent := getNonExistentPath(t)
@@ -269,7 +269,7 @@ func TestRSDecodeCommand_DeprecatedFlags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
-				cryptojwt.NewRS256DecoderWithPublicKeyFile, cryptojwt.NewRS256DecoderWithPrivateKeyFile)
+				cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 			registerDecodeFlags(decodeCmd)
 
 			output, err := executeCommand(decodeCmd, tt.args...)

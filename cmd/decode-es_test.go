@@ -14,13 +14,13 @@ func TestESDecodeCommand_Success(t *testing.T) {
 		name           string
 		algorithm      string
 		encoder        func(string) cryptojwt.Encoder
-		pubKeyDecoder  func(string) cryptojwt.Decoder
-		privKeyDecoder func(string) cryptojwt.Decoder
+		pubKeyDecoder  func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
+		privKeyDecoder func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
 		curve          elliptic.Curve
 	}{
-		{"ES256 decode with public key", "es256", cryptojwt.NewES256Encoder, cryptojwt.NewES256DecoderWithPublicKeyFile, cryptojwt.NewES256DecoderWithPrivateKeyFile, elliptic.P256()},
-		{"ES384 decode with public key", "es384", cryptojwt.NewES384Encoder, cryptojwt.NewES384DecoderWithPublicKeyFile, cryptojwt.NewES384DecoderWithPrivateKeyFile, elliptic.P384()},
-		{"ES512 decode with public key", "es512", cryptojwt.NewES512Encoder, cryptojwt.NewES512DecoderWithPublicKeyFile, cryptojwt.NewES512DecoderWithPrivateKeyFile, elliptic.P521()},
+		{"ES256 decode with public key", "es256", cryptojwt.NewES256Encoder, cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation, elliptic.P256()},
+		{"ES384 decode with public key", "es384", cryptojwt.NewES384Encoder, cryptojwt.NewES384DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES384DecoderWithPrivateKeyFileAndValidation, elliptic.P384()},
+		{"ES512 decode with public key", "es512", cryptojwt.NewES512Encoder, cryptojwt.NewES512DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES512DecoderWithPrivateKeyFileAndValidation, elliptic.P521()},
 	}
 
 	for _, tt := range tests {
@@ -65,7 +65,7 @@ func TestESDecodeCommand_WithPrivateKey(t *testing.T) {
 	token := strings.TrimSpace(tokenOutput)
 
 	// Decode with private key
-	decodeCmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFile, cryptojwt.NewES256DecoderWithPrivateKeyFile)
+	decodeCmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd, "--token", token, "--private-key", privateKey)
@@ -82,7 +82,7 @@ func TestESDecodeCommand_WithPrivateKey(t *testing.T) {
 
 // TestESDecodeCommand_MissingKeys tests error when both keys are missing
 func TestESDecodeCommand_MissingKeys(t *testing.T) {
-	cmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFile, cryptojwt.NewES256DecoderWithPrivateKeyFile)
+	cmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--token", "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.test.test")
@@ -91,8 +91,8 @@ func TestESDecodeCommand_MissingKeys(t *testing.T) {
 		t.Fatal("Expected error for missing keys, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "private key file or public key file is mandatory") {
-		t.Errorf("Expected key mandatory error, got: %v", err)
+	if !strings.Contains(err.Error(), "key file is required") {
+		t.Errorf("Expected key required error, got: %v", err)
 	}
 }
 
@@ -100,7 +100,7 @@ func TestESDecodeCommand_MissingKeys(t *testing.T) {
 func TestESDecodeCommand_MissingToken(t *testing.T) {
 	_, publicKey := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFile, cryptojwt.NewES256DecoderWithPrivateKeyFile)
+	cmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--public-key", publicKey)
@@ -109,8 +109,8 @@ func TestESDecodeCommand_MissingToken(t *testing.T) {
 		t.Fatal("Expected error for missing token, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "token is mandatory") {
-		t.Errorf("Expected token mandatory error, got: %v", err)
+	if !strings.Contains(err.Error(), "token is required") {
+		t.Errorf("Expected token required error, got: %v", err)
 	}
 }
 
@@ -118,7 +118,7 @@ func TestESDecodeCommand_MissingToken(t *testing.T) {
 func TestESDecodeCommand_InvalidToken(t *testing.T) {
 	_, publicKey := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFile, cryptojwt.NewES256DecoderWithPrivateKeyFile)
+	cmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--token", "invalid.token", "--public-key", publicKey)
@@ -140,7 +140,7 @@ func TestESDecodeCommand_WrongKey(t *testing.T) {
 	token := strings.TrimSpace(tokenOutput)
 
 	// Try to decode with second key
-	decodeCmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFile, cryptojwt.NewES256DecoderWithPrivateKeyFile)
+	decodeCmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
 	_, err := executeCommand(decodeCmd, "--token", token, "--public-key", publicKey2)
@@ -161,7 +161,7 @@ func TestESDecodeCommand_DeprecatedFlags(t *testing.T) {
 	token := strings.TrimSpace(tokenOutput)
 
 	// Decode with deprecated flags
-	decodeCmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFile, cryptojwt.NewES256DecoderWithPrivateKeyFile)
+	decodeCmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd, "--t", token, "--pubk", publicKey)
