@@ -14,6 +14,12 @@ type rsjwtEncoderWithPrivateKeyFile struct {
 	method         jwt.SigningMethod
 }
 
+type rsjwtEncoderWithCachedPrivateKey struct {
+	encoder    encoder
+	privateKey crypto.PrivateKey
+	method     jwt.SigningMethod
+}
+
 type rsjwtDecoderWithPrivateKeyFile struct {
 	decoder decoder
 	privateKeyFile string
@@ -24,6 +30,12 @@ type rsjwtDecoderWithPublicKeyFile struct {
 	decoder decoder
 	publicKeyFile string
 	method        jwt.SigningMethod
+}
+
+type rsjwtDecoderWithCachedPublicKey struct {
+	decoder   decoder
+	publicKey crypto.PublicKey
+	method    jwt.SigningMethod
 }
 
 // NewRS256Encoder creates a new RSA-SHA256 JWT encoder with a private key file.
@@ -62,6 +74,61 @@ func NewRS256DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 	}
 }
 
+// NewRS256EncoderWithCache creates a new RSA-SHA256 JWT encoder with cached private key.
+// The private key is loaded once at creation time, improving performance for repeated operations.
+func NewRS256EncoderWithCache(privateKeyFile string) (Encoder, error) {
+	privateKey, _, err := readPrivateRSAKey(privateKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return &rsjwtEncoderWithCachedPrivateKey{
+		method:     jwt.SigningMethodRS256,
+		privateKey: privateKey,
+	}, nil
+}
+
+// NewRS256DecoderWithPrivateKeyFileAndCache creates a new RSA-SHA256 JWT decoder with cached public key from private key file.
+// The key is loaded once at creation time, improving performance for repeated operations.
+func NewRS256DecoderWithPrivateKeyFileAndCache(privateKeyFile string) (Decoder, error) {
+	return NewRS256DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewRS256DecoderWithPrivateKeyFileAndCacheAndValidation creates a new RSA-SHA256 JWT decoder with cached public key and validation options.
+func NewRS256DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
+	_, publicKey, err := readPrivateRSAKey(privateKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return &rsjwtDecoderWithCachedPublicKey{
+		method:    jwt.SigningMethodRS256,
+		publicKey: publicKey,
+		decoder:   decoder{validationOpts: validationOpts},
+	}, nil
+}
+
+// NewRS256DecoderWithPublicKeyFileAndCache creates a new RSA-SHA256 JWT decoder with cached public key from public key file.
+// The key is loaded once at creation time, improving performance for repeated operations.
+func NewRS256DecoderWithPublicKeyFileAndCache(publicKeyFile string) (Decoder, error) {
+	return NewRS256DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewRS256DecoderWithPublicKeyFileAndCacheAndValidation creates a new RSA-SHA256 JWT decoder with cached public key and validation options.
+func NewRS256DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
+	publicKeyBytes, err := os.ReadFile(publicKeyFile) // #nosec G304 -- user-provided file path
+	if err != nil {
+		return nil, fmt.Errorf("error reading public key file: %w", err)
+	}
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RSA public key: %w", err)
+	}
+	return &rsjwtDecoderWithCachedPublicKey{
+		method:    jwt.SigningMethodRS256,
+		publicKey: publicKey,
+		decoder:   decoder{validationOpts: validationOpts},
+	}, nil
+}
+
 // NewRS384Encoder creates a new RSA-SHA384 JWT encoder with a private key file.
 func NewRS384Encoder(privateKeyFile string) Encoder {
 	return &rsjwtEncoderWithPrivateKeyFile{
@@ -98,6 +165,61 @@ func NewRS384DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 	}
 }
 
+// NewRS384EncoderWithCache creates a new RSA-SHA384 JWT encoder with cached private key.
+// The private key is loaded once at creation time, improving performance for repeated operations.
+func NewRS384EncoderWithCache(privateKeyFile string) (Encoder, error) {
+	privateKey, _, err := readPrivateRSAKey(privateKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return &rsjwtEncoderWithCachedPrivateKey{
+		method:     jwt.SigningMethodRS384,
+		privateKey: privateKey,
+	}, nil
+}
+
+// NewRS384DecoderWithPrivateKeyFileAndCache creates a new RSA-SHA384 JWT decoder with cached public key from private key file.
+// The key is loaded once at creation time, improving performance for repeated operations.
+func NewRS384DecoderWithPrivateKeyFileAndCache(privateKeyFile string) (Decoder, error) {
+	return NewRS384DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewRS384DecoderWithPrivateKeyFileAndCacheAndValidation creates a new RSA-SHA384 JWT decoder with cached public key and validation options.
+func NewRS384DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
+	_, publicKey, err := readPrivateRSAKey(privateKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return &rsjwtDecoderWithCachedPublicKey{
+		method:    jwt.SigningMethodRS384,
+		publicKey: publicKey,
+		decoder:   decoder{validationOpts: validationOpts},
+	}, nil
+}
+
+// NewRS384DecoderWithPublicKeyFileAndCache creates a new RSA-SHA384 JWT decoder with cached public key from public key file.
+// The key is loaded once at creation time, improving performance for repeated operations.
+func NewRS384DecoderWithPublicKeyFileAndCache(publicKeyFile string) (Decoder, error) {
+	return NewRS384DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewRS384DecoderWithPublicKeyFileAndCacheAndValidation creates a new RSA-SHA384 JWT decoder with cached public key and validation options.
+func NewRS384DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
+	publicKeyBytes, err := os.ReadFile(publicKeyFile) // #nosec G304 -- user-provided file path
+	if err != nil {
+		return nil, fmt.Errorf("error reading public key file: %w", err)
+	}
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RSA public key: %w", err)
+	}
+	return &rsjwtDecoderWithCachedPublicKey{
+		method:    jwt.SigningMethodRS384,
+		publicKey: publicKey,
+		decoder:   decoder{validationOpts: validationOpts},
+	}, nil
+}
+
 // NewRS512Encoder creates a new RSA-SHA512 JWT encoder with a private key file.
 func NewRS512Encoder(privateKeyFile string) Encoder {
 	return &rsjwtEncoderWithPrivateKeyFile{
@@ -132,6 +254,61 @@ func NewRS512DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 		publicKeyFile: publicKeyFile,
 		decoder:       decoder{validationOpts: validationOpts},
 	}
+}
+
+// NewRS512EncoderWithCache creates a new RSA-SHA512 JWT encoder with cached private key.
+// The private key is loaded once at creation time, improving performance for repeated operations.
+func NewRS512EncoderWithCache(privateKeyFile string) (Encoder, error) {
+	privateKey, _, err := readPrivateRSAKey(privateKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return &rsjwtEncoderWithCachedPrivateKey{
+		method:     jwt.SigningMethodRS512,
+		privateKey: privateKey,
+	}, nil
+}
+
+// NewRS512DecoderWithPrivateKeyFileAndCache creates a new RSA-SHA512 JWT decoder with cached public key from private key file.
+// The key is loaded once at creation time, improving performance for repeated operations.
+func NewRS512DecoderWithPrivateKeyFileAndCache(privateKeyFile string) (Decoder, error) {
+	return NewRS512DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewRS512DecoderWithPrivateKeyFileAndCacheAndValidation creates a new RSA-SHA512 JWT decoder with cached public key and validation options.
+func NewRS512DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
+	_, publicKey, err := readPrivateRSAKey(privateKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return &rsjwtDecoderWithCachedPublicKey{
+		method:    jwt.SigningMethodRS512,
+		publicKey: publicKey,
+		decoder:   decoder{validationOpts: validationOpts},
+	}, nil
+}
+
+// NewRS512DecoderWithPublicKeyFileAndCache creates a new RSA-SHA512 JWT decoder with cached public key from public key file.
+// The key is loaded once at creation time, improving performance for repeated operations.
+func NewRS512DecoderWithPublicKeyFileAndCache(publicKeyFile string) (Decoder, error) {
+	return NewRS512DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewRS512DecoderWithPublicKeyFileAndCacheAndValidation creates a new RSA-SHA512 JWT decoder with cached public key and validation options.
+func NewRS512DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
+	publicKeyBytes, err := os.ReadFile(publicKeyFile) // #nosec G304 -- user-provided file path
+	if err != nil {
+		return nil, fmt.Errorf("error reading public key file: %w", err)
+	}
+	publicKey, err := jwt.ParseRSAPublicKeyFromPEM(publicKeyBytes)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing RSA public key: %w", err)
+	}
+	return &rsjwtDecoderWithCachedPublicKey{
+		method:    jwt.SigningMethodRS512,
+		publicKey: publicKey,
+		decoder:   decoder{validationOpts: validationOpts},
+	}, nil
 }
 
 func readPrivateRSAKey(privateKeyFile string) (crypto.PrivateKey, crypto.PublicKey, error) {
@@ -173,4 +350,12 @@ func (j *rsjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
 		return "", fmt.Errorf("error parsing RSA public key: %w", err)
 	}
 	return j.decoder.DecodeJWT(key, token)
+}
+
+func (j *rsjwtEncoderWithCachedPrivateKey) Encode(payload string) (string, error) {
+	return j.encoder.EncodeJWT(j.privateKey, j.method, payload)
+}
+
+func (j *rsjwtDecoderWithCachedPublicKey) Decode(token string) (string, error) {
+	return j.decoder.DecodeJWT(j.publicKey, token)
 }

@@ -413,7 +413,7 @@ func TestRSAComplexPayloads(t *testing.T) {
 
 	t.Run("unicode characters in payload", func(t *testing.T) {
 		unicodePayload := `{"name":"用户名","message":"Hello 世界"}`
-		
+
 		encoder := cryptojwt.NewRS512Encoder(privateKeyPath)
 		token, err := encoder.Encode(unicodePayload)
 		if err != nil {
@@ -429,4 +429,62 @@ func TestRSAComplexPayloads(t *testing.T) {
 			t.Errorf("Expected decoded payload to contain unicode characters")
 		}
 	})
+}
+
+// Benchmarks comparing cached vs uncached performance
+
+func BenchmarkRS256EncodeWithoutCache(b *testing.B) {
+	privateKeyPath, _ := generateRSAKeyPair(b)
+	encoder := cryptojwt.NewRS256Encoder(privateKeyPath)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = encoder.Encode(validPayload)
+	}
+}
+
+func BenchmarkRS256EncodeWithCache(b *testing.B) {
+	privateKeyPath, _ := generateRSAKeyPair(b)
+	encoder, err := cryptojwt.NewRS256EncoderWithCache(privateKeyPath)
+	if err != nil {
+		b.Fatalf("Failed to create cached encoder: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = encoder.Encode(validPayload)
+	}
+}
+
+func BenchmarkRS256DecodeWithoutCache(b *testing.B) {
+	privateKeyPath, publicKeyPath := generateRSAKeyPair(b)
+	encoder := cryptojwt.NewRS256Encoder(privateKeyPath)
+	token, err := encoder.Encode(validPayload)
+	if err != nil {
+		b.Fatalf("Failed to encode: %v", err)
+	}
+	decoder := cryptojwt.NewRS256DecoderWithPublicKeyFile(publicKeyPath)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = decoder.Decode(token)
+	}
+}
+
+func BenchmarkRS256DecodeWithCache(b *testing.B) {
+	privateKeyPath, publicKeyPath := generateRSAKeyPair(b)
+	encoder := cryptojwt.NewRS256Encoder(privateKeyPath)
+	token, err := encoder.Encode(validPayload)
+	if err != nil {
+		b.Fatalf("Failed to encode: %v", err)
+	}
+	decoder, err := cryptojwt.NewRS256DecoderWithPublicKeyFileAndCache(publicKeyPath)
+	if err != nil {
+		b.Fatalf("Failed to create cached decoder: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = decoder.Decode(token)
+	}
 }
