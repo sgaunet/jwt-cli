@@ -36,17 +36,29 @@ func NewRS256Encoder(privateKeyFile string) Encoder {
 
 // NewRS256DecoderWithPrivateKeyFile creates a new RSA-SHA256 JWT decoder with a private key file.
 func NewRS256DecoderWithPrivateKeyFile(privateKeyFile string) Decoder {
+	return NewRS256DecoderWithPrivateKeyFileAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewRS256DecoderWithPrivateKeyFileAndValidation creates a new RSA-SHA256 JWT decoder with validation options.
+func NewRS256DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &rsjwtDecoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodRS256,
 		privateKeyFile: privateKeyFile,
+		decoder:        decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewRS256DecoderWithPublicKeyFile creates a new RSA-SHA256 JWT decoder with a public key file.
 func NewRS256DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
+	return NewRS256DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewRS256DecoderWithPublicKeyFileAndValidation creates a new RSA-SHA256 JWT decoder with validation options.
+func NewRS256DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &rsjwtDecoderWithPublicKeyFile{
 		method:        jwt.SigningMethodRS256,
 		publicKeyFile: publicKeyFile,
+		decoder:       decoder{validationOpts: validationOpts},
 	}
 }
 
@@ -60,17 +72,29 @@ func NewRS384Encoder(privateKeyFile string) Encoder {
 
 // NewRS384DecoderWithPrivateKeyFile creates a new RSA-SHA384 JWT decoder with a private key file.
 func NewRS384DecoderWithPrivateKeyFile(privateKeyFile string) Decoder {
+	return NewRS384DecoderWithPrivateKeyFileAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewRS384DecoderWithPrivateKeyFileAndValidation creates a new RSA-SHA384 JWT decoder with validation options.
+func NewRS384DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &rsjwtDecoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodRS384,
 		privateKeyFile: privateKeyFile,
+		decoder:        decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewRS384DecoderWithPublicKeyFile creates a new RSA-SHA384 JWT decoder with a public key file.
 func NewRS384DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
+	return NewRS384DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewRS384DecoderWithPublicKeyFileAndValidation creates a new RSA-SHA384 JWT decoder with validation options.
+func NewRS384DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &rsjwtDecoderWithPublicKeyFile{
 		method:        jwt.SigningMethodRS384,
 		publicKeyFile: publicKeyFile,
+		decoder:       decoder{validationOpts: validationOpts},
 	}
 }
 
@@ -84,17 +108,29 @@ func NewRS512Encoder(privateKeyFile string) Encoder {
 
 // NewRS512DecoderWithPrivateKeyFile creates a new RSA-SHA512 JWT decoder with a private key file.
 func NewRS512DecoderWithPrivateKeyFile(privateKeyFile string) Decoder {
+	return NewRS512DecoderWithPrivateKeyFileAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewRS512DecoderWithPrivateKeyFileAndValidation creates a new RSA-SHA512 JWT decoder with validation options.
+func NewRS512DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &rsjwtDecoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodRS512,
 		privateKeyFile: privateKeyFile,
+		decoder:        decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewRS512DecoderWithPublicKeyFile creates a new RSA-SHA512 JWT decoder with a public key file.
 func NewRS512DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
+	return NewRS512DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewRS512DecoderWithPublicKeyFileAndValidation creates a new RSA-SHA512 JWT decoder with validation options.
+func NewRS512DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &rsjwtDecoderWithPublicKeyFile{
 		method:        jwt.SigningMethodRS512,
 		publicKeyFile: publicKeyFile,
+		decoder:       decoder{validationOpts: validationOpts},
 	}
 }
 

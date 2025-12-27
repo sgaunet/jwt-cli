@@ -62,9 +62,20 @@ package cryptojwt
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// ValidationOptions configures JWT claims validation behavior.
+type ValidationOptions struct {
+	// ValidateClaims enables validation of time-based JWT claims (exp, nbf, iat).
+	// When false, tokens are accepted regardless of expiration or timing claims.
+	ValidateClaims bool
+	// ClockSkew allows tolerance for clock differences between systems.
+	// Applied to exp and nbf validation. Default is 0 (no tolerance).
+	ClockSkew time.Duration
+}
 
 // Encoder is the interface for encoding JWT tokens.
 type Encoder interface {
@@ -86,6 +97,7 @@ type encoder struct {
 }
 
 type decoder struct {
+	validationOpts ValidationOptions
 }
 
 func (e *encoder) EncodeJWT(secret any, signingMethod jwt.SigningMethod, payload string) (string, error) {
@@ -106,7 +118,22 @@ func (e *encoder) EncodeJWT(secret any, signingMethod jwt.SigningMethod, payload
 
 func (d *decoder) DecodeJWT(secret any, token string) (string, error) {
 	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(token, claims, func(_ *jwt.Token) (any, error) {
+
+	// Configure parser based on validation options
+	var parser *jwt.Parser
+	if d.validationOpts.ValidateClaims {
+		// Enable claims validation with optional clock skew
+		parser = jwt.NewParser(
+			jwt.WithLeeway(d.validationOpts.ClockSkew),
+		)
+	} else {
+		// Disable claims validation for backward compatibility
+		parser = jwt.NewParser(
+			jwt.WithoutClaimsValidation(),
+		)
+	}
+
+	_, err := parser.ParseWithClaims(token, claims, func(_ *jwt.Token) (any, error) {
 		return secret, nil
 	})
 	if err != nil {
