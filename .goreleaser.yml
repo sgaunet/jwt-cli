@@ -21,6 +21,9 @@ builds:
     goarm:
       - "6"
       - "7"
+    ignore:
+      - goos: windows
+        goarch: arm
     id: lin
     # hooks:
     #   post:
@@ -40,10 +43,13 @@ changelog:
       - '^docs:'
       - '^test:'
 
-brews:
-  - homepage: 'https://github.com/sgaunet/jwt-cli'
-    description: ''
-    directory: Formula
+homebrew_casks:
+  - name: jwt-cli
+    homepage: 'https://github.com/sgaunet/jwt-cli'
+    description: 'CLI tool for encoding and decoding JWT tokens'
+    directory: Casks
+    binaries:
+      - jwt-cli
     commit_author:
       name: sgaunet
       email: 1552102+sgaunet@users.noreply.github.com
@@ -52,92 +58,26 @@ brews:
       name: homebrew-tools
       # Token with 'repo' scope is required for pushing to a different repository
       token: '{{ .Env.HOMEBREW_TAP_TOKEN }}'
-    url_template: 'https://github.com/sgaunet/jwt-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
-    install: |
-      bin.install "{{ .ArtifactName }}" => "jwt-cli"
-    test: |
-      system "#{bin}/jwt-cli", "--help"
+    url:
+      template: 'https://github.com/sgaunet/jwt-cli/releases/download/{{ .Tag }}/{{ .ArtifactName }}'
 
 
-dockers:
-  # https://goreleaser.com/customization/docker/
-  - use: buildx
-    goos: linux
-    goarch: amd64
-    image_templates:
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-amd64"
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:latest-amd64"
-    build_flag_templates:
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    # extra_files:
-    # - src
-    # - resources
-
-  - use: buildx
-    goos: linux
-    goarch: arm64
-    image_templates:
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-arm64v8"
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:latest-arm64v8"
-    build_flag_templates:
-      - "--platform=linux/arm64/v8"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    # extra_files:
-    # - src
-    # - resources
-
-  - use: buildx
-    goos: linux
-    goarch: arm
-    goarm: "6"
-    image_templates:
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-armv6"
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:latest-armv6"
-    build_flag_templates:
-      - "--platform=linux/arm/v6"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    # extra_files:
-    # - src
-    # - resources
-
-  - use: buildx
-    goos: linux
-    goarch: arm
-    goarm: "7"
-    image_templates:
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-armv7"
-      - "ghcr.io/sgaunet/{{ .ProjectName }}:latest-armv7"
-    build_flag_templates:
-      - "--platform=linux/arm/v7"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    # extra_files:
-    # - src
-    # - resources
-
-docker_manifests:
-  # https://goreleaser.com/customization/docker_manifest/
-  - name_template: ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}
-    image_templates:
-      - ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-amd64
-      - ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-arm64v8
-      - ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-armv6
-      - ghcr.io/sgaunet/{{ .ProjectName }}:{{ .Version }}-armv7
-  - name_template: ghcr.io/sgaunet/{{ .ProjectName }}:latest
-    image_templates:
-      - ghcr.io/sgaunet/{{ .ProjectName }}:latest-amd64
-      - ghcr.io/sgaunet/{{ .ProjectName }}:latest-arm64v8
-      - ghcr.io/sgaunet/{{ .ProjectName }}:latest-armv6
-      - ghcr.io/sgaunet/{{ .ProjectName }}:latest-armv7
+dockers_v2:
+  # https://goreleaser.com/customization/dockers_v2/
+  - id: jwt-cli
+    dockerfile: Dockerfile
+    images:
+      - "ghcr.io/sgaunet/{{ .ProjectName }}"
+    tags:
+      - "{{ .Version }}"
+      - "latest"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+      - linux/arm/v6
+      - linux/arm/v7
+    labels:
+      "org.opencontainers.image.created": "{{ .Date }}"
+      "org.opencontainers.image.title": "{{ .ProjectName }}"
+      "org.opencontainers.image.revision": "{{ .FullCommit }}"
+      "org.opencontainers.image.version": "{{ .Version }}"

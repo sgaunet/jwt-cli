@@ -1,2 +1,4 @@
 FROM scratch
-COPY jwt-cli /jwt-cli
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/jwt-cli /jwt-cli
+ENTRYPOINT ["/jwt-cli"]
