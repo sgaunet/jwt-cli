@@ -91,6 +91,8 @@ func init() {
 	decodeCmd.PersistentFlags().StringP("token", "t", "", "JWT token to decode and verify")
 	decodeCmd.PersistentFlags().StringP("secret", "s", "", "HMAC secret for verification (minimum 32 bytes for HS256, 48 bytes for HS384, 64 bytes for HS512)")
 	decodeCmd.PersistentFlags().Bool("allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
+	decodeCmd.PersistentFlags().Bool("validate-claims", false, "validate JWT time-based claims (exp, nbf, iat) - reject expired or not-yet-valid tokens")
+	decodeCmd.PersistentFlags().Duration("clock-skew", 0, "clock skew tolerance for claims validation (e.g., 5m, 30s)")
 	_ = decodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
 	_ = decodeCmd.MarkPersistentFlagFilename("public-key", "pem", "key")
 	_ = decodeCmd.MarkPersistentFlagFilename("token", "jwt", "txt")

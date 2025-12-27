@@ -55,49 +55,85 @@ func NewES512Encoder(privateKeyFile string) Encoder {
 
 // NewES256DecoderWithPrivateKeyFile creates a new ECDSA-SHA256 JWT decoder with a private key file.
 func NewES256DecoderWithPrivateKeyFile(privateKeyFile string) Decoder {
+	return NewES256DecoderWithPrivateKeyFileAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewES256DecoderWithPrivateKeyFileAndValidation creates a new ECDSA-SHA256 JWT decoder with validation options.
+func NewES256DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &esjwtDecoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodES256,
 		privateKeyFile: privateKeyFile,
+		decoder:        decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewES384DecoderWithPrivateKeyFile creates a new ECDSA-SHA384 JWT decoder with a private key file.
 func NewES384DecoderWithPrivateKeyFile(privateKeyFile string) Decoder {
+	return NewES384DecoderWithPrivateKeyFileAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewES384DecoderWithPrivateKeyFileAndValidation creates a new ECDSA-SHA384 JWT decoder with validation options.
+func NewES384DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &esjwtDecoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodES384,
 		privateKeyFile: privateKeyFile,
+		decoder:        decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewES512DecoderWithPrivateKeyFile creates a new ECDSA-SHA512 JWT decoder with a private key file.
 func NewES512DecoderWithPrivateKeyFile(privateKeyFile string) Decoder {
+	return NewES512DecoderWithPrivateKeyFileAndValidation(privateKeyFile, ValidationOptions{})
+}
+
+// NewES512DecoderWithPrivateKeyFileAndValidation creates a new ECDSA-SHA512 JWT decoder with validation options.
+func NewES512DecoderWithPrivateKeyFileAndValidation(privateKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &esjwtDecoderWithPrivateKeyFile{
 		method:         jwt.SigningMethodES512,
 		privateKeyFile: privateKeyFile,
+		decoder:        decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewES256DecoderWithPublicKeyFile creates a new ECDSA-SHA256 JWT decoder with a public key file.
 func NewES256DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
+	return NewES256DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewES256DecoderWithPublicKeyFileAndValidation creates a new ECDSA-SHA256 JWT decoder with validation options.
+func NewES256DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &esjwtDecoderWithPublicKeyFile{
 		method:        jwt.SigningMethodES256,
 		publicKeyFile: publicKeyFile,
+		decoder:       decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewES384DecoderWithPublicKeyFile creates a new ECDSA-SHA384 JWT decoder with a public key file.
 func NewES384DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
+	return NewES384DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewES384DecoderWithPublicKeyFileAndValidation creates a new ECDSA-SHA384 JWT decoder with validation options.
+func NewES384DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &esjwtDecoderWithPublicKeyFile{
 		method:        jwt.SigningMethodES384,
 		publicKeyFile: publicKeyFile,
+		decoder:       decoder{validationOpts: validationOpts},
 	}
 }
 
 // NewES512DecoderWithPublicKeyFile creates a new ECDSA-SHA512 JWT decoder with a public key file.
 func NewES512DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
+	return NewES512DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
+}
+
+// NewES512DecoderWithPublicKeyFileAndValidation creates a new ECDSA-SHA512 JWT decoder with validation options.
+func NewES512DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validationOpts ValidationOptions) Decoder {
 	return &esjwtDecoderWithPublicKeyFile{
 		method:        jwt.SigningMethodES512,
 		publicKeyFile: publicKeyFile,
+		decoder:       decoder{validationOpts: validationOpts},
 	}
 }
 

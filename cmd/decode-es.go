@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//nolint:dupl // Similar structure needed for different algorithms
-func createESDecodeCommand(_ /* alg */, use, short, long, example string, pubKeyDecoder, privKeyDecoder func(string) cryptojwt.Decoder) *cobra.Command {
+//nolint:dupl,funlen // Similar structure needed for different algorithms
+func createESDecodeCommand(_ /* alg */, use, short, long, example string, pubKeyDecoderWithValidation, privKeyDecoderWithValidation func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder) *cobra.Command {
 	return &cobra.Command{
 		Use:     use,
 		Short:   short,
@@ -27,6 +27,8 @@ func createESDecodeCommand(_ /* alg */, use, short, long, example string, pubKey
 			if token == "" {
 				token, _ = cmd.Flags().GetString("t") // Check deprecated flag
 			}
+			validateClaims, _ := cmd.Flags().GetBool("validate-claims")
+			clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
 
 			if privateKeyFile == "" && publicKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -57,11 +59,16 @@ Example usage:
 Tip: The token is the three-part string (header.payload.signature) produced by the encode command.`, use, use)
 			}
 
+			validationOpts := cryptojwt.ValidationOptions{
+				ValidateClaims: validateClaims,
+				ClockSkew:      clockSkew,
+			}
+
 			var j cryptojwt.Decoder
 			if publicKeyFile != "" {
-				j = pubKeyDecoder(publicKeyFile)
+				j = pubKeyDecoderWithValidation(publicKeyFile, validationOpts)
 			} else {
-				j = privKeyDecoder(privateKeyFile)
+				j = privKeyDecoderWithValidation(privateKeyFile, validationOpts)
 			}
 
 			t, err := j.Decode(token)
@@ -85,17 +92,24 @@ You can provide either the public key (recommended) or the private key.
 
 Key Requirements:
   - Public or private key in PEM format using P-256 curve
-  - Key must match the one used for encoding`,
+  - Key must match the one used for encoding
+
+Claims Validation:
+  By default, time-based claims (exp, nbf, iat) are not validated. Use
+  --validate-claims to enable validation and reject expired tokens.`,
 	`  # Decode with public key (recommended)
   jwt-cli decode es256 --token "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9..." --public-key ecdsa-p256-public.pem
 
   # Decode with private key
   jwt-cli decode es256 --token "$TOKEN" --private-key ecdsa-p256-private.pem
 
+  # Decode with claims validation
+  jwt-cli decode es256 --token "$TOKEN" --public-key ecdsa-p256-public.pem --validate-claims
+
   # Decode and extract specific field
   jwt-cli decode es256 --token "$TOKEN" --public-key ecdsa-p256-public.pem | jq -r '.user'`,
-	cryptojwt.NewES256DecoderWithPublicKeyFile,
-	cryptojwt.NewES256DecoderWithPrivateKeyFile,
+	cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation,
+	cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation,
 )
 
 var decodeES384Cmd = createESDecodeCommand(
@@ -105,14 +119,21 @@ var decodeES384Cmd = createESDecodeCommand(
 	`Decode and verify a JWT token signed with ES384.
 
 ES384 uses ECDSA with SHA-384 hash and P-384 curve for verification.
-You can provide either the public key (recommended) or the private key.`,
+You can provide either the public key (recommended) or the private key.
+
+Claims Validation:
+  By default, time-based claims (exp, nbf, iat) are not validated. Use
+  --validate-claims to enable validation and reject expired tokens.`,
 	`  # Decode with public key
   jwt-cli decode es384 --token "eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCJ9..." --public-key jwtES384pubkey.pem
 
   # Decode with private key
-  jwt-cli decode es384 --token "$TOKEN" --private-key jwtES384key.pem`,
-	cryptojwt.NewES384DecoderWithPublicKeyFile,
-	cryptojwt.NewES384DecoderWithPrivateKeyFile,
+  jwt-cli decode es384 --token "$TOKEN" --private-key jwtES384key.pem
+
+  # Decode with claims validation
+  jwt-cli decode es384 --token "$TOKEN" --public-key jwtES384pubkey.pem --validate-claims`,
+	cryptojwt.NewES384DecoderWithPublicKeyFileAndValidation,
+	cryptojwt.NewES384DecoderWithPrivateKeyFileAndValidation,
 )
 
 var decodeES512Cmd = createESDecodeCommand(
@@ -122,12 +143,19 @@ var decodeES512Cmd = createESDecodeCommand(
 	`Decode and verify a JWT token signed with ES512.
 
 ES512 uses ECDSA with SHA-512 hash and P-521 curve for verification.
-You can provide either the public key (recommended) or the private key.`,
+You can provide either the public key (recommended) or the private key.
+
+Claims Validation:
+  By default, time-based claims (exp, nbf, iat) are not validated. Use
+  --validate-claims to enable validation and reject expired tokens.`,
 	`  # Decode with public key
   jwt-cli decode es512 --token "eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9..." --public-key ecdsa-p521-public.pem
 
   # Decode with private key
-  jwt-cli decode es512 --token "$TOKEN" --private-key ecdsa-p521-private.pem`,
-	cryptojwt.NewES512DecoderWithPublicKeyFile,
-	cryptojwt.NewES512DecoderWithPrivateKeyFile,
+  jwt-cli decode es512 --token "$TOKEN" --private-key ecdsa-p521-private.pem
+
+  # Decode with claims validation and clock skew
+  jwt-cli decode es512 --token "$TOKEN" --public-key ecdsa-p521-public.pem --validate-claims --clock-skew 2m`,
+	cryptojwt.NewES512DecoderWithPublicKeyFileAndValidation,
+	cryptojwt.NewES512DecoderWithPrivateKeyFileAndValidation,
 )

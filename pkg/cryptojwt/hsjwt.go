@@ -19,6 +19,7 @@ type hsjwtEncoderDecoder struct {
 	secret          []byte
 	method          jwt.SigningMethod
 	allowWeakSecret bool
+	validationOpts  ValidationOptions
 }
 
 // validateSecretLength validates that the secret meets minimum length requirements.
@@ -36,10 +37,17 @@ func NewHS256Encoder(secret []byte) EncoderDecoder {
 
 // NewHS256EncoderWithOptions creates a new HMAC-SHA256 JWT encoder/decoder with options.
 func NewHS256EncoderWithOptions(secret []byte, allowWeakSecret bool) EncoderDecoder {
+	return NewHS256EncoderWithValidation(secret, allowWeakSecret, ValidationOptions{})
+}
+
+// NewHS256EncoderWithValidation creates a new HMAC-SHA256 JWT encoder/decoder with validation options.
+func NewHS256EncoderWithValidation(secret []byte, allowWeakSecret bool, validationOpts ValidationOptions) EncoderDecoder {
 	return &hsjwtEncoderDecoder{
 		method:          jwt.SigningMethodHS256,
 		secret:          secret,
 		allowWeakSecret: allowWeakSecret,
+		validationOpts:  validationOpts,
+		decoder:         decoder{validationOpts: validationOpts},
 	}
 }
 
@@ -50,7 +58,12 @@ func NewHS256Decoder(secret []byte) EncoderDecoder {
 
 // NewHS256DecoderWithOptions creates a new HMAC-SHA256 JWT decoder with options.
 func NewHS256DecoderWithOptions(secret []byte, allowWeakSecret bool) EncoderDecoder {
-	return NewHS256EncoderWithOptions(secret, allowWeakSecret)
+	return NewHS256EncoderWithValidation(secret, allowWeakSecret, ValidationOptions{})
+}
+
+// NewHS256DecoderWithValidation creates a new HMAC-SHA256 JWT decoder with validation options.
+func NewHS256DecoderWithValidation(secret []byte, allowWeakSecret bool, validationOpts ValidationOptions) EncoderDecoder {
+	return NewHS256EncoderWithValidation(secret, allowWeakSecret, validationOpts)
 }
 
 // NewHS384Encoder creates a new HMAC-SHA384 JWT encoder/decoder.
@@ -60,10 +73,17 @@ func NewHS384Encoder(secret []byte) EncoderDecoder {
 
 // NewHS384EncoderWithOptions creates a new HMAC-SHA384 JWT encoder/decoder with options.
 func NewHS384EncoderWithOptions(secret []byte, allowWeakSecret bool) EncoderDecoder {
+	return NewHS384EncoderWithValidation(secret, allowWeakSecret, ValidationOptions{})
+}
+
+// NewHS384EncoderWithValidation creates a new HMAC-SHA384 JWT encoder/decoder with validation options.
+func NewHS384EncoderWithValidation(secret []byte, allowWeakSecret bool, validationOpts ValidationOptions) EncoderDecoder {
 	return &hsjwtEncoderDecoder{
 		method:          jwt.SigningMethodHS384,
 		secret:          secret,
 		allowWeakSecret: allowWeakSecret,
+		validationOpts:  validationOpts,
+		decoder:         decoder{validationOpts: validationOpts},
 	}
 }
 
@@ -74,7 +94,12 @@ func NewHS384Decoder(secret []byte) EncoderDecoder {
 
 // NewHS384DecoderWithOptions creates a new HMAC-SHA384 JWT decoder with options.
 func NewHS384DecoderWithOptions(secret []byte, allowWeakSecret bool) EncoderDecoder {
-	return NewHS384EncoderWithOptions(secret, allowWeakSecret)
+	return NewHS384EncoderWithValidation(secret, allowWeakSecret, ValidationOptions{})
+}
+
+// NewHS384DecoderWithValidation creates a new HMAC-SHA384 JWT decoder with validation options.
+func NewHS384DecoderWithValidation(secret []byte, allowWeakSecret bool, validationOpts ValidationOptions) EncoderDecoder {
+	return NewHS384EncoderWithValidation(secret, allowWeakSecret, validationOpts)
 }
 
 // NewHS512Encoder creates a new HMAC-SHA512 JWT encoder/decoder.
@@ -84,10 +109,17 @@ func NewHS512Encoder(secret []byte) EncoderDecoder {
 
 // NewHS512EncoderWithOptions creates a new HMAC-SHA512 JWT encoder/decoder with options.
 func NewHS512EncoderWithOptions(secret []byte, allowWeakSecret bool) EncoderDecoder {
+	return NewHS512EncoderWithValidation(secret, allowWeakSecret, ValidationOptions{})
+}
+
+// NewHS512EncoderWithValidation creates a new HMAC-SHA512 JWT encoder/decoder with validation options.
+func NewHS512EncoderWithValidation(secret []byte, allowWeakSecret bool, validationOpts ValidationOptions) EncoderDecoder {
 	return &hsjwtEncoderDecoder{
 		method:          jwt.SigningMethodHS512,
 		secret:          secret,
 		allowWeakSecret: allowWeakSecret,
+		validationOpts:  validationOpts,
+		decoder:         decoder{validationOpts: validationOpts},
 	}
 }
 
@@ -98,7 +130,12 @@ func NewHS512Decoder(secret []byte) EncoderDecoder {
 
 // NewHS512DecoderWithOptions creates a new HMAC-SHA512 JWT decoder with options.
 func NewHS512DecoderWithOptions(secret []byte, allowWeakSecret bool) EncoderDecoder {
-	return NewHS512EncoderWithOptions(secret, allowWeakSecret)
+	return NewHS512EncoderWithValidation(secret, allowWeakSecret, ValidationOptions{})
+}
+
+// NewHS512DecoderWithValidation creates a new HMAC-SHA512 JWT decoder with validation options.
+func NewHS512DecoderWithValidation(secret []byte, allowWeakSecret bool, validationOpts ValidationOptions) EncoderDecoder {
+	return NewHS512EncoderWithValidation(secret, allowWeakSecret, validationOpts)
 }
 
 func (j *hsjwtEncoderDecoder) Decode(token string) (string, error) {

@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//nolint:dupl // Similar structure needed for different algorithms
-func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKeyDecoder, privKeyDecoder func(string) cryptojwt.Decoder) *cobra.Command {
+//nolint:dupl,funlen // Similar structure needed for different algorithms
+func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKeyDecoderWithValidation, privKeyDecoderWithValidation func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder) *cobra.Command {
 	return &cobra.Command{
 		Use:     use,
 		Short:   short,
@@ -27,6 +27,8 @@ func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKey
 			if token == "" {
 				token, _ = cmd.Flags().GetString("t") // Check deprecated flag
 			}
+			validateClaims, _ := cmd.Flags().GetBool("validate-claims")
+			clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
 
 			if privateKeyFile == "" && publicKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -56,11 +58,16 @@ Example usage:
 Tip: The token is the three-part string (header.payload.signature) produced by the encode command.`, use, use)
 			}
 
+			validationOpts := cryptojwt.ValidationOptions{
+				ValidateClaims: validateClaims,
+				ClockSkew:      clockSkew,
+			}
+
 			var j cryptojwt.Decoder
 			if publicKeyFile != "" {
-				j = pubKeyDecoder(publicKeyFile)
+				j = pubKeyDecoderWithValidation(publicKeyFile, validationOpts)
 			} else {
-				j = privKeyDecoder(privateKeyFile)
+				j = privKeyDecoderWithValidation(privateKeyFile, validationOpts)
 			}
 
 			t, err := j.Decode(token)
@@ -86,17 +93,24 @@ asymmetric key principle.
 
 Key Requirements:
   - Public or private key in PEM format
-  - Key must match the one used for encoding`,
+  - Key must match the one used for encoding
+
+Claims Validation:
+  By default, time-based claims (exp, nbf, iat) are not validated. Use
+  --validate-claims to enable validation and reject expired tokens.`,
 	`  # Decode with public key (recommended)
   jwt-cli decode rs256 --token "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..." --public-key RS256.key.pub
 
   # Decode with private key
   jwt-cli decode rs256 --token "$TOKEN" --private-key RS256.key
 
+  # Decode with claims validation
+  jwt-cli decode rs256 --token "$TOKEN" --public-key RS256.key.pub --validate-claims
+
   # Decode and extract specific field
   jwt-cli decode rs256 --token "$TOKEN" --public-key RS256.key.pub | jq -r '.user'`,
-	cryptojwt.NewRS256DecoderWithPublicKeyFile,
-	cryptojwt.NewRS256DecoderWithPrivateKeyFile,
+	cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation,
+	cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation,
 )
 
 var decodeRS384Cmd = createRSDecodeCommand(
@@ -106,14 +120,21 @@ var decodeRS384Cmd = createRSDecodeCommand(
 	`Decode and verify a JWT token signed with RS384.
 
 RS384 uses RSA signature with SHA-384 hash for verification. You can
-provide either the public key (recommended) or the private key.`,
+provide either the public key (recommended) or the private key.
+
+Claims Validation:
+  By default, time-based claims (exp, nbf, iat) are not validated. Use
+  --validate-claims to enable validation and reject expired tokens.`,
 	`  # Decode with public key
   jwt-cli decode rs384 --token "eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9..." --public-key RS384.key.pub
 
   # Decode with private key
-  jwt-cli decode rs384 --token "$TOKEN" --private-key RS384.key`,
-	cryptojwt.NewRS384DecoderWithPublicKeyFile,
-	cryptojwt.NewRS384DecoderWithPrivateKeyFile,
+  jwt-cli decode rs384 --token "$TOKEN" --private-key RS384.key
+
+  # Decode with claims validation and clock skew
+  jwt-cli decode rs384 --token "$TOKEN" --public-key RS384.key.pub --validate-claims --clock-skew 30s`,
+	cryptojwt.NewRS384DecoderWithPublicKeyFileAndValidation,
+	cryptojwt.NewRS384DecoderWithPrivateKeyFileAndValidation,
 )
 
 var decodeRS512Cmd = createRSDecodeCommand(
@@ -123,12 +144,19 @@ var decodeRS512Cmd = createRSDecodeCommand(
 	`Decode and verify a JWT token signed with RS512.
 
 RS512 uses RSA signature with SHA-512 hash for verification. You can
-provide either the public key (recommended) or the private key.`,
+provide either the public key (recommended) or the private key.
+
+Claims Validation:
+  By default, time-based claims (exp, nbf, iat) are not validated. Use
+  --validate-claims to enable validation and reject expired tokens.`,
 	`  # Decode with public key
   jwt-cli decode rs512 --token "eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9..." --public-key RS512.key.pub
 
   # Decode with private key
-  jwt-cli decode rs512 --token "$TOKEN" --private-key RS512.key`,
-	cryptojwt.NewRS512DecoderWithPublicKeyFile,
-	cryptojwt.NewRS512DecoderWithPrivateKeyFile,
+  jwt-cli decode rs512 --token "$TOKEN" --private-key RS512.key
+
+  # Decode with claims validation
+  jwt-cli decode rs512 --token "$TOKEN" --public-key RS512.key.pub --validate-claims`,
+	cryptojwt.NewRS512DecoderWithPublicKeyFileAndValidation,
+	cryptojwt.NewRS512DecoderWithPrivateKeyFileAndValidation,
 )
