@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func createTempFile(t *testing.T, content []byte) string {
+func createTempFile(t testing.TB, content []byte) string {
 	t.Helper()
 	tmpFile, err := os.CreateTemp(t.TempDir(), "test-*.pem")
 	if err != nil {
@@ -27,7 +27,7 @@ func createTempFile(t *testing.T, content []byte) string {
 	return tmpFile.Name()
 }
 
-func generateRSAKeyPair(t *testing.T) (privateKeyPath, publicKeyPath string) {
+func generateRSAKeyPair(t testing.TB) (privateKeyPath, publicKeyPath string) {
 	t.Helper()
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -55,7 +55,7 @@ func generateRSAKeyPair(t *testing.T) (privateKeyPath, publicKeyPath string) {
 	return privateKeyPath, publicKeyPath
 }
 
-func generateECDSAKeyPair(t *testing.T, curve elliptic.Curve) (privateKeyPath, publicKeyPath string) {
+func generateECDSAKeyPair(t testing.TB, curve elliptic.Curve) (privateKeyPath, publicKeyPath string) {
 	t.Helper()
 	privateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
@@ -87,12 +87,12 @@ func generateECDSAKeyPair(t *testing.T, curve elliptic.Curve) (privateKeyPath, p
 	return privateKeyPath, publicKeyPath
 }
 
-func createInvalidPEMFile(t *testing.T) string {
+func createInvalidPEMFile(t testing.TB) string {
 	t.Helper()
 	return createTempFile(t, []byte("invalid pem content"))
 }
 
-func createWrongTypePEMFile(t *testing.T, pemType string) string {
+func createWrongTypePEMFile(t testing.TB, pemType string) string {
 	t.Helper()
 	block := &pem.Block{
 		Type:  pemType,
@@ -101,7 +101,7 @@ func createWrongTypePEMFile(t *testing.T, pemType string) string {
 	return createTempFile(t, pem.EncodeToMemory(block))
 }
 
-func createMalformedECKeyFile(t *testing.T) string {
+func createMalformedECKeyFile(t testing.TB) string {
 	t.Helper()
 	block := &pem.Block{
 		Type:  "EC PRIVATE KEY",
@@ -110,7 +110,7 @@ func createMalformedECKeyFile(t *testing.T) string {
 	return createTempFile(t, pem.EncodeToMemory(block))
 }
 
-func createMalformedRSAKeyFile(t *testing.T) string {
+func createMalformedRSAKeyFile(t testing.TB) string {
 	t.Helper()
 	block := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -119,7 +119,7 @@ func createMalformedRSAKeyFile(t *testing.T) string {
 	return createTempFile(t, pem.EncodeToMemory(block))
 }
 
-func getNonExistentPath(t *testing.T) string {
+func getNonExistentPath(t testing.TB) string {
 	t.Helper()
 	return filepath.Join(t.TempDir(), "non-existent-file.pem")
 }

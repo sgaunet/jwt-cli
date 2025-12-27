@@ -483,7 +483,7 @@ func TestECDSAComplexPayloads(t *testing.T) {
 	t.Run("large payload", func(t *testing.T) {
 		privateKeyPath, publicKeyPath := generateECDSAKeyPair(t, elliptic.P256())
 		largePayload := `{"data":[0,1,2,3,4,5,6,7,8,9],"more":"test data"}`
-		
+
 		encoder := cryptojwt.NewES256Encoder(privateKeyPath)
 		token, err := encoder.Encode(largePayload)
 		if err != nil {
@@ -499,4 +499,62 @@ func TestECDSAComplexPayloads(t *testing.T) {
 			t.Errorf("Expected decoded payload to contain data field")
 		}
 	})
+}
+
+// Benchmarks comparing cached vs uncached performance
+
+func BenchmarkES256EncodeWithoutCache(b *testing.B) {
+	privateKeyPath, _ := generateECDSAKeyPair(b, elliptic.P256())
+	encoder := cryptojwt.NewES256Encoder(privateKeyPath)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = encoder.Encode(validPayload)
+	}
+}
+
+func BenchmarkES256EncodeWithCache(b *testing.B) {
+	privateKeyPath, _ := generateECDSAKeyPair(b, elliptic.P256())
+	encoder, err := cryptojwt.NewES256EncoderWithCache(privateKeyPath)
+	if err != nil {
+		b.Fatalf("Failed to create cached encoder: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = encoder.Encode(validPayload)
+	}
+}
+
+func BenchmarkES256DecodeWithoutCache(b *testing.B) {
+	privateKeyPath, publicKeyPath := generateECDSAKeyPair(b, elliptic.P256())
+	encoder := cryptojwt.NewES256Encoder(privateKeyPath)
+	token, err := encoder.Encode(validPayload)
+	if err != nil {
+		b.Fatalf("Failed to encode: %v", err)
+	}
+	decoder := cryptojwt.NewES256DecoderWithPublicKeyFile(publicKeyPath)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = decoder.Decode(token)
+	}
+}
+
+func BenchmarkES256DecodeWithCache(b *testing.B) {
+	privateKeyPath, publicKeyPath := generateECDSAKeyPair(b, elliptic.P256())
+	encoder := cryptojwt.NewES256Encoder(privateKeyPath)
+	token, err := encoder.Encode(validPayload)
+	if err != nil {
+		b.Fatalf("Failed to encode: %v", err)
+	}
+	decoder, err := cryptojwt.NewES256DecoderWithPublicKeyFileAndCache(publicKeyPath)
+	if err != nil {
+		b.Fatalf("Failed to create cached decoder: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = decoder.Decode(token)
+	}
 }
