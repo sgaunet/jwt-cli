@@ -25,10 +25,30 @@ func createESEncodeCommand(_ /* alg */, use, short, long, example string, encode
 			}
 
 			if privateKeyFile == "" {
-				return fmt.Errorf("private key file is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: private key file is required
+
+Provide the path to your ECDSA private key file in PEM format for signing the JWT token.
+
+Example usage:
+  jwt-cli encode %s --private-key ./keys/ec-private.pem --payload '{"sub":"1234567890","name":"Alice"}'
+
+Generate keys with:
+  jwt-cli genkeys %s
+
+Tip: ECDSA provides strong security with smaller key sizes compared to RSA.
+     ES256 uses P-256 curve, ES384 uses P-384, ES512 uses P-521.`, use, use)
 			}
 			if payload == "" {
-				return fmt.Errorf("payload is mandatory\n\n%s", cmd.UsageString())
+				//nolint:revive,staticcheck // User-facing error message with proper formatting
+				return fmt.Errorf(`Error: payload is required
+
+The payload contains the claims (data) to be encoded in the JWT token.
+
+Example usage:
+  jwt-cli encode %s --private-key ./keys/ec-private.pem --payload '{"sub":"1234567890","name":"Alice"}'
+
+Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (expiration), 'iat' (issued at).`, use)
 			}
 
 			j := encoder(privateKeyFile)
