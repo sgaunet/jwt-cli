@@ -1,8 +1,6 @@
 module github.com/sgaunet/jwt-cli
 
-go 1.23
-
-toolchain go1.23.2
+go 1.26
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
