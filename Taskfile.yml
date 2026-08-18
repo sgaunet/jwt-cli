@@ -13,6 +13,11 @@ tasks:
     desc: "Run linter"
     cmds:
       - golangci-lint run
+
+  vulncheck:
+    desc: "Scan dependencies for known vulnerabilities"
+    cmds:
+      - govulncheck ./...
   
   binary:
     desc: "Build binary"
