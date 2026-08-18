@@ -1,4 +1,3 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/sgaunet/jwt-cli)](https://goreportcard.com/report/github.com/sgaunet/jwt-cli)
 [![GitHub release](https://img.shields.io/github/release/sgaunet/jwt-cli.svg)](https://github.com/sgaunet/jwt-cli/releases/latest)
 ![GitHub Downloads](https://img.shields.io/github/downloads/sgaunet/jwt-cli/total)
 ![Coverage](https://raw.githubusercontent.com/wiki/sgaunet/jwt-cli/coverage-badge.svg)
