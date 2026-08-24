@@ -6,8 +6,10 @@ import (
 	"crypto/elliptic"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
-	"os"
+
+	"github.com/sgaunet/jwt-cli/internal/keyfile"
 )
 
 // PEM block types understood by the key loaders.
@@ -23,11 +25,16 @@ const (
 	publicKeyRole  = "public"
 )
 
-// readKeyFile reads a key file from disk. role names the kind of key being
-// read, so the error identifies which file was at fault.
+// readKeyFile reads a key file from disk under the keyfile size bound. role
+// names the kind of key being read, so the error identifies which file was at
+// fault. An oversized file is additionally reported as ErrInvalidKey, since
+// nothing that large can be key material.
 func readKeyFile(file, role string) ([]byte, error) {
-	keyBytes, err := os.ReadFile(file) // #nosec G304 -- user-provided file path
-	if err != nil {
+	keyBytes, err := keyfile.Read(file)
+	switch {
+	case errors.Is(err, keyfile.ErrTooLarge):
+		return nil, fmt.Errorf("%w: failed to read %s key file: %w", ErrInvalidKey, role, err)
+	case err != nil:
 		return nil, fmt.Errorf("failed to read %s key file: %w", role, err)
 	}
 	return keyBytes, nil

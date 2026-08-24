@@ -772,3 +772,41 @@ testcases:
     assertions:
     - result.code ShouldEqual 0
     - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+# Key files are read under a 1 MiB bound. Without it, pointing a key flag at a
+# huge file (or an endless device like /dev/zero) grows the process until it is
+# OOM-killed. Uses a real oversized file rather than /dev/zero so a regression
+# fails this case instead of stalling the suite.
+- name: encode_with_oversized_key_file_fails
+  steps:
+  - type: exec
+    script: |
+      head -c 2M /dev/urandom > oversized-key.pem
+      cd ..
+      go run . encode rs256 --private-key tests/oversized-key.pem --payload '{ "email": "{{.EMAIL}}" }'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring key file too large
+    - result.systemerr ShouldContainSubstring exceeds 1048576 bytes
+
+- name: decode_with_oversized_key_file_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs256 --public-key tests/oversized-key.pem \
+        --token '{{.encode_JWT_with_RS256.token}}'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring key file too large
+    - result.systemout ShouldNotContainSubstring {{.EMAIL}}
+
+- name: paseto_with_oversized_key_file_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode public --version v4 --private-key tests/oversized-key.pem --payload '{ "email": "{{.EMAIL}}" }'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring key file too large

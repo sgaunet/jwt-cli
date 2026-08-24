@@ -4,9 +4,9 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"fmt"
-	"os"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sgaunet/jwt-cli/internal/keyfile"
 )
 
 // minRSAKeyBits is the smallest RSA modulus accepted for RS256/RS384/RS512.
@@ -268,7 +268,7 @@ func validateRSAKeySize(modulusBits int, allowWeakKey bool) error {
 }
 
 func readPrivateRSAKey(privateKeyFile string, allowWeakKey bool) (crypto.PrivateKey, crypto.PublicKey, error) {
-	privateKey, err := os.ReadFile(privateKeyFile) // #nosec G304 -- user-provided file path
+	privateKey, err := keyfile.Read(privateKeyFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: error reading private key file: %w", ErrInvalidKey, err)
 	}
@@ -284,7 +284,7 @@ func readPrivateRSAKey(privateKeyFile string, allowWeakKey bool) (crypto.Private
 }
 
 func readPublicRSAKey(publicKeyFile string, allowWeakKey bool) (*rsa.PublicKey, error) {
-	publicKey, err := os.ReadFile(publicKeyFile) // #nosec G304 -- user-provided file path
+	publicKey, err := keyfile.Read(publicKeyFile)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error reading public key file: %w", ErrInvalidKey, err)
 	}
