@@ -17,12 +17,6 @@ type esjwtEncoderWithPrivateKeyFile struct {
 	method         jwt.SigningMethod
 }
 
-type esjwtEncoderWithCachedPrivateKey struct {
-	encoder    encoder
-	privateKey crypto.PrivateKey
-	method     jwt.SigningMethod
-}
-
 type esjwtDecoderWithPrivateKeyFile struct {
 	decoder decoder
 	privateKeyFile string
@@ -33,12 +27,6 @@ type esjwtDecoderWithPublicKeyFile struct {
 	decoder decoder
 	publicKeyFile string
 	method        jwt.SigningMethod
-}
-
-type esjwtDecoderWithCachedPublicKey struct {
-	decoder   decoder
-	publicKey crypto.PublicKey
-	method    jwt.SigningMethod
 }
 
 // NewES256Encoder creates a new ECDSA-SHA256 JWT encoder with a private key file.
@@ -151,79 +139,6 @@ func NewES256DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 	}
 }
 
-// NewES256EncoderWithCache creates a new ECDSA-SHA256 JWT encoder with cached private key.
-//
-// The private key is loaded once at creation time, improving performance for repeated
-// operations. This is recommended for high-throughput scenarios.
-//
-// Security: The cached key remains in memory for the lifetime of the encoder. Private
-// key files should have strict file permissions (0600).
-//
-// Performance: Eliminates repeated file reads and key parsing for encoding many tokens.
-//
-// Example:
-//
-//	encoder, err := cryptojwt.NewES256EncoderWithCache("ec-private.pem")
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	for i := 0; i < 1000; i++ {
-//	    token, _ := encoder.Encode(fmt.Sprintf(`{"id":%d}`, i))
-//	    fmt.Println(token)
-//	}
-func NewES256EncoderWithCache(privateKeyFile string) (Encoder, error) {
-	privateKey, _, err := readECDSAPrivateKey(privateKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	return &esjwtEncoderWithCachedPrivateKey{
-		method:     jwt.SigningMethodES256,
-		privateKey: privateKey,
-	}, nil
-}
-
-// NewES256DecoderWithPrivateKeyFileAndCache creates a new ECDSA-SHA256 JWT decoder with cached public key from private key file.
-// The key is loaded once at creation time, improving performance for repeated operations.
-func NewES256DecoderWithPrivateKeyFileAndCache(privateKeyFile string) (Decoder, error) {
-	return NewES256DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile, ValidationOptions{})
-}
-
-// NewES256DecoderWithPrivateKeyFileAndCacheAndValidation creates a new ECDSA-SHA256 JWT decoder with cached public key and validation options.
-func NewES256DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
-	_, publicKey, err := readECDSAPrivateKey(privateKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	return &esjwtDecoderWithCachedPublicKey{
-		method:    jwt.SigningMethodES256,
-		publicKey: publicKey,
-		decoder:   decoder{validationOpts: validationOpts},
-	}, nil
-}
-
-// NewES256DecoderWithPublicKeyFileAndCache creates a new ECDSA-SHA256 JWT decoder with cached public key from public key file.
-// The key is loaded once at creation time, improving performance for repeated operations.
-func NewES256DecoderWithPublicKeyFileAndCache(publicKeyFile string) (Decoder, error) {
-	return NewES256DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile, ValidationOptions{})
-}
-
-// NewES256DecoderWithPublicKeyFileAndCacheAndValidation creates a new ECDSA-SHA256 JWT decoder with cached public key and validation options.
-func NewES256DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
-	publicKeyBytes, err := os.ReadFile(publicKeyFile) // #nosec G304 -- user-provided file path
-	if err != nil {
-		return nil, fmt.Errorf("error reading public key file: %w", err)
-	}
-	publicKey, err := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing EC public key: %w", err)
-	}
-	return &esjwtDecoderWithCachedPublicKey{
-		method:    jwt.SigningMethodES256,
-		publicKey: publicKey,
-		decoder:   decoder{validationOpts: validationOpts},
-	}, nil
-}
-
 // NewES384DecoderWithPublicKeyFile creates a new ECDSA-SHA384 JWT decoder with a public key file.
 func NewES384DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
 	return NewES384DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
@@ -238,61 +153,6 @@ func NewES384DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 	}
 }
 
-// NewES384EncoderWithCache creates a new ECDSA-SHA384 JWT encoder with cached private key.
-// The private key is loaded once at creation time, improving performance for repeated operations.
-func NewES384EncoderWithCache(privateKeyFile string) (Encoder, error) {
-	privateKey, _, err := readECDSAPrivateKey(privateKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	return &esjwtEncoderWithCachedPrivateKey{
-		method:     jwt.SigningMethodES384,
-		privateKey: privateKey,
-	}, nil
-}
-
-// NewES384DecoderWithPrivateKeyFileAndCache creates a new ECDSA-SHA384 JWT decoder with cached public key from private key file.
-// The key is loaded once at creation time, improving performance for repeated operations.
-func NewES384DecoderWithPrivateKeyFileAndCache(privateKeyFile string) (Decoder, error) {
-	return NewES384DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile, ValidationOptions{})
-}
-
-// NewES384DecoderWithPrivateKeyFileAndCacheAndValidation creates a new ECDSA-SHA384 JWT decoder with cached public key and validation options.
-func NewES384DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
-	_, publicKey, err := readECDSAPrivateKey(privateKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	return &esjwtDecoderWithCachedPublicKey{
-		method:    jwt.SigningMethodES384,
-		publicKey: publicKey,
-		decoder:   decoder{validationOpts: validationOpts},
-	}, nil
-}
-
-// NewES384DecoderWithPublicKeyFileAndCache creates a new ECDSA-SHA384 JWT decoder with cached public key from public key file.
-// The key is loaded once at creation time, improving performance for repeated operations.
-func NewES384DecoderWithPublicKeyFileAndCache(publicKeyFile string) (Decoder, error) {
-	return NewES384DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile, ValidationOptions{})
-}
-
-// NewES384DecoderWithPublicKeyFileAndCacheAndValidation creates a new ECDSA-SHA384 JWT decoder with cached public key and validation options.
-func NewES384DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
-	publicKeyBytes, err := os.ReadFile(publicKeyFile) // #nosec G304 -- user-provided file path
-	if err != nil {
-		return nil, fmt.Errorf("error reading public key file: %w", err)
-	}
-	publicKey, err := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing EC public key: %w", err)
-	}
-	return &esjwtDecoderWithCachedPublicKey{
-		method:    jwt.SigningMethodES384,
-		publicKey: publicKey,
-		decoder:   decoder{validationOpts: validationOpts},
-	}, nil
-}
-
 // NewES512DecoderWithPublicKeyFile creates a new ECDSA-SHA512 JWT decoder with a public key file.
 func NewES512DecoderWithPublicKeyFile(publicKeyFile string) Decoder {
 	return NewES512DecoderWithPublicKeyFileAndValidation(publicKeyFile, ValidationOptions{})
@@ -305,61 +165,6 @@ func NewES512DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 		publicKeyFile: publicKeyFile,
 		decoder:       decoder{validationOpts: validationOpts},
 	}
-}
-
-// NewES512EncoderWithCache creates a new ECDSA-SHA512 JWT encoder with cached private key.
-// The private key is loaded once at creation time, improving performance for repeated operations.
-func NewES512EncoderWithCache(privateKeyFile string) (Encoder, error) {
-	privateKey, _, err := readECDSAPrivateKey(privateKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	return &esjwtEncoderWithCachedPrivateKey{
-		method:     jwt.SigningMethodES512,
-		privateKey: privateKey,
-	}, nil
-}
-
-// NewES512DecoderWithPrivateKeyFileAndCache creates a new ECDSA-SHA512 JWT decoder with cached public key from private key file.
-// The key is loaded once at creation time, improving performance for repeated operations.
-func NewES512DecoderWithPrivateKeyFileAndCache(privateKeyFile string) (Decoder, error) {
-	return NewES512DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile, ValidationOptions{})
-}
-
-// NewES512DecoderWithPrivateKeyFileAndCacheAndValidation creates a new ECDSA-SHA512 JWT decoder with cached public key and validation options.
-func NewES512DecoderWithPrivateKeyFileAndCacheAndValidation(privateKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
-	_, publicKey, err := readECDSAPrivateKey(privateKeyFile)
-	if err != nil {
-		return nil, err
-	}
-	return &esjwtDecoderWithCachedPublicKey{
-		method:    jwt.SigningMethodES512,
-		publicKey: publicKey,
-		decoder:   decoder{validationOpts: validationOpts},
-	}, nil
-}
-
-// NewES512DecoderWithPublicKeyFileAndCache creates a new ECDSA-SHA512 JWT decoder with cached public key from public key file.
-// The key is loaded once at creation time, improving performance for repeated operations.
-func NewES512DecoderWithPublicKeyFileAndCache(publicKeyFile string) (Decoder, error) {
-	return NewES512DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile, ValidationOptions{})
-}
-
-// NewES512DecoderWithPublicKeyFileAndCacheAndValidation creates a new ECDSA-SHA512 JWT decoder with cached public key and validation options.
-func NewES512DecoderWithPublicKeyFileAndCacheAndValidation(publicKeyFile string, validationOpts ValidationOptions) (Decoder, error) {
-	publicKeyBytes, err := os.ReadFile(publicKeyFile) // #nosec G304 -- user-provided file path
-	if err != nil {
-		return nil, fmt.Errorf("error reading public key file: %w", err)
-	}
-	publicKey, err := jwt.ParseECPublicKeyFromPEM(publicKeyBytes)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing EC public key: %w", err)
-	}
-	return &esjwtDecoderWithCachedPublicKey{
-		method:    jwt.SigningMethodES512,
-		publicKey: publicKey,
-		decoder:   decoder{validationOpts: validationOpts},
-	}, nil
 }
 
 func readECDSAPrivateKey(privateKeyFile string) (crypto.PrivateKey, crypto.PublicKey, error) {
@@ -408,12 +213,4 @@ func (j *esjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
 		return "", fmt.Errorf("error parsing EC public key: %w", err)
 	}
 	return j.decoder.DecodeJWT(key, token)
-}
-
-func (j *esjwtEncoderWithCachedPrivateKey) Encode(payload string) (string, error) {
-	return j.encoder.EncodeJWT(j.privateKey, j.method, payload)
-}
-
-func (j *esjwtDecoderWithCachedPublicKey) Decode(token string) (string, error) {
-	return j.decoder.DecodeJWT(j.publicKey, token)
 }
