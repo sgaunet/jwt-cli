@@ -44,8 +44,8 @@ func TestRSDecodeCommand_SuccessWithPublicKey(t *testing.T) {
 			privateKey, publicKey := generateRSAKeyPair(t)
 
 			// First encode a token
-			encodeCmd := createRSEncodeCommand(
-				strings.ToUpper(tt.algorithm),
+			encodeCmd := createAsymmetricEncodeCommand(
+				rsKeyVocab,
 				tt.algorithm,
 				"Test",
 				"Test",
@@ -64,8 +64,8 @@ func TestRSDecodeCommand_SuccessWithPublicKey(t *testing.T) {
 			token := strings.TrimSpace(tokenOutput)
 
 			// Now decode with public key
-			decodeCmd := createRSDecodeCommand(
-				strings.ToUpper(tt.algorithm),
+			decodeCmd := createAsymmetricDecodeCommand(
+				rsKeyVocab,
 				tt.algorithm,
 				"Test",
 				"Test",
@@ -101,13 +101,13 @@ func TestRSDecodeCommand_SuccessWithPrivateKey(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
 	// Encode
-	encodeCmd := createRSEncodeCommand("RS256", "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey)
 	token := strings.TrimSpace(tokenOutput)
 
 	// Decode with private key
-	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+	decodeCmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
@@ -125,7 +125,7 @@ func TestRSDecodeCommand_SuccessWithPrivateKey(t *testing.T) {
 
 // TestRSDecodeCommand_MissingKeys tests error when both keys are missing
 func TestRSDecodeCommand_MissingKeys(t *testing.T) {
-	cmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+	cmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
@@ -144,7 +144,7 @@ func TestRSDecodeCommand_MissingKeys(t *testing.T) {
 func TestRSDecodeCommand_MissingToken(t *testing.T) {
 	_, publicKey := generateRSAKeyPair(t)
 
-	cmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+	cmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
@@ -163,7 +163,7 @@ func TestRSDecodeCommand_MissingToken(t *testing.T) {
 func TestRSDecodeCommand_InvalidToken(t *testing.T) {
 	_, publicKey := generateRSAKeyPair(t)
 
-	cmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+	cmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(cmd)
 
@@ -180,13 +180,13 @@ func TestRSDecodeCommand_WrongKey(t *testing.T) {
 	_, publicKey2 := generateRSAKeyPair(t) // Different key pair
 
 	// Encode with first key
-	encodeCmd := createRSEncodeCommand("RS256", "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey1)
 	token := strings.TrimSpace(tokenOutput)
 
 	// Try to decode with second key
-	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+	decodeCmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
@@ -202,13 +202,13 @@ func TestRSDecodeCommand_PublicKeyPrecedence(t *testing.T) {
 	privateKey, publicKey := generateRSAKeyPair(t)
 
 	// Encode
-	encodeCmd := createRSEncodeCommand("RS256", "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey)
 	token := strings.TrimSpace(tokenOutput)
 
 	// Decode with both keys (public should take precedence)
-	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+	decodeCmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
@@ -229,13 +229,13 @@ func TestRSDecodeCommand_NonExistentPublicKey(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
 	// Encode
-	encodeCmd := createRSEncodeCommand("RS256", "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey)
 	token := strings.TrimSpace(tokenOutput)
 
 	// Try to decode with nonexistent public key
-	decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+	decodeCmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 		cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 	registerDecodeFlags(decodeCmd)
 
@@ -252,7 +252,7 @@ func TestRSDecodeCommand_DeprecatedFlags(t *testing.T) {
 	privateKey, publicKey := generateRSAKeyPair(t)
 
 	// Encode
-	encodeCmd := createRSEncodeCommand("RS256", "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test", cryptojwt.NewRS256Encoder)
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey)
 	token := strings.TrimSpace(tokenOutput)
@@ -268,7 +268,7 @@ func TestRSDecodeCommand_DeprecatedFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			decodeCmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+			decodeCmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 				cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 			registerDecodeFlags(decodeCmd)
 

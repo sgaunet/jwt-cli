@@ -28,9 +28,9 @@ Claims Validation:
   # Decode a v3 public token (NIST P-384)
   jwt-cli paseto decode public --version v3 --public-key paseto-v3-public.pem --token "$TOKEN"`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			privateKeyFile := pasetoFlag(cmd, "private-key", "pk")
-			publicKeyFile := pasetoFlag(cmd, "public-key", "pubk")
-			token := pasetoFlag(cmd, "token", "t")
+			privateKeyFile := flagWithFallback(cmd, "private-key", "pk")
+			publicKeyFile := flagWithFallback(cmd, "public-key", "pubk")
+			token := flagWithFallback(cmd, "token", "t")
 			version := pasetoVersionFlag(cmd)
 
 			if privateKeyFile == "" && publicKeyFile == "" {

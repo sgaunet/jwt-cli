@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/sgaunet/jwt-cli/pkg/paseto"
@@ -170,15 +169,6 @@ func newPublicCodec(version, privateKeyFile, publicKeyFile string) (paseto.Encod
 	return codec, nil
 }
 
-// pasetoFlag reads a flag, falling back to its deprecated short alias.
-func pasetoFlag(cmd *cobra.Command, name, deprecated string) string {
-	value, _ := cmd.Flags().GetString(name)
-	if value == "" {
-		value, _ = cmd.Flags().GetString(deprecated) // Check deprecated flag
-	}
-	return value
-}
-
 // pasetoVersionFlag reads the --version flag, defaulting to v4 when unset.
 func pasetoVersionFlag(cmd *cobra.Command) string {
 	version, _ := cmd.Flags().GetString("version")
@@ -186,20 +176,4 @@ func pasetoVersionFlag(cmd *cobra.Command) string {
 		return pasetoV4
 	}
 	return version
-}
-
-// outputToken emits a freshly encoded token, honouring --json.
-func outputToken(token string) {
-	output(CommandOutput{Success: true, Token: token})
-}
-
-// outputClaims emits decoded claims, honouring --json.
-func outputClaims(claims string) {
-	// Parse claims string as JSON for structured output
-	var claimsData any
-	if err := json.Unmarshal([]byte(claims), &claimsData); err != nil {
-		// If claims aren't valid JSON, treat as raw string
-		claimsData = claims
-	}
-	output(CommandOutput{Success: true, Claims: claimsData})
 }

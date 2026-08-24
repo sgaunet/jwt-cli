@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"encoding/json"
-
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
 	"github.com/spf13/cobra"
 )
 
-//nolint:dupl // Similar structure needed for different algorithms
 func createHSDecodeCommand(_ /* alg */, use, short, long, example string, decoderWithValidation func([]byte, bool, cryptojwt.ValidationOptions) cryptojwt.EncoderDecoder) *cobra.Command {
 	return &cobra.Command{
 		Use:     use,
@@ -15,14 +12,8 @@ func createHSDecodeCommand(_ /* alg */, use, short, long, example string, decode
 		Long:    long,
 		Example: example,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			secret, _ := cmd.Flags().GetString("secret")
-			if secret == "" {
-				secret, _ = cmd.Flags().GetString("s") // Check deprecated flag
-			}
-			token, _ := cmd.Flags().GetString("token")
-			if token == "" {
-				token, _ = cmd.Flags().GetString("t") // Check deprecated flag
-			}
+			secret := flagWithFallback(cmd, "secret", "s")
+			token := flagWithFallback(cmd, "token", "t")
 			allowWeakSecret, _ := cmd.Flags().GetBool("allow-weak-secret")
 			validateClaims, _ := cmd.Flags().GetBool("validate-claims")
 			clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
@@ -62,13 +53,7 @@ Tip: The token is the three-part string (header.payload.signature) produced by t
 			if err != nil {
 				return userErrorf("decoding failed: %v", err)
 			}
-			// Parse claims string as JSON for structured output
-			var claimsData any
-			if err := json.Unmarshal([]byte(claims), &claimsData); err != nil {
-				// If claims aren't valid JSON, treat as raw string
-				claimsData = claims
-			}
-			output(CommandOutput{Success: true, Claims: claimsData})
+			outputClaims(claims)
 			return nil
 		},
 	}

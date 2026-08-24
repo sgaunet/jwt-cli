@@ -30,7 +30,7 @@ Key Requirements:
   jwt-cli paseto encode local --version v3 --key "$KEY" --payload '{"user":"alice"}'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			key, _ := cmd.Flags().GetString("key")
-			payload := pasetoFlag(cmd, "payload", "p")
+			payload := flagWithFallback(cmd, "payload", "p")
 			version := pasetoVersionFlag(cmd)
 
 			if key == "" {

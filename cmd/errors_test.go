@@ -65,7 +65,7 @@ func TestValidationErrorsAreReported(t *testing.T) {
 		{
 			name: "rs256 encode without private key",
 			build: func(_ *testing.T) (*cobra.Command, []string) {
-				cmd := createRSEncodeCommand("RS256", "rs256", "Test", "Test", "Test",
+				cmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 					cryptojwt.NewRS256Encoder)
 				registerEncodeFlags(cmd)
 				return cmd, []string{"--payload", validPayload}
@@ -75,7 +75,7 @@ func TestValidationErrorsAreReported(t *testing.T) {
 		{
 			name: "rs256 decode without keys",
 			build: func(_ *testing.T) (*cobra.Command, []string) {
-				cmd := createRSDecodeCommand("RS256", "rs256", "Test", "Test", "Test",
+				cmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 					cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation,
 					cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
 				registerDecodeFlags(cmd)
@@ -86,7 +86,7 @@ func TestValidationErrorsAreReported(t *testing.T) {
 		{
 			name: "es256 encode without private key",
 			build: func(_ *testing.T) (*cobra.Command, []string) {
-				cmd := createESEncodeCommand("ES256", "es256", "Test", "Test", "Test",
+				cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
 					cryptojwt.NewES256Encoder)
 				registerEncodeFlags(cmd)
 				return cmd, []string{"--payload", validPayload}
@@ -98,7 +98,7 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			build: func(t *testing.T) (*cobra.Command, []string) {
 				t.Helper()
 				_, publicKey := generateECDSAKeyPair(t, elliptic.P256())
-				cmd := createESDecodeCommand("ES256", "es256", "Test", "Test", "Test",
+				cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
 					cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation,
 					cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
 				registerDecodeFlags(cmd)

@@ -31,8 +31,8 @@ Key Requirements:
   # Store the token in a variable
   TOKEN=$(jwt-cli paseto encode public --private-key paseto-v4-private.pem --payload '{"user":"alice"}')`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			privateKeyFile := pasetoFlag(cmd, "private-key", "pk")
-			payload := pasetoFlag(cmd, "payload", "p")
+			privateKeyFile := flagWithFallback(cmd, "private-key", "pk")
+			payload := flagWithFallback(cmd, "payload", "p")
 			version := pasetoVersionFlag(cmd)
 
 			if privateKeyFile == "" {
