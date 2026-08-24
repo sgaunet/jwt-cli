@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
@@ -130,7 +131,7 @@ func generateRSAKeyPair(t *testing.T) (string, string) {
 		t.Fatalf("Failed to marshal public key: %v", err)
 	}
 	publicKeyPEM := &pem.Block{
-		Type:  "PUBLIC KEY",
+		Type:  testPEMPublicKey,
 		Bytes: publicKeyBytes,
 	}
 	publicKeyPEMBytes := pem.EncodeToMemory(publicKeyPEM)
@@ -155,7 +156,7 @@ func generateECDSAKeyPair(t *testing.T, curve elliptic.Curve) (string, string) {
 		t.Fatalf("Failed to marshal EC private key: %v", err)
 	}
 	privateKeyPEM := &pem.Block{
-		Type:  "EC PRIVATE KEY",
+		Type:  testPEMECPrivateKey,
 		Bytes: privateKeyBytes,
 	}
 	privateKeyPEMBytes := pem.EncodeToMemory(privateKeyPEM)
@@ -165,7 +166,7 @@ func generateECDSAKeyPair(t *testing.T, curve elliptic.Curve) (string, string) {
 		t.Fatalf("Failed to marshal public key: %v", err)
 	}
 	publicKeyPEM := &pem.Block{
-		Type:  "PUBLIC KEY",
+		Type:  testPEMPublicKey,
 		Bytes: publicKeyBytes,
 	}
 	publicKeyPEMBytes := pem.EncodeToMemory(publicKeyPEM)
@@ -209,7 +210,7 @@ func createMalformedRSAKeyFile(t *testing.T) string {
 func createMalformedECKeyFile(t *testing.T) string {
 	t.Helper()
 	block := &pem.Block{
-		Type:  "EC PRIVATE KEY",
+		Type:  testPEMECPrivateKey,
 		Bytes: []byte("malformed ec key data"),
 	}
 	return createTempFile(t, pem.EncodeToMemory(block))
@@ -225,6 +226,12 @@ func getNonExistentPath(t *testing.T) string {
 // Test constants used across multiple test files.
 //nolint:unused // Shared test constants used across multiple test files
 const (
+	// testPEMPublicKey is the PEM block type for PKIX public keys.
+	testPEMPublicKey = "PUBLIC KEY"
+
+	// testPEMECPrivateKey is the PEM block type for SEC 1 EC private keys.
+	testPEMECPrivateKey = "EC PRIVATE KEY"
+
 	// testRSAKeySize is the RSA key size used for test key generation (2048 bits).
 	testRSAKeySize = 2048
 
@@ -249,3 +256,110 @@ const (
 	// weakSecret is a secret that doesn't meet minimum length requirements.
 	weakSecret = "short"
 )
+
+// registerPasetoEncodeFlags registers the flags a "paseto encode" subcommand
+// reads from its parent, so tests can execute the subcommand standalone.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func registerPasetoEncodeFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("payload", "p", "", "JSON payload to encode")
+	cmd.Flags().String("private-key", "", "path to private key file")
+	cmd.Flags().String("key", "", "hex-encoded symmetric key")
+	cmd.Flags().String("version", pasetoV4, "PASETO version")
+	// Deprecated flags for backward compatibility
+	cmd.Flags().String("p", "", "")
+	_ = cmd.Flags().MarkDeprecated("p", "use --payload or -p instead")
+	cmd.Flags().String("pk", "", "")
+	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
+}
+
+// registerPasetoDecodeFlags registers the flags a "paseto decode" subcommand
+// reads from its parent, so tests can execute the subcommand standalone.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func registerPasetoDecodeFlags(cmd *cobra.Command) {
+	cmd.Flags().StringP("token", "t", "", "PASETO token to decode")
+	cmd.Flags().String("private-key", "", "path to private key file")
+	cmd.Flags().String("public-key", "", "path to public key file")
+	cmd.Flags().String("key", "", "hex-encoded symmetric key")
+	cmd.Flags().String("version", pasetoV4, "PASETO version")
+	// Deprecated flags for backward compatibility
+	cmd.Flags().String("t", "", "")
+	_ = cmd.Flags().MarkDeprecated("t", "use --token or -t instead")
+	cmd.Flags().String("pk", "", "")
+	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
+	cmd.Flags().String("pubk", "", "")
+	_ = cmd.Flags().MarkDeprecated("pubk", "use --public-key instead")
+}
+
+// generateEd25519KeyPair generates a test Ed25519 key pair for PASETO v2/v4
+// public tokens and returns the private and public key file paths in PEM form.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func generateEd25519KeyPair(t *testing.T) (string, string) {
+	t.Helper()
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("Failed to generate Ed25519 key: %v", err)
+	}
+
+	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		t.Fatalf("Failed to marshal Ed25519 private key: %v", err)
+	}
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	})
+
+	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		t.Fatalf("Failed to marshal Ed25519 public key: %v", err)
+	}
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  testPEMPublicKey,
+		Bytes: publicKeyBytes,
+	})
+
+	return createTempFile(t, privateKeyPEM), createTempFile(t, publicKeyPEM)
+}
+
+// generateP384KeyPair generates a test NIST P-384 key pair for PASETO v3 public
+// tokens and returns the private and public key file paths in PEM form.
+//
+// The private key uses the SEC 1 "EC PRIVATE KEY" encoding, matching what
+// "jwt-cli paseto genkeys v3" instructs users to generate.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func generateP384KeyPair(t *testing.T) (string, string) {
+	t.Helper()
+	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	if err != nil {
+		t.Fatalf("Failed to generate P-384 key: %v", err)
+	}
+
+	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		t.Fatalf("Failed to marshal P-384 private key: %v", err)
+	}
+	privateKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  testPEMECPrivateKey,
+		Bytes: privateKeyBytes,
+	})
+
+	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		t.Fatalf("Failed to marshal P-384 public key: %v", err)
+	}
+	publicKeyPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  testPEMPublicKey,
+		Bytes: publicKeyBytes,
+	})
+
+	return createTempFile(t, privateKeyPEM), createTempFile(t, publicKeyPEM)
+}
+
+// pasetoTestKey is a valid hex-encoded 32-byte symmetric key for local tokens.
+//
+//nolint:unused // Shared test helper used across multiple test files
+const pasetoTestKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
