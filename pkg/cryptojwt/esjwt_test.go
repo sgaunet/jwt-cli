@@ -501,9 +501,9 @@ func TestECDSAComplexPayloads(t *testing.T) {
 	})
 }
 
-// Benchmarks comparing cached vs uncached performance
+// Benchmarks for the encode and decode paths used by the CLI
 
-func BenchmarkES256EncodeWithoutCache(b *testing.B) {
+func BenchmarkES256Encode(b *testing.B) {
 	privateKeyPath, _ := generateECDSAKeyPair(b, elliptic.P256())
 	encoder := cryptojwt.NewES256Encoder(privateKeyPath)
 
@@ -513,20 +513,7 @@ func BenchmarkES256EncodeWithoutCache(b *testing.B) {
 	}
 }
 
-func BenchmarkES256EncodeWithCache(b *testing.B) {
-	privateKeyPath, _ := generateECDSAKeyPair(b, elliptic.P256())
-	encoder, err := cryptojwt.NewES256EncoderWithCache(privateKeyPath)
-	if err != nil {
-		b.Fatalf("Failed to create cached encoder: %v", err)
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = encoder.Encode(validPayload)
-	}
-}
-
-func BenchmarkES256DecodeWithoutCache(b *testing.B) {
+func BenchmarkES256Decode(b *testing.B) {
 	privateKeyPath, publicKeyPath := generateECDSAKeyPair(b, elliptic.P256())
 	encoder := cryptojwt.NewES256Encoder(privateKeyPath)
 	token, err := encoder.Encode(validPayload)
@@ -534,24 +521,6 @@ func BenchmarkES256DecodeWithoutCache(b *testing.B) {
 		b.Fatalf("Failed to encode: %v", err)
 	}
 	decoder := cryptojwt.NewES256DecoderWithPublicKeyFile(publicKeyPath)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, _ = decoder.Decode(token)
-	}
-}
-
-func BenchmarkES256DecodeWithCache(b *testing.B) {
-	privateKeyPath, publicKeyPath := generateECDSAKeyPair(b, elliptic.P256())
-	encoder := cryptojwt.NewES256Encoder(privateKeyPath)
-	token, err := encoder.Encode(validPayload)
-	if err != nil {
-		b.Fatalf("Failed to encode: %v", err)
-	}
-	decoder, err := cryptojwt.NewES256DecoderWithPublicKeyFileAndCache(publicKeyPath)
-	if err != nil {
-		b.Fatalf("Failed to create cached decoder: %v", err)
-	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
