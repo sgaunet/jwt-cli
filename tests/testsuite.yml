@@ -810,3 +810,31 @@ testcases:
     assertions:
     - result.code ShouldNotEqual 0
     - result.systemerr ShouldContainSubstring key file too large
+
+# Pins the --clock-skew behaviour the README documents: a token that expired
+# inside the tolerance window still decodes when validation is on.
+- name: decode_expired_token_within_clock_skew_succeeds
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="this-is-a-valid-32-byte-secret!!"
+      EXP=$(( $(date +%s) - 60 ))
+      TOKEN=$(go run . encode hs256 --secret "$SECRET" --payload "{ \"email\": \"{{.EMAIL}}\", \"exp\": $EXP }")
+      go run . decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims --clock-skew 5m
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: decode_expired_token_outside_clock_skew_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="this-is-a-valid-32-byte-secret!!"
+      EXP=$(( $(date +%s) - 3600 ))
+      TOKEN=$(go run . encode hs256 --secret "$SECRET" --payload "{ \"email\": \"{{.EMAIL}}\", \"exp\": $EXP }")
+      go run . decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims --clock-skew 30s
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring token is expired
