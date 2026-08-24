@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/sgaunet/jwt-cli/pkg/paseto"
@@ -93,10 +94,16 @@ which "openssl rand -hex 32" produces.`,
 	ValidArgs: pasetoVersions,
 }
 
+// errUnsupportedVersion is the sentinel behind every unrecognised --version
+// report. Use errors.Is to test for it.
+//
+//nolint:revive,staticcheck // User-facing error message with proper formatting
+var errUnsupportedVersion = errors.New(`Error: unsupported PASETO version`)
+
 // errUnsupportedPasetoVersion reports an unrecognised --version value.
 func errUnsupportedPasetoVersion(version string) error {
 	//nolint:revive,staticcheck // User-facing error message with proper formatting
-	return fmt.Errorf(`Error: unsupported PASETO version: %q
+	return fmt.Errorf(`%w: %q
 
 Supported versions are v2, v3 and v4.
 
@@ -104,7 +111,7 @@ Example usage:
   jwt-cli paseto encode local --version v4 --key "$(openssl rand -hex 32)" --payload '{"user":"alice"}'
 
 Tip: v4 is the recommended default. Use v3 only when a NIST-approved
-     algorithm (P-384) is required.`, version)
+     algorithm (P-384) is required.`, errUnsupportedVersion, version)
 }
 
 // newLocalCodec builds an encoder/decoder for PASETO local (symmetric) tokens.
