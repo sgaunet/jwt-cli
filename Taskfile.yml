@@ -50,6 +50,11 @@ tasks:
     cmds:
       - GITLAB_TOKEN="" goreleaser --clean
 
+  unit-tests:
+    desc: "Run Go unit tests with the race detector"
+    cmds:
+      - go test -race ./...
+
   tests:
     desc: "Run tests"
     dir: tests
