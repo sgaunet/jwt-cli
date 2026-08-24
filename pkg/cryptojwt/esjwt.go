@@ -5,9 +5,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"os"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sgaunet/jwt-cli/internal/keyfile"
 )
 
 type esjwtEncoderWithPrivateKeyFile struct {
@@ -167,7 +167,7 @@ func NewES512DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 }
 
 func readECDSAPrivateKey(privateKeyFile string) (crypto.PrivateKey, crypto.PublicKey, error) {
-	contentKeyFile, err := os.ReadFile(privateKeyFile) // #nosec G304 -- user-provided file path
+	contentKeyFile, err := keyfile.Read(privateKeyFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: error reading private key file: %w", ErrInvalidKey, err)
 	}
@@ -203,7 +203,7 @@ func (j *esjwtDecoderWithPrivateKeyFile) Decode(token string) (string, error) {
 }
 
 func (j *esjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
-	publicKey, err := os.ReadFile(j.publicKeyFile) // #nosec G304 -- user-provided file path
+	publicKey, err := keyfile.Read(j.publicKeyFile)
 	if err != nil {
 		return "", fmt.Errorf("%w: error reading public key file: %w", ErrInvalidKey, err)
 	}
