@@ -12,19 +12,19 @@ import (
 )
 
 type esjwtEncoderWithPrivateKeyFile struct {
-	encoder encoder
+	encoder        encoder
 	privateKeyFile string
 	method         jwt.SigningMethod
 }
 
 type esjwtDecoderWithPrivateKeyFile struct {
-	decoder decoder
+	decoder        decoder
 	privateKeyFile string
 	method         jwt.SigningMethod
 }
 
 type esjwtDecoderWithPublicKeyFile struct {
-	decoder decoder
+	decoder       decoder
 	publicKeyFile string
 	method        jwt.SigningMethod
 }

@@ -436,7 +436,7 @@ func TestHSEdgeCases(t *testing.T) {
 		for i := range longSecret {
 			longSecret[i] = byte(i % 256)
 		}
-		
+
 		encoder := cryptojwt.NewHS512Encoder(longSecret)
 		token, err := encoder.Encode(validPayload)
 		if err != nil {

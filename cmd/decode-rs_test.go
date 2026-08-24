@@ -10,11 +10,11 @@ import (
 // TestRSDecodeCommand_SuccessWithPublicKey tests decoding with public key
 func TestRSDecodeCommand_SuccessWithPublicKey(t *testing.T) {
 	tests := []struct {
-		name               string
-		algorithm          string
-		encoder            func(string) cryptojwt.Encoder
-		pubKeyDecoder      func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
-		privKeyDecoder     func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
+		name           string
+		algorithm      string
+		encoder        func(string) cryptojwt.Encoder
+		pubKeyDecoder  func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
+		privKeyDecoder func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
 	}{
 		{
 			name:           "RS256 decode with public key",

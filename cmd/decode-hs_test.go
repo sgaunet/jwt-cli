@@ -10,32 +10,32 @@ import (
 // TestHSDecodeCommand_Success tests successful JWT decoding for all HS algorithms
 func TestHSDecodeCommand_Success(t *testing.T) {
 	tests := []struct {
-		name            string
-		algorithm       string
+		name               string
+		algorithm          string
 		encoderConstructor func([]byte, bool) cryptojwt.EncoderDecoder
 		decoderConstructor func([]byte, bool, cryptojwt.ValidationOptions) cryptojwt.EncoderDecoder
-		secret          string
+		secret             string
 	}{
 		{
-			name:            "HS256 valid decoding",
-			algorithm:       "hs256",
+			name:               "HS256 valid decoding",
+			algorithm:          "hs256",
 			encoderConstructor: cryptojwt.NewHS256EncoderWithOptions,
 			decoderConstructor: cryptojwt.NewHS256DecoderWithValidation,
-			secret:          hs256Secret,
+			secret:             hs256Secret,
 		},
 		{
-			name:            "HS384 valid decoding",
-			algorithm:       "hs384",
+			name:               "HS384 valid decoding",
+			algorithm:          "hs384",
 			encoderConstructor: cryptojwt.NewHS384EncoderWithOptions,
 			decoderConstructor: cryptojwt.NewHS384DecoderWithValidation,
-			secret:          hs384Secret,
+			secret:             hs384Secret,
 		},
 		{
-			name:            "HS512 valid decoding",
-			algorithm:       "hs512",
+			name:               "HS512 valid decoding",
+			algorithm:          "hs512",
 			encoderConstructor: cryptojwt.NewHS512EncoderWithOptions,
 			decoderConstructor: cryptojwt.NewHS512DecoderWithValidation,
-			secret:          hs512Secret,
+			secret:             hs512Secret,
 		},
 	}
 
@@ -242,32 +242,32 @@ func TestHSDecodeCommand_WrongSecret(t *testing.T) {
 // TestHSDecodeCommand_WeakSecret tests secret length validation
 func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 	tests := []struct {
-		name            string
+		name               string
 		encoderConstructor func([]byte, bool) cryptojwt.EncoderDecoder
 		decoderConstructor func([]byte, bool, cryptojwt.ValidationOptions) cryptojwt.EncoderDecoder
-		secret          string
-		expectError     string
+		secret             string
+		expectError        string
 	}{
 		{
-			name:            "HS256 requires 32 bytes",
+			name:               "HS256 requires 32 bytes",
 			encoderConstructor: cryptojwt.NewHS256EncoderWithOptions,
 			decoderConstructor: cryptojwt.NewHS256DecoderWithValidation,
-			secret:          hs256Secret,
-			expectError:     "secret must be at least 32 bytes",
+			secret:             hs256Secret,
+			expectError:        "secret must be at least 32 bytes",
 		},
 		{
-			name:            "HS384 requires 48 bytes",
+			name:               "HS384 requires 48 bytes",
 			encoderConstructor: cryptojwt.NewHS384EncoderWithOptions,
 			decoderConstructor: cryptojwt.NewHS384DecoderWithValidation,
-			secret:          hs384Secret,
-			expectError:     "secret must be at least 48 bytes",
+			secret:             hs384Secret,
+			expectError:        "secret must be at least 48 bytes",
 		},
 		{
-			name:            "HS512 requires 64 bytes",
+			name:               "HS512 requires 64 bytes",
 			encoderConstructor: cryptojwt.NewHS512EncoderWithOptions,
 			decoderConstructor: cryptojwt.NewHS512DecoderWithValidation,
-			secret:          hs512Secret,
-			expectError:     "secret must be at least 64 bytes",
+			secret:             hs512Secret,
+			expectError:        "secret must be at least 64 bytes",
 		},
 	}
 

@@ -9,19 +9,19 @@ import (
 )
 
 type rsjwtEncoderWithPrivateKeyFile struct {
-	encoder encoder
+	encoder        encoder
 	privateKeyFile string
 	method         jwt.SigningMethod
 }
 
 type rsjwtDecoderWithPrivateKeyFile struct {
-	decoder decoder
+	decoder        decoder
 	privateKeyFile string
 	method         jwt.SigningMethod
 }
 
 type rsjwtDecoderWithPublicKeyFile struct {
-	decoder decoder
+	decoder       decoder
 	publicKeyFile string
 	method        jwt.SigningMethod
 }
