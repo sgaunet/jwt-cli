@@ -91,6 +91,60 @@ $ jwt-cli decode hs512 --secret "myAwesomeSecret" --token "eyJhbGciOiJIUzUxMiIsI
 }
 ```
 
+> **Note:** `decode` verifies the signature, but does **not** validate the
+> time-based claims `exp`, `nbf` and `iat` unless you pass `--validate-claims`.
+> A successful decode on its own does **not** mean the token is still valid.
+
+## JWT validation flags
+
+### `--validate-claims`
+
+Rejects a token whose `exp` has passed or whose `nbf` has not yet been reached.
+Off by default, so tokens can always be inspected regardless of their timing:
+
+```bash
+# Expired token: decodes fine by default, contents are still readable
+$ jwt-cli decode hs256 --secret "$SECRET" --token "$TOKEN"
+{
+  "email": "myemail@me.com",
+  "exp": 1735689600
+}
+
+# The same token, with validation enabled
+$ jwt-cli decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims
+decoding failed: invalid token: failed to parse token: token has invalid claims: token is expired
+```
+
+### `--clock-skew`
+
+Tolerance for clock differences between the issuer and this machine, applied to
+`exp` and `nbf`. Only meaningful together with `--validate-claims`; the default
+is `0`, meaning no tolerance. Takes a Go duration (`30s`, `5m`, `1h`):
+
+```bash
+# Accept a token that expired less than five minutes ago
+$ jwt-cli decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims --clock-skew 5m
+```
+
+### `--allow-weak-secret`
+
+HMAC secrets are checked against the RFC 7518 Section 3.2 minimums — 32 bytes
+for HS256, 48 for HS384, 64 for HS512. This flag bypasses that check, and is
+intended for testing only:
+
+```bash
+$ jwt-cli encode hs256 --secret "short" --payload '{ "email": "myemail@me.com" }'
+encoding failed: weak secret: HS256 requires a minimum of 32 bytes (got 5 bytes). Use --allow-weak-secret flag to bypass this check for testing purposes only
+
+$ jwt-cli encode hs256 --secret "short" --payload '{ "email": "myemail@me.com" }' --allow-weak-secret
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im15ZW1haWxAbWUuY29tIn0._zJ610dy5R45NllkjLZMxlYkU8b7UwQ5fxqnq0ZT700
+```
+
+The RSA equivalent is `--allow-weak-key`, described under [Create keys](#create-keys).
+
+`--allow-weak-secret` and `--allow-weak-key` apply to both `encode` and
+`decode`. `--validate-claims` and `--clock-skew` are `decode` only.
+
 ## PASETO Examples
 
 PASETO tokens come in two purposes: `local` (symmetric encryption) and `public`
@@ -264,7 +318,8 @@ For more information: `jwt-cli completion --help`
 
 This project is using :
 
-* golang 1.23+
+* golang — the required version is declared in [go.mod](go.mod), and the exact
+  toolchain used by CI is pinned in [mise.toml](mise.toml)
 * [task for development](https://taskfile.dev/#/)
 * docker
 * [docker buildx](https://github.com/docker/buildx)
