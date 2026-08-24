@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
 	"github.com/spf13/cobra"
@@ -31,7 +29,7 @@ func createHSDecodeCommand(_ /* alg */, use, short, long, example string, decode
 
 			if secret == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: secret is required
+				return userErrorf(`Error: secret is required
 
 The secret is used to verify the JWT token signature. It must match the secret used for encoding.
 
@@ -43,7 +41,7 @@ Tip: Use the same secret that was used to encode the token.
 			}
 			if token == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: token is required
+				return userErrorf(`Error: token is required
 
 Provide the JWT token string to decode and verify.
 
@@ -62,9 +60,7 @@ Tip: The token is the three-part string (header.payload.signature) produced by t
 			j := decoderWithValidation([]byte(secret), allowWeakSecret, validationOpts)
 			claims, err := j.Decode(token)
 			if err != nil {
-				errMsg := fmt.Sprintf("decoding failed: %v", err)
-				output(CommandOutput{Success: false, Error: errMsg})
-				return errors.New(errMsg)
+				return userErrorf("decoding failed: %v", err)
 			}
 			// Parse claims string as JSON for structured output
 			var claimsData any

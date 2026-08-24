@@ -363,3 +363,33 @@ func generateP384KeyPair(t *testing.T) (string, string) {
 //
 //nolint:unused // Shared test helper used across multiple test files
 const pasetoTestKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+// captureStderr redirects os.Stderr for the duration of fn and returns whatever
+// was written to it.
+//
+// output() writes human-readable errors straight to os.Stderr rather than to
+// cmd.ErrOrStderr(), so this is the only way to assert on what a failing
+// command actually shows the user.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	oldStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create pipe: %v", err)
+	}
+	os.Stderr = w
+	defer func() { os.Stderr = oldStderr }()
+
+	fn()
+
+	if err := w.Close(); err != nil {
+		t.Fatalf("Failed to close pipe: %v", err)
+	}
+	var captured bytes.Buffer
+	if _, err := captured.ReadFrom(r); err != nil {
+		t.Fatalf("Failed to read captured stderr: %v", err)
+	}
+	return captured.String()
+}

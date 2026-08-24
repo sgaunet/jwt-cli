@@ -49,15 +49,20 @@ Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
 
   # Encode with RS256 using private key
   jwt-cli encode rs256 --payload '{"user":"alice"}' --private-key RS256.key`,
-	// Silence errors because the output() function already prints them appropriately
+	// Silence Cobra's own error printing: command failures are reported through
+	// userError(), which renders them via output() (and honours --json), and
+	// Execute() reports anything else exactly once.
 	SilenceErrors: true,
 	SilenceUsage:  true,
 }
 
 // Execute runs the root command.
-// When a command returns an error via RunE, we exit with code 1.
+// When a command returns an error via RunE, we exit with code 1. Errors that no
+// command has printed yet - Cobra's flag-parse and unknown-command errors - are
+// reported here so they are not silently swallowed.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
+		reportError(err)
 		os.Exit(1)
 	}
 }

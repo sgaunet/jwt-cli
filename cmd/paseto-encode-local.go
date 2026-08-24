@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +35,7 @@ Key Requirements:
 
 			if key == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return pasetoError(`Error: key is required
+				return userError(`Error: key is required
 
 Local PASETO tokens are encrypted with a symmetric key that must be kept confidential.
 
@@ -48,7 +46,7 @@ Tip: The key must be hex-encoded and 32 bytes long. Generate one with 'openssl r
 			}
 			if payload == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return pasetoError(`Error: payload is required
+				return userError(`Error: payload is required
 
 The payload contains the claims (data) to be encoded in the PASETO token.
 
@@ -61,12 +59,12 @@ Tip: Payload must be valid JSON. The registered claims exp, nbf and iat accept
 
 			encoder, err := newLocalCodec(version, key)
 			if err != nil {
-				return pasetoError(err.Error())
+				return userError(err.Error())
 			}
 
 			token, err := encoder.Encode(payload)
 			if err != nil {
-				return pasetoError(fmt.Sprintf("encoding failed: %v", err))
+				return userErrorf("encoding failed: %v", err)
 			}
 			outputToken(token)
 			return nil

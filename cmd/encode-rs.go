@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +24,7 @@ func createRSEncodeCommand(_ /* alg */, use, short, long, example string, encode
 
 			if privateKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: private key file is required
+				return userErrorf(`Error: private key file is required
 
 Provide the path to your RSA private key file in PEM format for signing the JWT token.
 
@@ -41,7 +38,7 @@ Tip: Keep your private key secure and never share it. Use minimum 2048-bit RSA k
 			}
 			if payload == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: payload is required
+				return userErrorf(`Error: payload is required
 
 The payload contains the claims (data) to be encoded in the JWT token.
 
@@ -54,9 +51,7 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 			j := encoder(privateKeyFile)
 			t, err := j.Encode(payload)
 			if err != nil {
-				errMsg := fmt.Sprintf("encoding failed: %v", err)
-				output(CommandOutput{Success: false, Error: errMsg})
-				return errors.New(errMsg)
+				return userErrorf("encoding failed: %v", err)
 			}
 			output(CommandOutput{Success: true, Token: t})
 			return nil

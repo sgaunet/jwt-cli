@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 )
@@ -64,4 +65,42 @@ func outputHumanReadable(out CommandOutput) {
 			fmt.Fprintf(os.Stderr, "failed to encode claims: %s\n", err)
 		}
 	}
+}
+
+// reportedError marks an error whose message output() has already rendered, so
+// Execute() does not print it a second time.
+type reportedError struct {
+	msg string
+}
+
+// Error returns the message that was already reported to the user.
+func (e *reportedError) Error() string {
+	return e.msg
+}
+
+// userError reports a user-facing failure through output() and returns it so
+// Cobra exits non-zero.
+//
+// Every command failure is routed through output(): rootCmd sets SilenceErrors,
+// so an error merely returned from RunE would exit 1 without printing anything,
+// and only output() renders the --json failure envelope.
+func userError(msg string) error {
+	output(CommandOutput{Success: false, Error: msg})
+	return &reportedError{msg: msg}
+}
+
+// userErrorf is userError with printf-style formatting.
+func userErrorf(format string, a ...any) error {
+	return userError(fmt.Sprintf(format, a...))
+}
+
+// reportError prints an error that no command has rendered yet, such as Cobra's
+// own flag-parse and unknown-command errors. Errors produced by userError are
+// skipped, since their message has already been printed.
+func reportError(err error) {
+	var reported *reportedError
+	if errors.As(err, &reported) {
+		return
+	}
+	output(CommandOutput{Success: false, Error: err.Error()})
 }

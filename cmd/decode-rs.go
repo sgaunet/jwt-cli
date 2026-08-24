@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
 	"github.com/spf13/cobra"
@@ -34,7 +32,7 @@ func createRSDecodeCommand(_ /* alg */, use, short, long, example string, pubKey
 
 			if privateKeyFile == "" && publicKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: key file is required
+				return userErrorf(`Error: key file is required
 
 Provide either a public key file (recommended) or private key file in PEM format to verify the JWT token.
 
@@ -49,7 +47,7 @@ Tip: Use the public key for verification to follow asymmetric cryptography best 
 			}
 			if token == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: token is required
+				return userErrorf(`Error: token is required
 
 Provide the JWT token string to decode and verify.
 
@@ -74,9 +72,7 @@ Tip: The token is the three-part string (header.payload.signature) produced by t
 
 			claims, err := j.Decode(token)
 			if err != nil {
-				errMsg := fmt.Sprintf("decoding failed: %v", err)
-				output(CommandOutput{Success: false, Error: errMsg})
-				return errors.New(errMsg)
+				return userErrorf("decoding failed: %v", err)
 			}
 			// Parse claims string as JSON for structured output
 			var claimsData any
