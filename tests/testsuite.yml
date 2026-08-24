@@ -720,3 +720,55 @@ testcases:
     assertions:
     - result.code ShouldNotEqual 0
     - result.systemerr ShouldContainSubstring token is required
+
+# The RS commands enforce a 2048-bit floor. These cases pin both halves of that:
+# the rejection carries the offending size, and --allow-weak-key lifts it.
+- name: encode_with_weak_rsa_key_fails
+  steps:
+  - type: exec
+    script: |
+      openssl genrsa -out weak-rsa-private.pem 1024
+      openssl rsa -in weak-rsa-private.pem -pubout -out weak-rsa-public.pem
+      cd ..
+      go run . encode rs256 --private-key tests/weak-rsa-private.pem --payload '{ "email": "{{.EMAIL}}" }'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring RSA key is 1024 bits
+    - result.systemerr ShouldContainSubstring minimum 2048 required
+
+- name: encode_with_weak_rsa_key_and_opt_out_succeeds
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode rs256 --private-key tests/weak-rsa-private.pem \
+        --payload '{ "email": "{{.EMAIL}}" }' --allow-weak-key
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9
+    vars:
+      token:
+        from: result.systemout
+
+- name: decode_with_weak_rsa_key_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs256 --public-key tests/weak-rsa-public.pem \
+        --token '{{.encode_with_weak_rsa_key_and_opt_out_succeeds.token}}'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring RSA key is 1024 bits
+    - result.systemout ShouldNotContainSubstring {{.EMAIL}}
+
+- name: decode_with_weak_rsa_key_and_opt_out_succeeds
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs256 --public-key tests/weak-rsa-public.pem \
+        --token '{{.encode_with_weak_rsa_key_and_opt_out_succeeds.token}}' --allow-weak-key
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}

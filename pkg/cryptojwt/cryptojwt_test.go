@@ -29,7 +29,14 @@ func createTempFile(t testing.TB, content []byte) string {
 
 func generateRSAKeyPair(t testing.TB) (privateKeyPath, publicKeyPath string) {
 	t.Helper()
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	return generateRSAKeyPairWithBits(t, 2048)
+}
+
+// generateRSAKeyPairWithBits writes an RSA key pair of the requested modulus size,
+// so tests can exercise the minimum-key-size check with a deliberately weak key.
+func generateRSAKeyPairWithBits(t testing.TB, bits int) (privateKeyPath, publicKeyPath string) {
+	t.Helper()
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
 		t.Fatalf("Failed to generate RSA key: %v", err)
 	}

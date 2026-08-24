@@ -31,8 +31,8 @@ Claims Validation:
 
   # Decode and extract specific field
   jwt-cli decode es256 --token "$TOKEN" --public-key ecdsa-p256-public.pem | jq -r '.user'`,
-	cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation,
-	cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation,
+	ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation),
+	ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation),
 )
 
 var decodeES384Cmd = createAsymmetricDecodeCommand(
@@ -55,8 +55,8 @@ Claims Validation:
 
   # Decode with claims validation
   jwt-cli decode es384 --token "$TOKEN" --public-key jwtES384pubkey.pem --validate-claims`,
-	cryptojwt.NewES384DecoderWithPublicKeyFileAndValidation,
-	cryptojwt.NewES384DecoderWithPrivateKeyFileAndValidation,
+	ignoreWeakKeyDecoder(cryptojwt.NewES384DecoderWithPublicKeyFileAndValidation),
+	ignoreWeakKeyDecoder(cryptojwt.NewES384DecoderWithPrivateKeyFileAndValidation),
 )
 
 var decodeES512Cmd = createAsymmetricDecodeCommand(
@@ -79,6 +79,6 @@ Claims Validation:
 
   # Decode with claims validation and clock skew
   jwt-cli decode es512 --token "$TOKEN" --public-key ecdsa-p521-public.pem --validate-claims --clock-skew 2m`,
-	cryptojwt.NewES512DecoderWithPublicKeyFileAndValidation,
-	cryptojwt.NewES512DecoderWithPrivateKeyFileAndValidation,
+	ignoreWeakKeyDecoder(cryptojwt.NewES512DecoderWithPublicKeyFileAndValidation),
+	ignoreWeakKeyDecoder(cryptojwt.NewES512DecoderWithPrivateKeyFileAndValidation),
 )

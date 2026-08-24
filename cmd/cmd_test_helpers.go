@@ -64,6 +64,7 @@ func registerEncodeFlags(cmd *cobra.Command) {
 	cmd.Flags().StringP("secret", "s", "", "HMAC secret")
 	cmd.Flags().String("private-key", "", "path to RSA/ECDSA private key file")
 	cmd.Flags().Bool("allow-weak-secret", false, "allow weak secrets")
+	cmd.Flags().Bool("allow-weak-key", false, "allow RSA keys below 2048 bits")
 	// Deprecated flags for backward compatibility
 	cmd.Flags().String("p", "", "")
 	_ = cmd.Flags().MarkDeprecated("p", "use --payload or -p instead")
@@ -83,6 +84,7 @@ func registerDecodeFlags(cmd *cobra.Command) {
 	cmd.Flags().String("private-key", "", "path to RSA/ECDSA private key file")
 	cmd.Flags().String("public-key", "", "path to RSA/ECDSA public key file")
 	cmd.Flags().Bool("allow-weak-secret", false, "allow weak secrets")
+	cmd.Flags().Bool("allow-weak-key", false, "allow RSA keys below 2048 bits")
 	// Deprecated flags for backward compatibility
 	cmd.Flags().String("t", "", "")
 	_ = cmd.Flags().MarkDeprecated("t", "use --token or -t instead")
@@ -119,7 +121,16 @@ func createTempFile(t *testing.T, content []byte) string {
 //nolint:unused // Shared test helper used across multiple test files
 func generateRSAKeyPair(t *testing.T) (string, string) {
 	t.Helper()
-	privateKey, err := rsa.GenerateKey(rand.Reader, testRSAKeySize)
+	return generateRSAKeyPairWithBits(t, testRSAKeySize)
+}
+
+// generateRSAKeyPairWithBits writes an RSA key pair of the requested modulus size,
+// so tests can exercise --allow-weak-key with a deliberately weak key.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func generateRSAKeyPairWithBits(t *testing.T, bits int) (string, string) {
+	t.Helper()
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
 		t.Fatalf("Failed to generate RSA key: %v", err)
 	}
@@ -245,6 +256,8 @@ const (
 
 	// testRSAKeySize is the RSA key size used for test key generation (2048 bits).
 	testRSAKeySize = 2048
+	// testWeakRSAKeySize is below the 2048-bit floor the RS commands enforce.
+	testWeakRSAKeySize = 1024
 
 	// validPayload is a valid JSON payload for testing JWT encoding/decoding.
 	validPayload = `{"sub":"1234567890","name":"John Doe","iat":1516239022}`

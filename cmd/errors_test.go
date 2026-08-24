@@ -66,7 +66,7 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			name: "rs256 encode without private key",
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
-					cryptojwt.NewRS256Encoder)
+					cryptojwt.NewRS256EncoderWithOptions)
 				registerEncodeFlags(cmd)
 				return cmd, []string{"--payload", validPayload}
 			},
@@ -76,8 +76,8 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			name: "rs256 decode without keys",
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
-					cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation,
-					cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation)
+					cryptojwt.NewRS256DecoderWithPublicKeyFileAndOptions,
+					cryptojwt.NewRS256DecoderWithPrivateKeyFileAndOptions)
 				registerDecodeFlags(cmd)
 				return cmd, []string{"--token", "header.payload.signature"}
 			},
@@ -87,7 +87,7 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			name: "es256 encode without private key",
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
-					cryptojwt.NewES256Encoder)
+					ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 				registerEncodeFlags(cmd)
 				return cmd, []string{"--payload", validPayload}
 			},
@@ -99,8 +99,8 @@ func TestValidationErrorsAreReported(t *testing.T) {
 				t.Helper()
 				_, publicKey := generateECDSAKeyPair(t, elliptic.P256())
 				cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
-					cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation,
-					cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
+					ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation),
+					ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
 				registerDecodeFlags(cmd)
 				return cmd, []string{"--public-key", publicKey}
 			},

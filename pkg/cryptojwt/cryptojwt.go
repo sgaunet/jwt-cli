@@ -15,7 +15,9 @@
 //
 // Key Strength: HMAC secrets should be at least 256 bits (32 bytes) for HS256.
 // Use strong, randomly generated secrets. Enable validation with the
-// allowWeakSecret parameter set to false to enforce strong secrets.
+// allowWeakSecret parameter set to false to enforce strong secrets. RSA keys
+// must have a modulus of at least 2048 bits; the allowWeakKey parameter lifts
+// that floor for testing only.
 //
 // Claims Validation: Always validate standard JWT claims (exp, nbf, iat) in
 // production. The decoder provides parsed claims but does not automatically
@@ -27,10 +29,10 @@
 // # Errors
 //
 // Failures are reported through the sentinel errors ErrInvalidPayload,
-// ErrInvalidToken, ErrInvalidKey, ErrWeakSecret and ErrUnsupportedAlgorithm.
-// Use errors.Is to test for them. Each error also wraps the underlying cause,
-// so errors.Is against os.ErrNotExist or the jwt package's own errors keeps
-// working on the same value.
+// ErrInvalidToken, ErrInvalidKey, ErrWeakSecret, ErrWeakKey and
+// ErrUnsupportedAlgorithm. Use errors.Is to test for them. Each error also
+// wraps the underlying cause, so errors.Is against os.ErrNotExist or the jwt
+// package's own errors keeps working on the same value.
 //
 // # Usage Examples
 //
@@ -91,6 +93,9 @@ var (
 	// ErrWeakSecret indicates an HMAC secret shorter than RFC 7518 requires for
 	// the chosen algorithm.
 	ErrWeakSecret = errors.New("weak secret")
+	// ErrWeakKey indicates an RSA key whose modulus is below the minimum bit
+	// length this package accepts.
+	ErrWeakKey = errors.New("weak key")
 	// ErrUnsupportedAlgorithm indicates a signing method this package does not
 	// handle.
 	ErrUnsupportedAlgorithm = errors.New("unsupported algorithm")

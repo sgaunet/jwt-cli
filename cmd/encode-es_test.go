@@ -13,12 +13,12 @@ func TestESEncodeCommand_Success(t *testing.T) {
 	tests := []struct {
 		name        string
 		algorithm   string
-		constructor func(string) cryptojwt.Encoder
+		constructor asymmetricEncoderFunc
 		curve       elliptic.Curve
 	}{
-		{"ES256 valid encoding", "es256", cryptojwt.NewES256Encoder, elliptic.P256()},
-		{"ES384 valid encoding", "es384", cryptojwt.NewES384Encoder, elliptic.P384()},
-		{"ES512 valid encoding", "es512", cryptojwt.NewES512Encoder, elliptic.P521()},
+		{"ES256 valid encoding", "es256", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder), elliptic.P256()},
+		{"ES384 valid encoding", "es384", ignoreWeakKeyEncoder(cryptojwt.NewES384Encoder), elliptic.P384()},
+		{"ES512 valid encoding", "es512", ignoreWeakKeyEncoder(cryptojwt.NewES512Encoder), elliptic.P521()},
 	}
 
 	for _, tt := range tests {
@@ -49,7 +49,7 @@ func TestESEncodeCommand_Success(t *testing.T) {
 
 // TestESEncodeCommand_MissingPrivateKey tests error when private-key flag is missing
 func TestESEncodeCommand_MissingPrivateKey(t *testing.T) {
-	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--payload", validPayload)
@@ -67,7 +67,7 @@ func TestESEncodeCommand_MissingPrivateKey(t *testing.T) {
 func TestESEncodeCommand_MissingPayload(t *testing.T) {
 	privateKey, _ := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--private-key", privateKey)
@@ -85,7 +85,7 @@ func TestESEncodeCommand_MissingPayload(t *testing.T) {
 func TestESEncodeCommand_InvalidJSON(t *testing.T) {
 	privateKey, _ := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--payload", invalidJSON, "--private-key", privateKey)
@@ -97,7 +97,7 @@ func TestESEncodeCommand_InvalidJSON(t *testing.T) {
 
 // TestESEncodeCommand_NonExistentKeyFile tests error for missing key file
 func TestESEncodeCommand_NonExistentKeyFile(t *testing.T) {
-	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--payload", validPayload, "--private-key", getNonExistentPath(t))
@@ -111,7 +111,7 @@ func TestESEncodeCommand_NonExistentKeyFile(t *testing.T) {
 func TestESEncodeCommand_WrongKeyType(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--payload", validPayload, "--private-key", privateKey)
@@ -125,7 +125,7 @@ func TestESEncodeCommand_WrongKeyType(t *testing.T) {
 func TestESEncodeCommand_MalformedKey(t *testing.T) {
 	malformedKey := createMalformedECKeyFile(t)
 
-	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--payload", validPayload, "--private-key", malformedKey)
@@ -139,7 +139,7 @@ func TestESEncodeCommand_MalformedKey(t *testing.T) {
 func TestESEncodeCommand_DeprecatedFlags(t *testing.T) {
 	privateKey, _ := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(cmd)
 
 	output, err := executeCommand(cmd, "--p", validPayload, "--pk", privateKey)
