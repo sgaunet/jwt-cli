@@ -39,13 +39,23 @@ func getVersionInfo() VersionInfo {
 		Compiler:  runtime.Compiler,
 	}
 
-	// Try to get build info from runtime (useful for local development)
-	bi, ok := debug.ReadBuildInfo()
-	if !ok {
-		return info
+	// Try to get build info from runtime (useful for local development).
+	// Missing build info is not an error: the settings stay empty and the
+	// link-time values above are returned unchanged.
+	var settings []debug.BuildSetting
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		settings = bi.Settings
 	}
 
-	for _, setting := range bi.Settings {
+	return applyBuildSettings(info, settings)
+}
+
+// applyBuildSettings fills the commit and build date from the VCS settings embedded
+// by the Go toolchain, leaving values already injected at link time untouched.
+// It is pure so the truncation and precedence rules are testable without a real
+// build info, which never carries vcs.* keys under "go test".
+func applyBuildSettings(info VersionInfo, settings []debug.BuildSetting) VersionInfo {
+	for _, setting := range settings {
 		if setting.Key == "vcs.revision" && info.Commit == "none" {
 			// Use short hash (first 8 chars)
 			if len(setting.Value) >= shortHashLength {
