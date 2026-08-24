@@ -191,7 +191,7 @@ func (j *rsjwtDecoderWithPrivateKeyFile) Decode(token string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return j.decoder.DecodeJWT(publicKey, token)
+	return j.decoder.DecodeJWT(publicKey, j.method, token)
 }
 
 func (j *rsjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
@@ -203,5 +203,5 @@ func (j *rsjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error parsing RSA public key: %w", err)
 	}
-	return j.decoder.DecodeJWT(key, token)
+	return j.decoder.DecodeJWT(key, j.method, token)
 }

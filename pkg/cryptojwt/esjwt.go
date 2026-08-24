@@ -200,7 +200,7 @@ func (j *esjwtDecoderWithPrivateKeyFile) Decode(token string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return j.decoder.DecodeJWT(publicKey, token)
+	return j.decoder.DecodeJWT(publicKey, j.method, token)
 }
 
 func (j *esjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
@@ -212,5 +212,5 @@ func (j *esjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error parsing EC public key: %w", err)
 	}
-	return j.decoder.DecodeJWT(key, token)
+	return j.decoder.DecodeJWT(key, j.method, token)
 }

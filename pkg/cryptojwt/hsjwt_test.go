@@ -315,36 +315,43 @@ func TestHSAlgorithmInteroperability(t *testing.T) {
 		name    string
 		encoder cryptojwt.EncoderDecoder
 		decoder cryptojwt.EncoderDecoder
+		wantErr bool
 	}{
 		{
 			name:    "HS256 to HS256",
 			encoder: cryptojwt.NewHS256Encoder(secret),
 			decoder: cryptojwt.NewHS256Decoder(secret),
+			wantErr: false,
 		},
 		{
 			name:    "HS384 to HS384",
 			encoder: cryptojwt.NewHS384Encoder(secret),
 			decoder: cryptojwt.NewHS384Decoder(secret),
+			wantErr: false,
 		},
 		{
 			name:    "HS512 to HS512",
 			encoder: cryptojwt.NewHS512Encoder(secret),
 			decoder: cryptojwt.NewHS512Decoder(secret),
+			wantErr: false,
 		},
 		{
 			name:    "HS256 to HS384",
 			encoder: cryptojwt.NewHS256Encoder(secret),
 			decoder: cryptojwt.NewHS384Decoder(secret),
+			wantErr: true,
 		},
 		{
 			name:    "HS256 to HS512",
 			encoder: cryptojwt.NewHS256Encoder(secret),
 			decoder: cryptojwt.NewHS512Decoder(secret),
+			wantErr: true,
 		},
 		{
 			name:    "HS384 to HS512",
 			encoder: cryptojwt.NewHS384Encoder(secret),
 			decoder: cryptojwt.NewHS512Decoder(secret),
+			wantErr: true,
 		},
 	}
 
@@ -356,14 +363,20 @@ func TestHSAlgorithmInteroperability(t *testing.T) {
 			}
 
 			decoded, err := tt.decoder.Decode(token)
-			// HMAC algorithms with the same secret can decode each other's tokens
-			// This is standard JWT behavior
-			if err != nil {
-				t.Logf("Decode failed (may be expected for cross-algorithm): %v", err)
-			} else {
-				if !strings.Contains(decoded, "interop") {
-					t.Errorf("Expected decoded payload to contain 'interop', got: %s", decoded)
+			// Each decoder pins its own algorithm, so a token signed with a
+			// different HMAC algorithm is rejected even though the same secret
+			// would verify its signature. See TestHSAlgorithmPinning.
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("Expected cross-algorithm decode to be rejected, got claims: %s", decoded)
 				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Failed to decode: %v", err)
+			}
+			if !strings.Contains(decoded, "interop") {
+				t.Errorf("Expected decoded payload to contain 'interop', got: %s", decoded)
 			}
 		})
 	}
