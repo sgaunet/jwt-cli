@@ -20,7 +20,6 @@ linters:
     - tagliatelle
     - noinlineerr
     - ireturn      # Returning interfaces is intentional for our design
-    - err113       # We use formatted errors throughout
     - lll          # Line length limit is too restrictive for function signatures
     - nolintlint   # We use nolint directives where needed
 

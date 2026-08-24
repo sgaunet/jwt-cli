@@ -168,11 +168,11 @@ func NewRS512DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 func readPrivateRSAKey(privateKeyFile string) (crypto.PrivateKey, crypto.PublicKey, error) {
 	privateKey, err := os.ReadFile(privateKeyFile) // #nosec G304 -- user-provided file path
 	if err != nil {
-		return nil, nil, fmt.Errorf("error reading private key file: %w", err)
+		return nil, nil, fmt.Errorf("%w: error reading private key file: %w", ErrInvalidKey, err)
 	}
 	rsaPrivateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing RSA private key: %w", err)
+		return nil, nil, fmt.Errorf("%w: error parsing RSA private key: %w", ErrInvalidKey, err)
 	}
 	publicKey := rsaPrivateKey.Public()
 	return rsaPrivateKey, publicKey, nil
@@ -197,11 +197,11 @@ func (j *rsjwtDecoderWithPrivateKeyFile) Decode(token string) (string, error) {
 func (j *rsjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
 	publicKey, err := os.ReadFile(j.publicKeyFile) // #nosec G304 -- user-provided file path
 	if err != nil {
-		return "", fmt.Errorf("error reading public key file: %w", err)
+		return "", fmt.Errorf("%w: error reading public key file: %w", ErrInvalidKey, err)
 	}
 	key, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
 	if err != nil {
-		return "", fmt.Errorf("error parsing RSA public key: %w", err)
+		return "", fmt.Errorf("%w: error parsing RSA public key: %w", ErrInvalidKey, err)
 	}
 	return j.decoder.DecodeJWT(key, j.method, token)
 }

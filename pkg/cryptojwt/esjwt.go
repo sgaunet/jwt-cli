@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"os"
 
@@ -170,18 +169,18 @@ func NewES512DecoderWithPublicKeyFileAndValidation(publicKeyFile string, validat
 func readECDSAPrivateKey(privateKeyFile string) (crypto.PrivateKey, crypto.PublicKey, error) {
 	contentKeyFile, err := os.ReadFile(privateKeyFile) // #nosec G304 -- user-provided file path
 	if err != nil {
-		return nil, nil, fmt.Errorf("error reading private key file: %w", err)
+		return nil, nil, fmt.Errorf("%w: error reading private key file: %w", ErrInvalidKey, err)
 	}
 	block, _ := pem.Decode(contentKeyFile)
 	if block == nil {
-		return nil, nil, errors.New("unable to load key: PEM block is nil")
+		return nil, nil, fmt.Errorf("%w: unable to load key: PEM block is nil", ErrInvalidKey)
 	}
 	if block.Type != "EC PRIVATE KEY" {
-		return nil, nil, fmt.Errorf("wrong type of key - expected EC PRIVATE KEY, got %s", block.Type)
+		return nil, nil, fmt.Errorf("%w: wrong type of key - expected EC PRIVATE KEY, got %s", ErrInvalidKey, block.Type)
 	}
 	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing EC private key: %w", err)
+		return nil, nil, fmt.Errorf("%w: error parsing EC private key: %w", ErrInvalidKey, err)
 	}
 	publicKey := privateKey.Public()
 	return privateKey, publicKey, nil
@@ -206,11 +205,11 @@ func (j *esjwtDecoderWithPrivateKeyFile) Decode(token string) (string, error) {
 func (j *esjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
 	publicKey, err := os.ReadFile(j.publicKeyFile) // #nosec G304 -- user-provided file path
 	if err != nil {
-		return "", fmt.Errorf("error reading public key file: %w", err)
+		return "", fmt.Errorf("%w: error reading public key file: %w", ErrInvalidKey, err)
 	}
 	key, err := jwt.ParseECPublicKeyFromPEM(publicKey)
 	if err != nil {
-		return "", fmt.Errorf("error parsing EC public key: %w", err)
+		return "", fmt.Errorf("%w: error parsing EC public key: %w", ErrInvalidKey, err)
 	}
 	return j.decoder.DecodeJWT(key, j.method, token)
 }

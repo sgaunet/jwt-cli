@@ -24,6 +24,14 @@
 // Key Management: For RSA and ECDSA algorithms, protect private keys with
 // appropriate file permissions and never commit them to version control.
 //
+// # Errors
+//
+// Failures are reported through the sentinel errors ErrInvalidPayload,
+// ErrInvalidToken, ErrInvalidKey, ErrWeakSecret and ErrUnsupportedAlgorithm.
+// Use errors.Is to test for them. Each error also wraps the underlying cause,
+// so errors.Is against os.ErrNotExist or the jwt package's own errors keeps
+// working on the same value.
+//
 // # Usage Examples
 //
 // HMAC (HS256) encoding and decoding:
@@ -63,10 +71,29 @@ package cryptojwt
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+)
+
+// Sentinel errors returned by this package. Use errors.Is to test for them.
+var (
+	// ErrInvalidPayload indicates the payload is not valid JSON.
+	ErrInvalidPayload = errors.New("payload is not a valid JSON")
+	// ErrInvalidToken indicates the token is malformed, or its signature could
+	// not be verified with the supplied key and pinned algorithm.
+	ErrInvalidToken = errors.New("invalid token")
+	// ErrInvalidKey indicates the key could not be read or parsed, or is of the
+	// wrong type for the chosen algorithm.
+	ErrInvalidKey = errors.New("invalid key")
+	// ErrWeakSecret indicates an HMAC secret shorter than RFC 7518 requires for
+	// the chosen algorithm.
+	ErrWeakSecret = errors.New("weak secret")
+	// ErrUnsupportedAlgorithm indicates a signing method this package does not
+	// handle.
+	ErrUnsupportedAlgorithm = errors.New("unsupported algorithm")
 )
 
 // ValidationOptions configures JWT claims validation behavior.
@@ -106,14 +133,14 @@ func (e *encoder) EncodeJWT(secret any, signingMethod jwt.SigningMethod, payload
 	claims := jwt.MapClaims{}
 	err := json.Unmarshal([]byte(payload), &claims)
 	if err != nil {
-		return "", fmt.Errorf("payload is not a valid JSON: %w", err)
+		return "", fmt.Errorf("%w: %w", ErrInvalidPayload, err)
 	}
 	// Create token
 	token := jwt.NewWithClaims(signingMethod, claims)
 	// Generate encoded token and send it as response.
 	t, err := token.SignedString(secret)
 	if err != nil {
-		return "", fmt.Errorf("failed to sign token: %w", err)
+		return "", fmt.Errorf("%w: failed to sign token: %w", ErrInvalidKey, err)
 	}
 	return t, nil
 }
@@ -147,7 +174,7 @@ func (d *decoder) DecodeJWT(secret any, signingMethod jwt.SigningMethod, token s
 		return secret, nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to parse token: %w", err)
+		return "", fmt.Errorf("%w: failed to parse token: %w", ErrInvalidToken, err)
 	}
 	res, err := json.MarshalIndent(claims, "", "  ")
 	if err != nil {

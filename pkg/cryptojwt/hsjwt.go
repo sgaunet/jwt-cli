@@ -25,7 +25,9 @@ type hsjwtEncoderDecoder struct {
 // validateSecretLength validates that the secret meets minimum length requirements.
 func validateSecretLength(secret []byte, minLength int, algorithm string) error {
 	if len(secret) < minLength {
-		return fmt.Errorf("weak secret: %s requires a minimum of %d bytes (got %d bytes). Use --allow-weak-secret flag to bypass this check for testing purposes only", algorithm, minLength, len(secret))
+		return fmt.Errorf(
+			"%w: %s requires a minimum of %d bytes (got %d bytes). Use --allow-weak-secret flag to bypass this check for testing purposes only",
+			ErrWeakSecret, algorithm, minLength, len(secret))
 	}
 	return nil
 }
@@ -228,6 +230,6 @@ func (j *hsjwtEncoderDecoder) validateSecret() error {
 	case jwt.SigningMethodHS512:
 		return validateSecretLength(j.secret, minHS512SecretLength, "HS512")
 	default:
-		return fmt.Errorf("unknown HMAC signing method: %v", j.method)
+		return fmt.Errorf("%w: unknown HMAC signing method: %v", ErrUnsupportedAlgorithm, j.method)
 	}
 }
