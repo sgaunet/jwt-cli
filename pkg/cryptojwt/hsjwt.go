@@ -193,7 +193,7 @@ func (j *hsjwtEncoderDecoder) Decode(token string) (string, error) {
 			return "", err
 		}
 	}
-	return j.decoder.DecodeJWT(j.secret, token)
+	return j.decoder.DecodeJWT(j.secret, j.method, token)
 }
 
 // Encode creates and signs a JWT token using HMAC algorithm.

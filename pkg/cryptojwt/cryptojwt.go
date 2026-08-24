@@ -7,8 +7,10 @@
 //
 // # Security Considerations
 //
-// Algorithm Validation: All decoders validate that the token's algorithm
-// matches the expected algorithm to prevent algorithm confusion attacks.
+// Algorithm Validation: All decoders pin the accepted signing algorithm with
+// jwt.WithValidMethods, so a token is rejected unless its "alg" header matches
+// the exact algorithm the decoder was created for. An HS256 decoder therefore
+// rejects an HS384 token even when the shared secret would verify its signature.
 // Never use jwt.ParseWithClaims without proper algorithm validation.
 //
 // Key Strength: HMAC secrets should be at least 256 bits (32 bytes) for HS256.
@@ -116,19 +118,27 @@ func (e *encoder) EncodeJWT(secret any, signingMethod jwt.SigningMethod, payload
 	return t, nil
 }
 
-func (d *decoder) DecodeJWT(secret any, token string) (string, error) {
+// DecodeJWT parses and verifies a token, pinning the accepted signing algorithm
+// to signingMethod so the untrusted "alg" header cannot select a different one.
+func (d *decoder) DecodeJWT(secret any, signingMethod jwt.SigningMethod, token string) (string, error) {
 	claims := jwt.MapClaims{}
+
+	// Pin the expected algorithm: the parser rejects any token whose "alg" header
+	// differs from the algorithm this decoder was created for.
+	validMethods := jwt.WithValidMethods([]string{signingMethod.Alg()})
 
 	// Configure parser based on validation options
 	var parser *jwt.Parser
 	if d.validationOpts.ValidateClaims {
 		// Enable claims validation with optional clock skew
 		parser = jwt.NewParser(
+			validMethods,
 			jwt.WithLeeway(d.validationOpts.ClockSkew),
 		)
 	} else {
 		// Disable claims validation for backward compatibility
 		parser = jwt.NewParser(
+			validMethods,
 			jwt.WithoutClaimsValidation(),
 		)
 	}
