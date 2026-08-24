@@ -29,3 +29,9 @@ jobs:
 
       - name: Run unit tests with the race detector
         run: task unit-tests
+
+      # venom is pinned in mise.toml, so mise-action above already installed it.
+      # The suite generates its own keys with openssl/ssh-keygen, both present
+      # on ubuntu-latest.
+      - name: Run integration tests
+        run: task tests

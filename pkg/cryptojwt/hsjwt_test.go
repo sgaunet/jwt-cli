@@ -1,6 +1,7 @@
 package cryptojwt_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -449,4 +450,92 @@ func TestHSEdgeCases(t *testing.T) {
 			t.Fatalf("Failed to decode with long secret: %v", err)
 		}
 	})
+}
+
+// TestHSWeakSecretDecode verifies that RFC 7518 minimum secret lengths are enforced
+// on the decode path, not just when encoding. The token itself is valid and signed
+// with the same secret, so the only thing that can reject it is the length guard.
+func TestHSWeakSecretDecode(t *testing.T) {
+	tests := []struct {
+		name       string
+		secret     []byte
+		newEncoder func(secret []byte, allowWeakSecret bool) cryptojwt.EncoderDecoder
+		newDecoder func(secret []byte, allowWeakSecret bool) cryptojwt.EncoderDecoder
+		wantMin    string
+		wantAlgo   string
+	}{
+		{
+			name:       "HS256 secret shorter than 32 bytes",
+			secret:     []byte("tooshort"),
+			newEncoder: cryptojwt.NewHS256EncoderWithOptions,
+			newDecoder: cryptojwt.NewHS256DecoderWithOptions,
+			wantMin:    "minimum of 32 bytes",
+			wantAlgo:   "HS256",
+		},
+		{
+			name:       "HS384 secret shorter than 48 bytes",
+			secret:     []byte("this-is-only-32-bytes-long-pad!!"),
+			newEncoder: cryptojwt.NewHS384EncoderWithOptions,
+			newDecoder: cryptojwt.NewHS384DecoderWithOptions,
+			wantMin:    "minimum of 48 bytes",
+			wantAlgo:   "HS384",
+		},
+		{
+			name:       "HS512 secret shorter than 64 bytes",
+			secret:     []byte("this-is-a-valid-48-byte-secret-for-hs384-algo!!!"),
+			newEncoder: cryptojwt.NewHS512EncoderWithOptions,
+			newDecoder: cryptojwt.NewHS512DecoderWithOptions,
+			wantMin:    "minimum of 64 bytes",
+			wantAlgo:   "HS512",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Mint a genuinely valid token by bypassing the guard on the way in.
+			token, err := tt.newEncoder(tt.secret, true).Encode(validPayload)
+			if err != nil {
+				t.Fatalf("Failed to encode with allowWeakSecret=true: %v", err)
+			}
+
+			// Same secret, same algorithm, valid signature: only the length check can fail.
+			decoded, err := tt.newDecoder(tt.secret, false).Decode(token)
+			if err == nil {
+				t.Fatalf("Expected weak secret error on decode, got claims: %s", decoded)
+			}
+			if !errors.Is(err, cryptojwt.ErrWeakSecret) {
+				t.Errorf("Expected ErrWeakSecret, got: %v", err)
+			}
+			if !strings.Contains(err.Error(), tt.wantMin) {
+				t.Errorf("Expected error to mention %q, got: %v", tt.wantMin, err)
+			}
+			if !strings.Contains(err.Error(), tt.wantAlgo) {
+				t.Errorf("Expected error to mention %q, got: %v", tt.wantAlgo, err)
+			}
+
+			// The same weak secret must still decode when the caller opts out.
+			if _, err := tt.newDecoder(tt.secret, true).Decode(token); err != nil {
+				t.Errorf("Expected decode to succeed with allowWeakSecret=true, got: %v", err)
+			}
+		})
+	}
+}
+
+// TestNewHS512DecoderWithValidation covers the HS512 validation-aware decoder constructor.
+func TestNewHS512DecoderWithValidation(t *testing.T) {
+	secret := []byte("this-is-a-valid-64-byte-secret-for-hs512-algorithm-very-long!!!!")
+
+	token, err := cryptojwt.NewHS512Encoder(secret).Encode(validPayload)
+	if err != nil {
+		t.Fatalf("Failed to encode: %v", err)
+	}
+
+	decoder := cryptojwt.NewHS512DecoderWithValidation(secret, false, cryptojwt.ValidationOptions{})
+	claims, err := decoder.Decode(token)
+	if err != nil {
+		t.Fatalf("Failed to decode: %v", err)
+	}
+	if !strings.Contains(claims, "John Doe") {
+		t.Errorf("Expected decoded claims to contain the subject name, got: %s", claims)
+	}
 }

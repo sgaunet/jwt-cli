@@ -51,6 +51,7 @@ testcases:
       go run . encode rs256 --pk tests/RS256-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -65,6 +66,7 @@ testcases:
     # info: go run . decode rs256 --pk tests/RS256-private.pem --t '{{.encode_JWT_with_RS256.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: decode JWT with RS256 with public key
   steps:
@@ -75,6 +77,7 @@ testcases:
     # info: go run . decode rs256 --pubk tests/RS256-public.pem --t '{{.encode_JWT_with_RS256.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: encode_JWT_with_RS384
   steps:
@@ -84,6 +87,7 @@ testcases:
       go run . encode rs384 --pk tests/RS384-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -98,6 +102,7 @@ testcases:
     # info: go run . decode rs384 --pk tests/RS384-private.pem --t '{{.encode_JWT_with_RS384.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: decode JWT with RS384 with public key
   steps:
@@ -108,6 +113,7 @@ testcases:
     # info: go run . decode rs384 --pubk tests/RS384-public.pem --t '{{.encode_JWT_with_RS384.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 
 - name: encode_JWT_with_RS512
@@ -118,6 +124,7 @@ testcases:
       go run . encode rs512 --pk tests/RS512-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -132,16 +139,18 @@ testcases:
     # info: go run . decode rs512 --pk tests/RS512-private.pem --t '{{.encode_JWT_with_RS512.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
-- name: decode JWT with RS384 with public key
+- name: decode JWT with RS512 with public key
   steps:
   - type: exec
     script: |
       cd ..
-      go run . decode rs384 --pubk tests/RS384-public.pem --t '{{.encode_JWT_with_RS384.token}}'
-    # info: go run . decode rs384 --pubk tests/RS384-public.pem --t '{{.encode_JWT_with_RS384.token}}'
+      go run . decode rs512 --pubk tests/RS512-public.pem --t '{{.encode_JWT_with_RS512.token}}'
+    # info: go run . decode rs512 --pubk tests/RS512-public.pem --t '{{.encode_JWT_with_RS512.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: encode_JWT_with_ES256
   steps:
@@ -151,6 +160,7 @@ testcases:
       go run . encode es256 --pk tests/ES256-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -165,6 +175,7 @@ testcases:
     # info: go run . decode es256 --pk tests/ES256-private.pem --t '{{.encode_JWT_with_ES256.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: decode JWT with ES256 with public key
   steps:
@@ -175,6 +186,7 @@ testcases:
     # info: go run . decode es256 --pubk tests/ES256-public.pem --t '{{.encode_JWT_with_ES256.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: encode_JWT_with_ES384
   steps:
@@ -184,6 +196,7 @@ testcases:
       go run . encode es384 --pk tests/ES384-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -198,6 +211,7 @@ testcases:
     # info: go run . decode es384 --pk tests/ES384-private.pem --t '{{.encode_JWT_with_ES384.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: decode JWT with ES384 with public key
   steps:
@@ -208,6 +222,7 @@ testcases:
     # info: go run . decode es384 --pubk tests/ES384-public.pem --t '{{.encode_JWT_with_ES384.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: encode_JWT_with_ES512
   steps:
@@ -217,6 +232,7 @@ testcases:
       go run . encode es512 --pk tests/ES512-private.pem --p '{ "email": "{{.EMAIL}}" }' 
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -231,6 +247,7 @@ testcases:
     # info: go run . decode es256 --pk tests/ES512-private.pem --t '{{.encode_JWT_with_ES512.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: decode JWT with ES512 with public key
   steps:
@@ -241,6 +258,7 @@ testcases:
     # info: go run . decode es512 --pubk tests/ES512-public.pem --t '{{.encode_JWT_with_ES512.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 - name: encode_JWT_with_HS256
   steps:
@@ -250,6 +268,7 @@ testcases:
       go run . encode hs256 --s "this-is-a-valid-32-byte-secret!!" --p '{ "email": "{{.EMAIL}}" }'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -264,6 +283,7 @@ testcases:
     # info: go run . decode hs256 --s "this-is-a-valid-32-byte-secret!!" --t '{{.encode_JWT_with_HS256.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 
 - name: encode_JWT_with_HS384
@@ -274,6 +294,7 @@ testcases:
       go run . encode hs384 --s "this-is-a-valid-48-byte-secret-for-hs384-algo!!!" --p '{ "email": "{{.EMAIL}}" }'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -288,6 +309,7 @@ testcases:
     # info: go run . decode hs384 --s "this-is-a-valid-48-byte-secret-for-hs384-algo!!!" --t '{{.encode_JWT_with_HS384.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 
 - name: encode_JWT_with_HS512
@@ -298,6 +320,7 @@ testcases:
       go run . encode hs512 --s "this-is-a-valid-64-byte-secret-for-hs512-algorithm-very-long!!!!" --p '{ "email": "{{.EMAIL}}" }'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9
     vars:
       token:
         from: result.systemout
@@ -312,6 +335,7 @@ testcases:
     # info: go run . decode hs512 --s "this-is-a-valid-64-byte-secret-for-hs512-algorithm-very-long!!!!" --t '{{.encode_JWT_with_HS512.token}}'
     assertions:
     - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
 
 # PASETO Tests
 - name: generate_PASETO_local_key
@@ -566,3 +590,133 @@ testcases:
     - result.code ShouldEqual 0
     - 'result.systemout ShouldContainSubstring "success":'
     - 'result.systemout ShouldContainSubstring "claims":'
+
+# ---------------------------------------------------------------------------
+# JWT JSON output
+# ---------------------------------------------------------------------------
+
+- name: JWT_json_output
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs256 --json --secret "this-is-a-valid-32-byte-secret!!" --token '{{.encode_JWT_with_HS256.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+    - 'result.systemout ShouldContainSubstring "success":'
+    - 'result.systemout ShouldContainSubstring "claims":'
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+# ---------------------------------------------------------------------------
+# Negative paths.
+#
+# These assert a non-zero exit AND the specific stderr message: `go run .` also
+# exits non-zero when compilation fails, so an exit-code assertion on its own
+# would pass for the wrong reason. Errors go to stderr because the commands run
+# without --json (see cmd/output.go).
+#
+# Kept at the end of the suite on purpose: the decode cases above consume token
+# vars exported by earlier encode cases, and the Taskfile runs venom with
+# --stop-on-failure, so a failing case here cannot break that chain.
+# ---------------------------------------------------------------------------
+
+- name: decode_HS256_with_wrong_secret_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs256 --secret "this-is-a-DIFFERENT-32-byte-key!!" --token '{{.encode_JWT_with_HS256.token}}'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring decoding failed
+    - result.systemerr ShouldContainSubstring token signature is invalid
+    - result.systemout ShouldNotContainSubstring {{.EMAIL}}
+
+- name: decode_HS256_with_weak_secret_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs256 --secret "short" --token '{{.encode_JWT_with_HS256.token}}'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring weak secret
+    - result.systemerr ShouldContainSubstring minimum of 32 bytes
+
+- name: decode_RS256_with_wrong_key_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode rs256 --pubk tests/RS384-public.pem --token '{{.encode_JWT_with_RS256.token}}'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring token signature is invalid
+    - 'result.systemerr ShouldContainSubstring crypto/rsa: verification error'
+    - result.systemout ShouldNotContainSubstring {{.EMAIL}}
+
+- name: decode_ES256_with_wrong_key_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode es256 --pubk tests/ES384-public.pem --token '{{.encode_JWT_with_ES256.token}}'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring token signature is invalid
+    - 'result.systemerr ShouldContainSubstring crypto/ecdsa: verification error'
+    - result.systemout ShouldNotContainSubstring {{.EMAIL}}
+
+- name: decode_tampered_token_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      # Flip the last character of the signature segment.
+      TOKEN='{{.encode_JWT_with_HS256.token}}'
+      case "$TOKEN" in
+        *A) TAMPERED="${TOKEN%?}B" ;;
+        *)  TAMPERED="${TOKEN%?}A" ;;
+      esac
+      go run . decode hs256 --secret "this-is-a-valid-32-byte-secret!!" --token "$TAMPERED"
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring token signature is invalid
+
+- name: decode_expired_token_with_validate_claims_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="this-is-a-valid-32-byte-secret!!"
+      EXP=$(( $(date +%s) - 3600 ))
+      TOKEN=$(go run . encode hs256 --secret "$SECRET" --payload "{ \"email\": \"{{.EMAIL}}\", \"exp\": $EXP }")
+      go run . decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring token is expired
+
+# Pins the documented default: without --validate-claims an expired token still
+# decodes. If that ever changes silently, this case goes red.
+- name: decode_expired_token_without_validate_claims_succeeds
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="this-is-a-valid-32-byte-secret!!"
+      EXP=$(( $(date +%s) - 3600 ))
+      TOKEN=$(go run . encode hs256 --secret "$SECRET" --payload "{ \"email\": \"{{.EMAIL}}\", \"exp\": $EXP }")
+      go run . decode hs256 --secret "$SECRET" --token "$TOKEN"
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: decode_with_missing_token_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs256 --secret "this-is-a-valid-32-byte-secret!!"
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring token is required
