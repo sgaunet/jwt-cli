@@ -36,8 +36,8 @@ func TestRSEncodeCommand_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			privateKey, _ := generateRSAKeyPair(t)
 
-			cmd := createRSEncodeCommand(
-				strings.ToUpper(tt.algorithm),
+			cmd := createAsymmetricEncodeCommand(
+				rsKeyVocab,
 				tt.algorithm,
 				"Test command",
 				"Test description",
@@ -73,8 +73,8 @@ func TestRSEncodeCommand_Success(t *testing.T) {
 func TestRSEncodeCommand_ComplexPayload(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -100,8 +100,8 @@ func TestRSEncodeCommand_ComplexPayload(t *testing.T) {
 
 // TestRSEncodeCommand_MissingPrivateKey tests error when private-key flag is missing
 func TestRSEncodeCommand_MissingPrivateKey(t *testing.T) {
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -128,8 +128,8 @@ func TestRSEncodeCommand_MissingPrivateKey(t *testing.T) {
 func TestRSEncodeCommand_MissingPayload(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -156,8 +156,8 @@ func TestRSEncodeCommand_MissingPayload(t *testing.T) {
 func TestRSEncodeCommand_InvalidJSON(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -183,8 +183,8 @@ func TestRSEncodeCommand_InvalidJSON(t *testing.T) {
 
 // TestRSEncodeCommand_NonExistentKeyFile tests error when key file doesn't exist
 func TestRSEncodeCommand_NonExistentKeyFile(t *testing.T) {
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -213,8 +213,8 @@ func TestRSEncodeCommand_NonExistentKeyFile(t *testing.T) {
 func TestRSEncodeCommand_InvalidPEMFile(t *testing.T) {
 	invalidPEM := createInvalidPEMFile(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -242,8 +242,8 @@ func TestRSEncodeCommand_WrongKeyType(t *testing.T) {
 	// Generate an ECDSA key pair instead of RSA
 	privateKey, _ := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -270,8 +270,8 @@ func TestRSEncodeCommand_WrongKeyType(t *testing.T) {
 func TestRSEncodeCommand_MalformedKey(t *testing.T) {
 	malformedKey := createMalformedRSAKeyFile(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -299,8 +299,8 @@ func TestRSEncodeCommand_MalformedKey(t *testing.T) {
 func TestRSEncodeCommand_DeprecatedPrivateKeyFlag(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -330,8 +330,8 @@ func TestRSEncodeCommand_DeprecatedPrivateKeyFlag(t *testing.T) {
 func TestRSEncodeCommand_DeprecatedPayloadFlag(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -360,8 +360,8 @@ func TestRSEncodeCommand_DeprecatedPayloadFlag(t *testing.T) {
 func TestRSEncodeCommand_MixedFlags(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -390,8 +390,8 @@ func TestRSEncodeCommand_MixedFlags(t *testing.T) {
 func TestRSEncodeCommand_EmptyPayload(t *testing.T) {
 	privateKey, _ := generateRSAKeyPair(t)
 
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",
@@ -416,8 +416,8 @@ func TestRSEncodeCommand_EmptyPayload(t *testing.T) {
 
 // TestRSEncodeCommand_EmptyPrivateKey tests error handling for empty private key path
 func TestRSEncodeCommand_EmptyPrivateKey(t *testing.T) {
-	cmd := createRSEncodeCommand(
-		"RS256",
+	cmd := createAsymmetricEncodeCommand(
+		rsKeyVocab,
 		"rs256",
 		"Test",
 		"Test",

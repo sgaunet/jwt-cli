@@ -104,3 +104,19 @@ func reportError(err error) {
 	}
 	output(CommandOutput{Success: false, Error: err.Error()})
 }
+
+// outputToken emits a freshly encoded token, honouring --json.
+func outputToken(token string) {
+	output(CommandOutput{Success: true, Token: token})
+}
+
+// outputClaims emits decoded claims, honouring --json.
+func outputClaims(claims string) {
+	// Parse claims string as JSON for structured output
+	var claimsData any
+	if err := json.Unmarshal([]byte(claims), &claimsData); err != nil {
+		// If claims aren't valid JSON, treat as raw string
+		claimsData = claims
+	}
+	output(CommandOutput{Success: true, Claims: claimsData})
+}

@@ -26,7 +26,7 @@ Claims Validation:
   jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" | jq -r '.user'`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			key, _ := cmd.Flags().GetString("key")
-			token := pasetoFlag(cmd, "token", "t")
+			token := flagWithFallback(cmd, "token", "t")
 			version := pasetoVersionFlag(cmd)
 
 			if key == "" {

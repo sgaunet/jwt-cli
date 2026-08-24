@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//nolint:dupl // Similar structure needed for different algorithms
 func createHSEncodeCommand(_ /* alg */, use, short, long, example string, encoderWithOpts func([]byte, bool) cryptojwt.EncoderDecoder) *cobra.Command {
 	return &cobra.Command{
 		Use:     use,
@@ -13,14 +12,8 @@ func createHSEncodeCommand(_ /* alg */, use, short, long, example string, encode
 		Long:    long,
 		Example: example,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			secret, _ := cmd.Flags().GetString("secret")
-			if secret == "" {
-				secret, _ = cmd.Flags().GetString("s") // Check deprecated flag
-			}
-			payload, _ := cmd.Flags().GetString("payload")
-			if payload == "" {
-				payload, _ = cmd.Flags().GetString("p") // Check deprecated flag
-			}
+			secret := flagWithFallback(cmd, "secret", "s")
+			payload := flagWithFallback(cmd, "payload", "p")
 			allowWeakSecret, _ := cmd.Flags().GetBool("allow-weak-secret")
 
 			if secret == "" {
@@ -52,7 +45,7 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 			if err != nil {
 				return userErrorf("encoding failed: %v", err)
 			}
-			output(CommandOutput{Success: true, Token: t})
+			outputToken(t)
 			return nil
 		},
 	}
