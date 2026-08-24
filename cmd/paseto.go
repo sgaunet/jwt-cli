@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/sgaunet/jwt-cli/pkg/paseto"
@@ -169,17 +168,6 @@ func newPublicCodec(version, privateKeyFile, publicKeyFile string) (paseto.Encod
 		return nil, fmt.Errorf("failed to load key: %w", err)
 	}
 	return codec, nil
-}
-
-// pasetoError reports a user-facing failure and returns it so the command
-// exits non-zero.
-//
-// Every PASETO failure is routed through output(): rootCmd sets
-// SilenceErrors, so an error merely returned from RunE would exit 1 without
-// printing anything, and only output() renders the --json failure envelope.
-func pasetoError(msg string) error {
-	output(CommandOutput{Success: false, Error: msg})
-	return errors.New(msg)
 }
 
 // pasetoFlag reads a flag, falling back to its deprecated short alias.

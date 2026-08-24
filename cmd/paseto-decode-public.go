@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +35,7 @@ Claims Validation:
 
 			if privateKeyFile == "" && publicKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return pasetoError(`Error: key file is required
+				return userError(`Error: key file is required
 
 Provide either a public key file (recommended) or a private key file to verify the PASETO token.
 
@@ -52,7 +50,7 @@ Tip: The key must match the one used to encode the token.
 			}
 			if token == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return pasetoError(`Error: token is required
+				return userError(`Error: token is required
 
 Provide the PASETO token string to decode and verify.
 
@@ -64,12 +62,12 @@ Tip: The token is the string produced by 'jwt-cli paseto encode public'.`)
 
 			decoder, err := newPublicCodec(version, privateKeyFile, publicKeyFile)
 			if err != nil {
-				return pasetoError(err.Error())
+				return userError(err.Error())
 			}
 
 			claims, err := decoder.Decode(token)
 			if err != nil {
-				return pasetoError(fmt.Sprintf("decoding failed: %v", err))
+				return userErrorf("decoding failed: %v", err)
 			}
 			outputClaims(claims)
 			return nil

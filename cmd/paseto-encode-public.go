@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +37,7 @@ Key Requirements:
 
 			if privateKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return pasetoError(`Error: private key file is required
+				return userError(`Error: private key file is required
 
 Public PASETO tokens are signed with a private key.
 
@@ -51,7 +49,7 @@ Tip: Run 'jwt-cli paseto genkeys v4' to see how to generate a key pair.
 			}
 			if payload == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return pasetoError(`Error: payload is required
+				return userError(`Error: payload is required
 
 The payload contains the claims (data) to be encoded in the PASETO token.
 
@@ -64,12 +62,12 @@ Tip: Payload must be valid JSON. The registered claims exp, nbf and iat accept
 
 			encoder, err := newPublicCodec(version, privateKeyFile, "")
 			if err != nil {
-				return pasetoError(err.Error())
+				return userError(err.Error())
 			}
 
 			token, err := encoder.Encode(payload)
 			if err != nil {
-				return pasetoError(fmt.Sprintf("encoding failed: %v", err))
+				return userErrorf("encoding failed: %v", err)
 			}
 			outputToken(token)
 			return nil

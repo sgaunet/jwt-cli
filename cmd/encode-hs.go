@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/sgaunet/jwt-cli/pkg/cryptojwt"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +25,7 @@ func createHSEncodeCommand(_ /* alg */, use, short, long, example string, encode
 
 			if secret == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: secret is required
+				return userErrorf(`Error: secret is required
 
 The secret is used to sign and verify HMAC-based JWT tokens. It must be kept confidential.
 
@@ -40,7 +37,7 @@ Tip: Use a strong secret. HS256 requires at least 32 bytes, HS384 requires 48 by
 			}
 			if payload == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
-				return fmt.Errorf(`Error: payload is required
+				return userErrorf(`Error: payload is required
 
 The payload contains the claims (data) to be encoded in the JWT token.
 
@@ -53,9 +50,7 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 			j := encoderWithOpts([]byte(secret), allowWeakSecret)
 			t, err := j.Encode(payload)
 			if err != nil {
-				errMsg := fmt.Sprintf("encoding failed: %v", err)
-				output(CommandOutput{Success: false, Error: errMsg})
-				return errors.New(errMsg)
+				return userErrorf("encoding failed: %v", err)
 			}
 			output(CommandOutput{Success: true, Token: t})
 			return nil
