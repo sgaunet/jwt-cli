@@ -9,10 +9,10 @@
 
 # jwt-cli
 
-jwt-cli is a utility to encode/decode JWT token.
+jwt-cli is a utility to encode/decode JWT and PASETO tokens.
 
 ```
-Tool to encode/decode JWT token
+Tool to encode/decode JWT and PASETO tokens
 
 Usage:
   jwt-cli [command]
@@ -22,6 +22,7 @@ Available Commands:
   encode      encode JWT token
   genkeys     print commands example to generate keys for ES256, ES384, ES512, RS256, RS384, RS512
   help        Help about any command
+  paseto      PASETO token operations
   version     print version of jwt-cli
 
 Flags:
@@ -30,17 +31,17 @@ Flags:
 Use "jwt-cli [command] --help" for more information about a command.
 ```
 
-Supported methods are actually:
+## Supported JWT methods:
 
-* HS256
-* HS384
-* HS512
-* ES256
-* ES384
-* ES512
-* RS256
-* RS384
-* RS512
+* HS256, HS384, HS512
+* ES256, ES384, ES512
+* RS256, RS384, RS512
+
+## Supported PASETO versions:
+
+* V2 (local and public)
+* V3 (local and public)
+* V4 (local and public)
 
 # Demo
 
@@ -73,7 +74,7 @@ COPY --from jwtcli /jwt-cli /usr/bin/jwt-cli
 
 # Getting started
 
-Quite easy, this tool will help you to encode/decode JWT tokens.
+This tool will help you encode/decode JWT and PASETO tokens.
 
 ```
 # encode
@@ -87,6 +88,104 @@ $ jwt-cli decode hs512 --secret "myAwesomeSecret" --token "eyJhbGciOiJIUzUxMiIsI
 5cCI6IkpXVCJ9.eyJlbWFpbCI6Im15ZW1haWxAbWUuY29tIn0.SE0u1AWrDTHv67PnUALZl8VQ-7rnSXBNDTCVT_Dj12FStO6hL0ak0i4imcUHpWBEh-c5oSc-H90prGQ0oZx6ng"
 {
   "email": "myemail@me.com"
+}
+```
+
+## PASETO Examples
+
+PASETO tokens come in two purposes: `local` (symmetric encryption) and `public`
+(asymmetric signing). All three versions are supported — v2 and v4 use Ed25519
+keys, v3 uses NIST P-384.
+
+Run `jwt-cli paseto genkeys <version>` to print the exact OpenSSL commands for a
+given version.
+
+> **Note:** decoding verifies the token's signature or authentication tag, but
+> does **not** validate time-based claims — an expired token still decodes, so
+> its contents can be inspected.
+
+### Local (symmetric) tokens
+
+```bash
+# Generate a local (symmetric) key
+$ openssl rand -hex 32
+abcd1234567890abcd1234567890abcd1234567890abcd1234567890abcd1234
+
+# encode PASETO local token (v4 is the default)
+$ jwt-cli paseto encode local --key "abcd...1234" --payload '{ "email": "myemail@me.com" }'
+v4.local.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# decode PASETO local token
+$ jwt-cli paseto decode local --key "abcd...1234" --token "v4.local.xxxxxxxx"
+{
+  "email": "myemail@me.com"
+}
+
+# other versions via --version
+$ jwt-cli paseto encode local --version v3 --key "abcd...1234" --payload '{ "email": "myemail@me.com" }'
+v3.local.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### Public (asymmetric) tokens
+
+```bash
+# Show the key generation commands for a version
+$ jwt-cli paseto genkeys v4
+
+# Generate an Ed25519 key pair for v2/v4
+$ openssl genpkey -algorithm Ed25519 -out paseto-v4-private.pem
+$ openssl pkey -in paseto-v4-private.pem -pubout -out paseto-v4-public.pem
+
+# encode PASETO public token
+$ jwt-cli paseto encode public --private-key paseto-v4-private.pem --payload '{ "email": "myemail@me.com" }'
+v4.public.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# decode with the public key (recommended)
+$ jwt-cli paseto decode public --public-key paseto-v4-public.pem --token "v4.public.xxxxxxxx"
+{
+  "email": "myemail@me.com"
+}
+
+# decode with the private key
+$ jwt-cli paseto decode public --private-key paseto-v4-private.pem --token "v4.public.xxxxxxxx"
+{
+  "email": "myemail@me.com"
+}
+```
+
+For v3, generate a NIST P-384 key pair instead:
+
+```bash
+$ openssl ecparam -genkey -name secp384r1 -noout -out paseto-v3-private.pem
+$ openssl ec -in paseto-v3-private.pem -pubout -out paseto-v3-public.pem
+
+$ jwt-cli paseto encode public --version v3 --private-key paseto-v3-private.pem --payload '{ "email": "myemail@me.com" }'
+v3.public.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Key files may be supplied as PEM (PKCS#8, or SEC 1 for v3) or as raw key bytes.
+
+### Registered claims
+
+The registered claims `exp`, `nbf` and `iat` accept either an RFC 3339 timestamp
+or a Unix timestamp, and are stored in the RFC 3339 form PASETO requires:
+
+```bash
+$ jwt-cli paseto encode local --key "$KEY" --payload '{ "exp": "2030-01-01T00:00:00Z" }'
+$ jwt-cli paseto encode local --key "$KEY" --payload '{ "exp": 1893456000 }'
+```
+
+### JSON output
+
+Like the JWT commands, every PASETO command supports `--json` for programmatic use:
+
+```bash
+$ jwt-cli paseto decode local --json --key "$KEY" --token "$TOKEN"
+{
+  "success": true,
+  "claims": {
+    "email": "myemail@me.com"
+  }
 }
 ```
 

@@ -134,4 +134,60 @@ func init() {
 	genkeysCmd.AddCommand(genkeysRS256Cmd)
 	genkeysCmd.AddCommand(genkeysRS384Cmd)
 	genkeysCmd.AddCommand(genkeysRS512Cmd)
+
+	// paseto
+	rootCmd.AddCommand(pasetoCmd)
+	pasetoCmd.AddCommand(pasetoEncodeCmd)
+	pasetoCmd.AddCommand(pasetoDecodeCmd)
+	pasetoCmd.AddCommand(pasetoGenkeysCmd)
+
+	pasetoEncodeCmd.PersistentFlags().StringP("payload", "p", "",
+		"JSON payload to encode into the PASETO token (e.g., '{\"user\":\"alice\"}')")
+	pasetoEncodeCmd.PersistentFlags().String("private-key", "",
+		"path to Ed25519 (v2/v4) or P-384 (v3) private key file, PEM or raw")
+	pasetoEncodeCmd.PersistentFlags().String("key", "",
+		"hex-encoded 32-byte symmetric key for local tokens")
+	pasetoEncodeCmd.PersistentFlags().String("version", pasetoV4,
+		"PASETO version (v2, v3, v4)")
+	_ = pasetoEncodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
+	_ = pasetoEncodeCmd.MarkPersistentFlagFilename("payload", "json")
+	// Backward compatibility: add deprecated aliases for old flag names
+	pasetoEncodeCmd.PersistentFlags().String("p", "", "")
+	_ = pasetoEncodeCmd.PersistentFlags().MarkDeprecated("p", "use --payload or -p instead")
+	pasetoEncodeCmd.PersistentFlags().String("pk", "", "")
+	_ = pasetoEncodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
+
+	pasetoDecodeCmd.PersistentFlags().StringP("token", "t", "",
+		"PASETO token to decode and verify")
+	pasetoDecodeCmd.PersistentFlags().String("private-key", "",
+		"path to Ed25519 (v2/v4) or P-384 (v3) private key file, PEM or raw")
+	pasetoDecodeCmd.PersistentFlags().String("public-key", "",
+		"path to Ed25519 (v2/v4) or P-384 (v3) public key file, PEM or raw")
+	pasetoDecodeCmd.PersistentFlags().String("key", "",
+		"hex-encoded 32-byte symmetric key for local tokens")
+	pasetoDecodeCmd.PersistentFlags().String("version", pasetoV4,
+		"PASETO version (v2, v3, v4)")
+	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
+	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("public-key", "pem", "key")
+	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("token", "paseto", "txt")
+	// Backward compatibility: add deprecated aliases for old flag names
+	pasetoDecodeCmd.PersistentFlags().String("t", "", "")
+	_ = pasetoDecodeCmd.PersistentFlags().MarkDeprecated("t", "use --token or -t instead")
+	pasetoDecodeCmd.PersistentFlags().String("pk", "", "")
+	_ = pasetoDecodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
+	pasetoDecodeCmd.PersistentFlags().String("pubk", "", "")
+	_ = pasetoDecodeCmd.PersistentFlags().MarkDeprecated("pubk", "use --public-key instead")
+
+	// paseto encode subcommands
+	pasetoEncodeCmd.AddCommand(pasetoEncodeLocalCmd)
+	pasetoEncodeCmd.AddCommand(pasetoEncodePublicCmd)
+
+	// paseto decode subcommands
+	pasetoDecodeCmd.AddCommand(pasetoDecodeLocalCmd)
+	pasetoDecodeCmd.AddCommand(pasetoDecodePublicCmd)
+
+	// paseto genkeys subcommands
+	pasetoGenkeysCmd.AddCommand(pasetoGenkeysV2Cmd)
+	pasetoGenkeysCmd.AddCommand(pasetoGenkeysV3Cmd)
+	pasetoGenkeysCmd.AddCommand(pasetoGenkeysV4Cmd)
 }

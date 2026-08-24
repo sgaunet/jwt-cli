@@ -313,3 +313,256 @@ testcases:
     assertions:
     - result.code ShouldEqual 0
 
+# PASETO Tests
+- name: generate_PASETO_local_key
+  steps:
+  - type: exec
+    script: |
+      openssl rand -hex 32
+    assertions:
+    - result.code ShouldEqual 0
+    vars:
+      paseto_key:
+        from: result.systemout
+
+- name: encode_PASETO_v4_local
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode local --version v4 --key '{{.generate_PASETO_local_key.paseto_key}}' --payload '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring v4.local.
+    vars:
+      token:
+        from: result.systemout
+
+- name: decode_PASETO_v4_local
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode local --version v4 --key '{{.generate_PASETO_local_key.paseto_key}}' --token '{{.encode_PASETO_v4_local.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_PASETO_v3_local
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode local --version v3 --key '{{.generate_PASETO_local_key.paseto_key}}' --payload '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring v3.local.
+    vars:
+      token:
+        from: result.systemout
+
+- name: decode_PASETO_v3_local
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode local --version v3 --key '{{.generate_PASETO_local_key.paseto_key}}' --token '{{.encode_PASETO_v3_local.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_PASETO_v2_local
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode local --version v2 --key '{{.generate_PASETO_local_key.paseto_key}}' --payload '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring v2.local.
+    vars:
+      token:
+        from: result.systemout
+
+- name: decode_PASETO_v2_local
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode local --version v2 --key '{{.generate_PASETO_local_key.paseto_key}}' --token '{{.encode_PASETO_v2_local.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: create_PASETO_v4_keypair
+  steps:
+  - type: exec
+    script: |
+      openssl genpkey -algorithm Ed25519 -out paseto-v4-private.pem
+      openssl pkey -in paseto-v4-private.pem -pubout -out paseto-v4-public.pem
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_PASETO_v4_public
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode public --version v4 --private-key tests/paseto-v4-private.pem --payload '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring v4.public.
+    vars:
+      token:
+        from: result.systemout
+
+- name: decode_PASETO_v4_public_with_private_key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode public --version v4 --private-key tests/paseto-v4-private.pem --token '{{.encode_PASETO_v4_public.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode_PASETO_v4_public_with_public_key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode public --version v4 --public-key tests/paseto-v4-public.pem --token '{{.encode_PASETO_v4_public.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: create_PASETO_v2_keypair
+  steps:
+  - type: exec
+    script: |
+      openssl genpkey -algorithm Ed25519 -out paseto-v2-private.pem
+      openssl pkey -in paseto-v2-private.pem -pubout -out paseto-v2-public.pem
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_PASETO_v2_public
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode public --version v2 --private-key tests/paseto-v2-private.pem --payload '{ "email": "{{.EMAIL}}" }' 
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring v2.public.
+    vars:
+      token:
+        from: result.systemout
+
+- name: decode_PASETO_v2_public_with_private_key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode public --version v2 --private-key tests/paseto-v2-private.pem --token '{{.encode_PASETO_v2_public.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: decode_PASETO_v2_public_with_public_key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode public --version v2 --public-key tests/paseto-v2-public.pem --token '{{.encode_PASETO_v2_public.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: create_PASETO_v3_keypair
+  steps:
+  - type: exec
+    script: |
+      openssl ecparam -genkey -name secp384r1 -noout -out paseto-v3-private.pem
+      openssl ec -in paseto-v3-private.pem -pubout -out paseto-v3-public.pem
+    assertions:
+    - result.code ShouldEqual 0
+
+- name: encode_PASETO_v3_public
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode public --version v3 --private-key tests/paseto-v3-private.pem --payload '{ "email": "{{.EMAIL}}" }'
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring v3.public.
+    vars:
+      token:
+        from: result.systemout
+
+- name: decode_PASETO_v3_public_with_private_key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode public --version v3 --private-key tests/paseto-v3-private.pem --token '{{.encode_PASETO_v3_public.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: decode_PASETO_v3_public_with_public_key
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto decode public --version v3 --public-key tests/paseto-v3-public.pem --token '{{.encode_PASETO_v3_public.token}}'
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+# Execute the key-generation recipes the genkeys subcommands print, so a recipe
+# that produces an unusable key fails the suite.
+- name: PASETO_genkeys_v4_recipe_works
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      eval "$(go run . paseto genkeys v4 | grep '^openssl' | tail -2)"
+      TOKEN=$(go run . paseto encode public --version v4 --private-key paseto-v4-private.pem --payload '{ "email": "{{.EMAIL}}" }')
+      go run . paseto decode public --version v4 --public-key paseto-v4-public.pem --token "$TOKEN"
+      rm -f paseto-v4-private.pem paseto-v4-public.pem
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: PASETO_genkeys_v3_recipe_works
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      eval "$(go run . paseto genkeys v3 | grep '^openssl' | tail -2)"
+      TOKEN=$(go run . paseto encode public --version v3 --private-key paseto-v3-private.pem --payload '{ "email": "{{.EMAIL}}" }')
+      go run . paseto decode public --version v3 --public-key paseto-v3-public.pem --token "$TOKEN"
+      rm -f paseto-v3-private.pem paseto-v3-public.pem
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: PASETO_genkeys_v2_recipe_works
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      eval "$(go run . paseto genkeys v2 | grep '^openssl' | tail -2)"
+      TOKEN=$(go run . paseto encode public --version v2 --private-key paseto-v2-private.pem --payload '{ "email": "{{.EMAIL}}" }')
+      go run . paseto decode public --version v2 --public-key paseto-v2-public.pem --token "$TOKEN"
+      rm -f paseto-v2-private.pem paseto-v2-public.pem
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: PASETO_json_output
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      KEY=$(openssl rand -hex 32)
+      TOKEN=$(go run . paseto encode local --key "$KEY" --payload '{ "email": "{{.EMAIL}}" }')
+      go run . paseto decode local --json --key "$KEY" --token "$TOKEN"
+    assertions:
+    - result.code ShouldEqual 0
+    - 'result.systemout ShouldContainSubstring "success":'
+    - 'result.systemout ShouldContainSubstring "claims":'
