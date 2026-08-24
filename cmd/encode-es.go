@@ -25,7 +25,7 @@ Key Requirements:
 
   # Store token in variable
   TOKEN=$(jwt-cli encode es256 --payload '{"user":"alice"}' --private-key ecdsa-p256-private.pem)`,
-	cryptojwt.NewES256Encoder,
+	ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder),
 )
 
 var encodeES384Cmd = createAsymmetricEncodeCommand(
@@ -45,7 +45,7 @@ Key Requirements:
 
   # Store token in variable
   TOKEN=$(jwt-cli encode es384 --payload '{"user":"alice"}' --private-key jwtES384key.pem)`,
-	cryptojwt.NewES384Encoder,
+	ignoreWeakKeyEncoder(cryptojwt.NewES384Encoder),
 )
 
 var encodeES512Cmd = createAsymmetricEncodeCommand(
@@ -65,5 +65,5 @@ Key Requirements:
 
   # Store token in variable
   TOKEN=$(jwt-cli encode es512 --payload '{"user":"alice"}' --private-key ecdsa-p521-private.pem)`,
-	cryptojwt.NewES512Encoder,
+	ignoreWeakKeyEncoder(cryptojwt.NewES512Encoder),
 )

@@ -78,6 +78,8 @@ func init() {
 	encodeCmd.PersistentFlags().String("private-key", "", "path to RSA/ECDSA private key file in PEM format")
 	encodeCmd.PersistentFlags().StringP("secret", "s", "", "HMAC secret for signing (minimum 32 bytes for HS256, 48 bytes for HS384, 64 bytes for HS512)")
 	encodeCmd.PersistentFlags().Bool("allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
+	encodeCmd.PersistentFlags().Bool("allow-weak-key", false,
+		"allow RSA keys below 2048 bits for RSA algorithms (for testing purposes only)")
 	_ = encodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
 	_ = encodeCmd.MarkPersistentFlagFilename("payload", "json")
 	// Backward compatibility: add deprecated aliases for old flag names
@@ -105,6 +107,8 @@ func init() {
 	decodeCmd.PersistentFlags().StringP("token", "t", "", "JWT token to decode and verify")
 	decodeCmd.PersistentFlags().StringP("secret", "s", "", "HMAC secret for verification (minimum 32 bytes for HS256, 48 bytes for HS384, 64 bytes for HS512)")
 	decodeCmd.PersistentFlags().Bool("allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
+	decodeCmd.PersistentFlags().Bool("allow-weak-key", false,
+		"allow RSA keys below 2048 bits for RSA algorithms (for testing purposes only)")
 	decodeCmd.PersistentFlags().Bool("validate-claims", false, "validate JWT time-based claims (exp, nbf, iat) - reject expired or not-yet-valid tokens")
 	decodeCmd.PersistentFlags().Duration("clock-skew", 0, "clock skew tolerance for claims validation (e.g., 5m, 30s)")
 	_ = decodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")

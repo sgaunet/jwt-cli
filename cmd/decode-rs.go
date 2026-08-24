@@ -18,6 +18,7 @@ asymmetric key principle.
 Key Requirements:
   - Public or private key in PEM format
   - Key must match the one used for encoding
+  - Minimum 2048-bit RSA key, enforced unless --allow-weak-key is passed
 
 Claims Validation:
   By default, time-based claims (exp, nbf, iat) are not validated. Use
@@ -33,8 +34,8 @@ Claims Validation:
 
   # Decode and extract specific field
   jwt-cli decode rs256 --token "$TOKEN" --public-key RS256.key.pub | jq -r '.user'`,
-	cryptojwt.NewRS256DecoderWithPublicKeyFileAndValidation,
-	cryptojwt.NewRS256DecoderWithPrivateKeyFileAndValidation,
+	cryptojwt.NewRS256DecoderWithPublicKeyFileAndOptions,
+	cryptojwt.NewRS256DecoderWithPrivateKeyFileAndOptions,
 )
 
 var decodeRS384Cmd = createAsymmetricDecodeCommand(
@@ -57,8 +58,8 @@ Claims Validation:
 
   # Decode with claims validation and clock skew
   jwt-cli decode rs384 --token "$TOKEN" --public-key RS384.key.pub --validate-claims --clock-skew 30s`,
-	cryptojwt.NewRS384DecoderWithPublicKeyFileAndValidation,
-	cryptojwt.NewRS384DecoderWithPrivateKeyFileAndValidation,
+	cryptojwt.NewRS384DecoderWithPublicKeyFileAndOptions,
+	cryptojwt.NewRS384DecoderWithPrivateKeyFileAndOptions,
 )
 
 var decodeRS512Cmd = createAsymmetricDecodeCommand(
@@ -81,6 +82,6 @@ Claims Validation:
 
   # Decode with claims validation
   jwt-cli decode rs512 --token "$TOKEN" --public-key RS512.key.pub --validate-claims`,
-	cryptojwt.NewRS512DecoderWithPublicKeyFileAndValidation,
-	cryptojwt.NewRS512DecoderWithPrivateKeyFileAndValidation,
+	cryptojwt.NewRS512DecoderWithPublicKeyFileAndOptions,
+	cryptojwt.NewRS512DecoderWithPrivateKeyFileAndOptions,
 )

@@ -13,22 +13,22 @@ func TestRSEncodeCommand_Success(t *testing.T) {
 	tests := []struct {
 		name        string
 		algorithm   string
-		constructor func(string) cryptojwt.Encoder
+		constructor asymmetricEncoderFunc
 	}{
 		{
 			name:        "RS256 valid encoding",
 			algorithm:   "rs256",
-			constructor: cryptojwt.NewRS256Encoder,
+			constructor: cryptojwt.NewRS256EncoderWithOptions,
 		},
 		{
 			name:        "RS384 valid encoding",
 			algorithm:   "rs384",
-			constructor: cryptojwt.NewRS384Encoder,
+			constructor: cryptojwt.NewRS384EncoderWithOptions,
 		},
 		{
 			name:        "RS512 valid encoding",
 			algorithm:   "rs512",
-			constructor: cryptojwt.NewRS512Encoder,
+			constructor: cryptojwt.NewRS512EncoderWithOptions,
 		},
 	}
 
@@ -79,7 +79,7 @@ func TestRSEncodeCommand_ComplexPayload(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -106,7 +106,7 @@ func TestRSEncodeCommand_MissingPrivateKey(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -134,7 +134,7 @@ func TestRSEncodeCommand_MissingPayload(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -162,7 +162,7 @@ func TestRSEncodeCommand_InvalidJSON(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -189,7 +189,7 @@ func TestRSEncodeCommand_NonExistentKeyFile(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -219,7 +219,7 @@ func TestRSEncodeCommand_InvalidPEMFile(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -248,7 +248,7 @@ func TestRSEncodeCommand_WrongKeyType(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -276,7 +276,7 @@ func TestRSEncodeCommand_MalformedKey(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -305,7 +305,7 @@ func TestRSEncodeCommand_DeprecatedPrivateKeyFlag(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -336,7 +336,7 @@ func TestRSEncodeCommand_DeprecatedPayloadFlag(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -366,7 +366,7 @@ func TestRSEncodeCommand_MixedFlags(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -396,7 +396,7 @@ func TestRSEncodeCommand_EmptyPayload(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 
@@ -422,7 +422,7 @@ func TestRSEncodeCommand_EmptyPrivateKey(t *testing.T) {
 		"Test",
 		"Test",
 		"Test",
-		cryptojwt.NewRS256Encoder,
+		cryptojwt.NewRS256EncoderWithOptions,
 	)
 	registerEncodeFlags(cmd)
 

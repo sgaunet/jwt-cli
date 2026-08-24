@@ -276,6 +276,9 @@ The docker image is only created to simplify the copy of jwt-cli in another dock
 
 # Create keys
 
+RSA keys must be at least 2048 bits. The `encode`/`decode` commands reject a
+shorter key; pass `--allow-weak-key` to accept one for testing only.
+
 ## RS256
 
 ```

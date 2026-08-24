@@ -13,14 +13,14 @@ func TestESDecodeCommand_Success(t *testing.T) {
 	tests := []struct {
 		name           string
 		algorithm      string
-		encoder        func(string) cryptojwt.Encoder
-		pubKeyDecoder  func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
-		privKeyDecoder func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder
+		encoder        asymmetricEncoderFunc
+		pubKeyDecoder  asymmetricDecoderFunc
+		privKeyDecoder asymmetricDecoderFunc
 		curve          elliptic.Curve
 	}{
-		{"ES256 decode with public key", "es256", cryptojwt.NewES256Encoder, cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation, elliptic.P256()},
-		{"ES384 decode with public key", "es384", cryptojwt.NewES384Encoder, cryptojwt.NewES384DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES384DecoderWithPrivateKeyFileAndValidation, elliptic.P384()},
-		{"ES512 decode with public key", "es512", cryptojwt.NewES512Encoder, cryptojwt.NewES512DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES512DecoderWithPrivateKeyFileAndValidation, elliptic.P521()},
+		{"ES256 decode with public key", "es256", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation), elliptic.P256()},
+		{"ES384 decode with public key", "es384", ignoreWeakKeyEncoder(cryptojwt.NewES384Encoder), ignoreWeakKeyDecoder(cryptojwt.NewES384DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES384DecoderWithPrivateKeyFileAndValidation), elliptic.P384()},
+		{"ES512 decode with public key", "es512", ignoreWeakKeyEncoder(cryptojwt.NewES512Encoder), ignoreWeakKeyDecoder(cryptojwt.NewES512DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES512DecoderWithPrivateKeyFileAndValidation), elliptic.P521()},
 	}
 
 	for _, tt := range tests {
@@ -59,13 +59,13 @@ func TestESDecodeCommand_WithPrivateKey(t *testing.T) {
 	privateKey, _ := generateECDSAKeyPair(t, elliptic.P256())
 
 	// Encode
-	encodeCmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey)
 	token := strings.TrimSpace(tokenOutput)
 
 	// Decode with private key
-	decodeCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
+	decodeCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
 	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd, "--token", token, "--private-key", privateKey)
@@ -82,7 +82,7 @@ func TestESDecodeCommand_WithPrivateKey(t *testing.T) {
 
 // TestESDecodeCommand_MissingKeys tests error when both keys are missing
 func TestESDecodeCommand_MissingKeys(t *testing.T) {
-	cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
+	cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--token", "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.test.test")
@@ -100,7 +100,7 @@ func TestESDecodeCommand_MissingKeys(t *testing.T) {
 func TestESDecodeCommand_MissingToken(t *testing.T) {
 	_, publicKey := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
+	cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--public-key", publicKey)
@@ -118,7 +118,7 @@ func TestESDecodeCommand_MissingToken(t *testing.T) {
 func TestESDecodeCommand_InvalidToken(t *testing.T) {
 	_, publicKey := generateECDSAKeyPair(t, elliptic.P256())
 
-	cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
+	cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
 	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--token", "invalid.token", "--public-key", publicKey)
@@ -134,13 +134,13 @@ func TestESDecodeCommand_WrongKey(t *testing.T) {
 	_, publicKey2 := generateECDSAKeyPair(t, elliptic.P256())
 
 	// Encode with first key
-	encodeCmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey1)
 	token := strings.TrimSpace(tokenOutput)
 
 	// Try to decode with second key
-	decodeCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
+	decodeCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
 	registerDecodeFlags(decodeCmd)
 
 	_, err := executeCommand(decodeCmd, "--token", token, "--public-key", publicKey2)
@@ -155,13 +155,13 @@ func TestESDecodeCommand_DeprecatedFlags(t *testing.T) {
 	privateKey, publicKey := generateECDSAKeyPair(t, elliptic.P256())
 
 	// Encode
-	encodeCmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256Encoder)
+	encodeCmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
 	registerEncodeFlags(encodeCmd)
 	tokenOutput, _ := executeCommand(encodeCmd, "--payload", validPayload, "--private-key", privateKey)
 	token := strings.TrimSpace(tokenOutput)
 
 	// Decode with deprecated flags
-	decodeCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation, cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation)
+	decodeCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation), ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
 	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd, "--t", token, "--pubk", publicKey)

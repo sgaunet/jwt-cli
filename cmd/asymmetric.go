@@ -22,6 +22,35 @@ type asymmetricKeyVocab struct {
 	decodeKeyTip string
 }
 
+// asymmetricEncoderFunc builds an encoder from a private key file. allowWeakKey
+// is meaningful only for RSA; the ECDSA commands adapt their constructors with
+// ignoreWeakKeyEncoder.
+type asymmetricEncoderFunc func(privateKeyFile string, allowWeakKey bool) cryptojwt.Encoder
+
+// asymmetricDecoderFunc builds a decoder from a key file. allowWeakKey is
+// meaningful only for RSA; see ignoreWeakKeyDecoder.
+type asymmetricDecoderFunc func(
+	keyFile string, validationOpts cryptojwt.ValidationOptions, allowWeakKey bool,
+) cryptojwt.Decoder
+
+// ignoreWeakKeyEncoder adapts an encoder constructor that has no weak-key
+// opt-out. ECDSA key sizes are fixed by the curve the algorithm names, so there
+// is nothing for --allow-weak-key to override.
+func ignoreWeakKeyEncoder(f func(string) cryptojwt.Encoder) asymmetricEncoderFunc {
+	return func(privateKeyFile string, _ bool) cryptojwt.Encoder {
+		return f(privateKeyFile)
+	}
+}
+
+// ignoreWeakKeyDecoder adapts a decoder constructor that has no weak-key opt-out.
+func ignoreWeakKeyDecoder(
+	f func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder,
+) asymmetricDecoderFunc {
+	return func(keyFile string, validationOpts cryptojwt.ValidationOptions, _ bool) cryptojwt.Decoder {
+		return f(keyFile, validationOpts)
+	}
+}
+
 // esKeyVocab describes the ECDSA (ES256/384/512) commands.
 var esKeyVocab = asymmetricKeyVocab{
 	keyType:        "ECDSA",
@@ -38,8 +67,9 @@ var rsKeyVocab = asymmetricKeyVocab{
 	keyType:        "RSA",
 	privateKeyPath: "./keys/private.pem",
 	publicKeyPath:  "./keys/public.pem",
-	encodeKeyTip:   `Tip: Keep your private key secure and never share it. Use minimum 2048-bit RSA keys.`,
-	decodeKeyTip:   "",
+	encodeKeyTip: `Tip: Keep your private key secure and never share it. RSA keys must be at
+     least 2048 bits; pass --allow-weak-key to accept a shorter one for testing.`,
+	decodeKeyTip: "",
 }
 
 // createAsymmetricEncodeCommand builds an encode command for a private-key
@@ -48,7 +78,7 @@ var rsKeyVocab = asymmetricKeyVocab{
 func createAsymmetricEncodeCommand(
 	v asymmetricKeyVocab,
 	use, short, long, example string,
-	encoder func(string) cryptojwt.Encoder,
+	encoder asymmetricEncoderFunc,
 ) *cobra.Command {
 	return &cobra.Command{
 		Use:     use,
@@ -58,6 +88,7 @@ func createAsymmetricEncodeCommand(
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			privateKeyFile := flagWithFallback(cmd, "private-key", "pk")
 			payload := flagWithFallback(cmd, "payload", "p")
+			allowWeakKey, _ := cmd.Flags().GetBool("allow-weak-key")
 
 			if privateKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -86,7 +117,7 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 					use, v.privateKeyPath)
 			}
 
-			j := encoder(privateKeyFile)
+			j := encoder(privateKeyFile, allowWeakKey)
 			t, err := j.Encode(payload)
 			if err != nil {
 				return userErrorf("encoding failed: %v", err)
@@ -105,7 +136,7 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 func createAsymmetricDecodeCommand(
 	v asymmetricKeyVocab,
 	use, short, long, example string,
-	pubKeyDecoderWithValidation, privKeyDecoderWithValidation func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder,
+	pubKeyDecoderWithValidation, privKeyDecoderWithValidation asymmetricDecoderFunc,
 ) *cobra.Command {
 	return &cobra.Command{
 		Use:     use,
@@ -118,6 +149,7 @@ func createAsymmetricDecodeCommand(
 			token := flagWithFallback(cmd, "token", "t")
 			validateClaims, _ := cmd.Flags().GetBool("validate-claims")
 			clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
+			allowWeakKey, _ := cmd.Flags().GetBool("allow-weak-key")
 
 			if privateKeyFile == "" && publicKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -156,9 +188,9 @@ Tip: The token is the three-part string (header.payload.signature) produced by t
 
 			var j cryptojwt.Decoder
 			if publicKeyFile != "" {
-				j = pubKeyDecoderWithValidation(publicKeyFile, validationOpts)
+				j = pubKeyDecoderWithValidation(publicKeyFile, validationOpts, allowWeakKey)
 			} else {
-				j = privKeyDecoderWithValidation(privateKeyFile, validationOpts)
+				j = privKeyDecoderWithValidation(privateKeyFile, validationOpts, allowWeakKey)
 			}
 
 			claims, err := j.Decode(token)
