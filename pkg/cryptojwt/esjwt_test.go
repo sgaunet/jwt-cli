@@ -463,7 +463,7 @@ func TestECDSAComplexPayloads(t *testing.T) {
 	t.Run("special characters in payload", func(t *testing.T) {
 		privateKeyPath, publicKeyPath := generateECDSAKeyPair(t, elliptic.P521())
 		specialPayload := `{"message":"Hello\nWorld\t!","emoji":"🔐"}`
-		
+
 		encoder := cryptojwt.NewES512Encoder(privateKeyPath)
 		token, err := encoder.Encode(specialPayload)
 		if err != nil {
