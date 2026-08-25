@@ -18,12 +18,14 @@ func decodeSymmetricKey(keyHex string) ([]byte, error) {
 
 // LocalV4Encoder encodes and decodes PASETO V4 local (symmetric) tokens.
 type LocalV4Encoder struct {
+	validator
+
 	key paseto.V4SymmetricKey
 }
 
 // NewLocalV4Encoder creates a PASETO V4 local encoder/decoder from a
 // hex-encoded 32-byte symmetric key.
-func NewLocalV4Encoder(keyHex string) (*LocalV4Encoder, error) {
+func NewLocalV4Encoder(keyHex string, opts ...Option) (*LocalV4Encoder, error) {
 	keyBytes, err := decodeSymmetricKey(keyHex)
 	if err != nil {
 		return nil, err
@@ -35,7 +37,8 @@ func NewLocalV4Encoder(keyHex string) (*LocalV4Encoder, error) {
 	}
 
 	return &LocalV4Encoder{
-		key: key,
+		key:       key,
+		validator: newValidator(opts),
 	}, nil
 }
 
@@ -50,25 +53,28 @@ func (l *LocalV4Encoder) Encode(payload string) (string, error) {
 
 // Decode decrypts a v4.local token and returns its claims as indented JSON.
 //
-// The token's authentication tag is verified, but no claims validation is
-// performed: expired tokens decode successfully.
+// The token's authentication tag is verified. Claims are validated only when
+// the encoder was built WithValidation; by default an expired token decodes
+// successfully.
 func (l *LocalV4Encoder) Decode(tokenString string) (string, error) {
-	parser := paseto.NewParserWithoutExpiryCheck()
+	parser := l.parser()
 	token, err := parser.ParseV4Local(l.key, tokenString, nil)
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidToken, err)
+		return "", wrapDecodeError(err)
 	}
 	return claimsJSON(token)
 }
 
 // LocalV3Encoder encodes and decodes PASETO V3 local (symmetric) tokens.
 type LocalV3Encoder struct {
+	validator
+
 	key paseto.V3SymmetricKey
 }
 
 // NewLocalV3Encoder creates a PASETO V3 local encoder/decoder from a
 // hex-encoded 32-byte symmetric key.
-func NewLocalV3Encoder(keyHex string) (*LocalV3Encoder, error) {
+func NewLocalV3Encoder(keyHex string, opts ...Option) (*LocalV3Encoder, error) {
 	keyBytes, err := decodeSymmetricKey(keyHex)
 	if err != nil {
 		return nil, err
@@ -80,7 +86,8 @@ func NewLocalV3Encoder(keyHex string) (*LocalV3Encoder, error) {
 	}
 
 	return &LocalV3Encoder{
-		key: key,
+		key:       key,
+		validator: newValidator(opts),
 	}, nil
 }
 
@@ -95,25 +102,28 @@ func (l *LocalV3Encoder) Encode(payload string) (string, error) {
 
 // Decode decrypts a v3.local token and returns its claims as indented JSON.
 //
-// The token's authentication tag is verified, but no claims validation is
-// performed: expired tokens decode successfully.
+// The token's authentication tag is verified. Claims are validated only when
+// the encoder was built WithValidation; by default an expired token decodes
+// successfully.
 func (l *LocalV3Encoder) Decode(tokenString string) (string, error) {
-	parser := paseto.NewParserWithoutExpiryCheck()
+	parser := l.parser()
 	token, err := parser.ParseV3Local(l.key, tokenString, nil)
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidToken, err)
+		return "", wrapDecodeError(err)
 	}
 	return claimsJSON(token)
 }
 
 // LocalV2Encoder encodes and decodes PASETO V2 local (symmetric) tokens.
 type LocalV2Encoder struct {
+	validator
+
 	key paseto.V2SymmetricKey
 }
 
 // NewLocalV2Encoder creates a PASETO V2 local encoder/decoder from a
 // hex-encoded 32-byte symmetric key.
-func NewLocalV2Encoder(keyHex string) (*LocalV2Encoder, error) {
+func NewLocalV2Encoder(keyHex string, opts ...Option) (*LocalV2Encoder, error) {
 	keyBytes, err := decodeSymmetricKey(keyHex)
 	if err != nil {
 		return nil, err
@@ -125,7 +135,8 @@ func NewLocalV2Encoder(keyHex string) (*LocalV2Encoder, error) {
 	}
 
 	return &LocalV2Encoder{
-		key: key,
+		key:       key,
+		validator: newValidator(opts),
 	}, nil
 }
 
@@ -141,13 +152,14 @@ func (l *LocalV2Encoder) Encode(payload string) (string, error) {
 
 // Decode decrypts a v2.local token and returns its claims as indented JSON.
 //
-// The token's authentication tag is verified, but no claims validation is
-// performed: expired tokens decode successfully.
+// The token's authentication tag is verified. Claims are validated only when
+// the encoder was built WithValidation; by default an expired token decodes
+// successfully.
 func (l *LocalV2Encoder) Decode(tokenString string) (string, error) {
-	parser := paseto.NewParserWithoutExpiryCheck()
+	parser := l.parser()
 	token, err := parser.ParseV2Local(l.key, tokenString)
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidToken, err)
+		return "", wrapDecodeError(err)
 	}
 	return claimsJSON(token)
 }

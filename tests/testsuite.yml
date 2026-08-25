@@ -838,3 +838,44 @@ testcases:
     assertions:
     - result.code ShouldNotEqual 0
     - result.systemerr ShouldContainSubstring token is expired
+
+# PASETO parity with the JWT --validate-claims cases above: off by default, and
+# --clock-skew widens the window once it is on.
+- name: paseto_decode_expired_token_fails_with_validate_claims
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      KEY=$(openssl rand -hex 32)
+      EXP=$(( $(date +%s) - 3600 ))
+      TOKEN=$(go run . paseto encode local --key "$KEY" --payload "{ \"email\": \"{{.EMAIL}}\", \"exp\": $EXP }")
+      go run . paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims
+    assertions:
+    - result.code ShouldNotEqual 0
+    - 'result.systemerr ShouldContainSubstring claims validation failed: token has expired'
+    - result.systemout ShouldNotContainSubstring {{.EMAIL}}
+
+- name: paseto_decode_expired_token_within_clock_skew_succeeds
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      KEY=$(openssl rand -hex 32)
+      EXP=$(( $(date +%s) - 60 ))
+      TOKEN=$(go run . paseto encode local --key "$KEY" --payload "{ \"email\": \"{{.EMAIL}}\", \"exp\": $EXP }")
+      go run . paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims --clock-skew 5m
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: paseto_decode_without_exp_succeeds_with_validate_claims
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      KEY=$(openssl rand -hex 32)
+      TOKEN=$(go run . paseto encode local --key "$KEY" --payload '{ "email": "{{.EMAIL}}" }')
+      go run . paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}

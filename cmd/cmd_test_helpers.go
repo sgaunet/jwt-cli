@@ -307,6 +307,8 @@ func registerPasetoDecodeFlags(cmd *cobra.Command) {
 	cmd.Flags().String("public-key", "", "path to public key file")
 	cmd.Flags().String("key", "", "hex-encoded symmetric key")
 	cmd.Flags().String("version", pasetoV4, "PASETO version")
+	cmd.Flags().Bool("validate-claims", false, "validate PASETO time-based claims")
+	cmd.Flags().Duration("clock-skew", 0, "clock skew tolerance for claims validation")
 	// Deprecated flags for backward compatibility
 	cmd.Flags().String("t", "", "")
 	_ = cmd.Flags().MarkDeprecated("t", "use --token or -t instead")
