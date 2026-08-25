@@ -25,7 +25,9 @@ tasks:
   binary:
     desc: "Build binary"
     cmds:
-      - CGO_ENABLED=0 go build .
+      # Mirrors the release build in .goreleaser.yml: -s -w strips the symbol
+      # table and DWARF data, -trimpath keeps local paths out of the binary.
+      - CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" .
 
   install:
     desc: "Install godoc binary"

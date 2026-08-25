@@ -221,6 +221,13 @@ func (j *hsjwtEncoderDecoder) Encode(payload string) (string, error) {
 }
 
 // validateSecret validates the secret based on the signing method.
+//
+// The default branch is unreachable through the exported API: every
+// NewHS256/384/512* constructor hard-codes method to one of the three cases
+// below, and the field is unexported. It is kept so that adding a fourth HMAC
+// method without a matching case fails closed — refusing to sign — rather than
+// silently skipping the length check. NewHSEncoderDecoderWithMethod reaches it,
+// so the branch is covered rather than sitting at 0%.
 func (j *hsjwtEncoderDecoder) validateSecret() error {
 	switch j.method {
 	case jwt.SigningMethodHS256:

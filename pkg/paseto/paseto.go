@@ -23,11 +23,7 @@
 // the jwt-cli command line tool.
 package paseto
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-)
+import "errors"
 
 // EncoderDecoder encodes a JSON payload into a PASETO token and decodes a
 // PASETO token back into its JSON claims.
@@ -52,12 +48,3 @@ var (
 	// unusable type or format, such as a non-parsable exp.
 	ErrInvalidClaim = errors.New("invalid claim")
 )
-
-// validateJSONPayload reports whether payload is syntactically valid JSON.
-func validateJSONPayload(payload string) error {
-	var js json.RawMessage
-	if err := json.Unmarshal([]byte(payload), &js); err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalidPayload, err)
-	}
-	return nil
-}
