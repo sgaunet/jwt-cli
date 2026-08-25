@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 // extractToken pulls a PASETO token out of captured command output, which may
@@ -295,4 +297,67 @@ func TestPasetoLocalCommand_JSONErrorEnvelope(t *testing.T) {
 	if failure.Error == "" {
 		t.Error("Expected a non-empty error message in the failure envelope")
 	}
+}
+
+// expiredPasetoPayload renders a payload whose exp claim is already in the past.
+func expiredPasetoPayload(age time.Duration) string {
+	return fmt.Sprintf(`{"name":"John Doe","exp":%d}`, time.Now().Add(-age).Unix())
+}
+
+func TestPasetoDecodeLocalCommand_ValidateClaims(t *testing.T) {
+	token := encodePasetoLocal(t,
+		"--key", pasetoTestKey,
+		"--payload", expiredPasetoPayload(time.Hour),
+	)
+
+	t.Run("expired token decodes by default", func(t *testing.T) {
+		cmd := createPasetoDecodeLocalCommand()
+		registerPasetoDecodeFlags(cmd)
+
+		out, err := executeCommand(cmd, "--key", pasetoTestKey, "--token", token)
+		if err != nil {
+			t.Fatalf("Expected the expired token to decode by default, got: %v", err)
+		}
+		if !strings.Contains(out, "John Doe") {
+			t.Errorf("Expected claims in output, got: %s", out)
+		}
+	})
+
+	t.Run("expired token is rejected with --validate-claims", func(t *testing.T) {
+		cmd := createPasetoDecodeLocalCommand()
+		registerPasetoDecodeFlags(cmd)
+
+		var err error
+		stderr := captureStderr(t, func() {
+			_, err = executeCommand(cmd, "--key", pasetoTestKey, "--token", token, "--validate-claims")
+		})
+		if err == nil {
+			t.Fatal("Expected an error for an expired token, got nil")
+		}
+		if !strings.Contains(stderr, "token has expired") {
+			t.Errorf("Expected the expiry to be reported, got: %s", stderr)
+		}
+	})
+
+	t.Run("--clock-skew widens the window", func(t *testing.T) {
+		recent := encodePasetoLocal(t,
+			"--key", pasetoTestKey,
+			"--payload", expiredPasetoPayload(time.Minute),
+		)
+
+		cmd := createPasetoDecodeLocalCommand()
+		registerPasetoDecodeFlags(cmd)
+		out, err := executeCommand(cmd,
+			"--key", pasetoTestKey,
+			"--token", recent,
+			"--validate-claims",
+			"--clock-skew", "5m",
+		)
+		if err != nil {
+			t.Fatalf("Expected the token to decode inside the tolerance, got: %v", err)
+		}
+		if !strings.Contains(out, "John Doe") {
+			t.Errorf("Expected claims in output, got: %s", out)
+		}
+	})
 }

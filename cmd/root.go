@@ -176,6 +176,10 @@ func init() {
 		"hex-encoded 32-byte symmetric key for local tokens")
 	pasetoDecodeCmd.PersistentFlags().String("version", pasetoV4,
 		"PASETO version (v2, v3, v4)")
+	pasetoDecodeCmd.PersistentFlags().Bool("validate-claims", false,
+		"validate PASETO time-based claims (exp, nbf) - reject expired or not-yet-valid tokens")
+	pasetoDecodeCmd.PersistentFlags().Duration("clock-skew", 0,
+		"clock skew tolerance for claims validation (e.g., 5m, 30s)")
 	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
 	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("public-key", "pem", "key")
 	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("token", "paseto", "txt")

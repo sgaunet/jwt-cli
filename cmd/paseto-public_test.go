@@ -3,6 +3,7 @@ package cmd
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -278,6 +279,59 @@ func TestPasetoGenkeysCommands(t *testing.T) {
 			// The removed DER recipe produced a key the tool rejects.
 			if strings.Contains(out, "-outform DER") {
 				t.Error("genkeys must not print the DER recipe, which yields an unusable key")
+			}
+		})
+	}
+}
+
+func TestPasetoDecodePublicCommand_ValidateClaims(t *testing.T) {
+	for _, version := range []string{"v4", "v3", "v2"} {
+		t.Run(version, func(t *testing.T) {
+			privateKey, publicKey := pasetoKeyPair(t, version)
+
+			encode := createPasetoEncodePublicCommand()
+			registerPasetoEncodeFlags(encode)
+			out, err := executeCommand(encode,
+				"--version", version,
+				"--private-key", privateKey,
+				"--payload", expiredPasetoPayload(time.Hour),
+			)
+			if err != nil {
+				t.Fatalf("Failed to encode: %v", err)
+			}
+			token := strings.TrimSpace(out)
+
+			cmd := createPasetoDecodePublicCommand()
+			registerPasetoDecodeFlags(cmd)
+			stderr := captureStderr(t, func() {
+				_, err = executeCommand(cmd,
+					"--version", version,
+					"--public-key", publicKey,
+					"--token", token,
+					"--validate-claims",
+				)
+			})
+			if err == nil {
+				t.Fatal("Expected an error for an expired token, got nil")
+			}
+			if !strings.Contains(stderr, "token has expired") {
+				t.Errorf("Expected the expiry to be reported, got: %s", stderr)
+			}
+
+			cmd = createPasetoDecodePublicCommand()
+			registerPasetoDecodeFlags(cmd)
+			out, err = executeCommand(cmd,
+				"--version", version,
+				"--public-key", publicKey,
+				"--token", token,
+				"--validate-claims",
+				"--clock-skew", "24h",
+			)
+			if err != nil {
+				t.Fatalf("Expected the token to decode inside the tolerance, got: %v", err)
+			}
+			if !strings.Contains(out, "John Doe") {
+				t.Errorf("Expected claims in output, got: %s", out)
 			}
 		})
 	}

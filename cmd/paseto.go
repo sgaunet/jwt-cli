@@ -46,8 +46,9 @@ Token purposes:
 
 Claims Validation:
   Decoding verifies the token's signature or authentication tag, but does NOT
-  validate time-based claims: expired (exp) and not-yet-valid (nbf) tokens are
-  decoded successfully so their contents can be inspected.`,
+  validate time-based claims by default: expired (exp) and not-yet-valid (nbf)
+  tokens are decoded successfully so their contents can be inspected. Pass
+  --validate-claims to "paseto decode" to enforce them instead.`,
 	Example: `  # Generate a symmetric key and encode a local token
   jwt-cli paseto encode local --key "$(openssl rand -hex 32)" --payload '{"user":"alice"}'
 
@@ -70,7 +71,10 @@ var pasetoDecodeCmd = &cobra.Command{
 	Short: "Decode a PASETO token",
 	Long: `Decode and verify a PASETO local (symmetric) or public (asymmetric) token.
 
-Time-based claims are not validated: an expired token still decodes.`,
+Time-based claims are not validated by default: an expired token still decodes.
+Use --validate-claims to reject expired (exp) or not-yet-valid (nbf) tokens, and
+--clock-skew to allow tolerance for clock differences. A claim that is absent is
+never enforced, and iat is never enforced.`,
 	ValidArgs: []string{pasetoPurposeLocal, pasetoPurposePublic},
 }
 
@@ -115,18 +119,18 @@ Tip: v4 is the recommended default. Use v3 only when a NIST-approved
 }
 
 // newLocalCodec builds an encoder/decoder for PASETO local (symmetric) tokens.
-func newLocalCodec(version, keyHex string) (paseto.EncoderDecoder, error) {
+func newLocalCodec(version, keyHex string, opts ...paseto.Option) (paseto.EncoderDecoder, error) {
 	var (
 		codec paseto.EncoderDecoder
 		err   error
 	)
 	switch version {
 	case pasetoV4:
-		codec, err = paseto.NewLocalV4Encoder(keyHex)
+		codec, err = paseto.NewLocalV4Encoder(keyHex, opts...)
 	case pasetoV3:
-		codec, err = paseto.NewLocalV3Encoder(keyHex)
+		codec, err = paseto.NewLocalV3Encoder(keyHex, opts...)
 	case pasetoV2:
-		codec, err = paseto.NewLocalV2Encoder(keyHex)
+		codec, err = paseto.NewLocalV2Encoder(keyHex, opts...)
 	default:
 		return nil, errUnsupportedPasetoVersion(version)
 	}
@@ -142,7 +146,7 @@ func newLocalCodec(version, keyHex string) (paseto.EncoderDecoder, error) {
 // When a public key file is supplied it takes precedence, matching the JWT
 // decode commands; the resulting value can only decode. Supplying a private key
 // yields a value that can both sign and verify.
-func newPublicCodec(version, privateKeyFile, publicKeyFile string) (paseto.EncoderDecoder, error) {
+func newPublicCodec(version, privateKeyFile, publicKeyFile string, opts ...paseto.Option) (paseto.EncoderDecoder, error) {
 	var (
 		codec paseto.EncoderDecoder
 		err   error
@@ -151,21 +155,21 @@ func newPublicCodec(version, privateKeyFile, publicKeyFile string) (paseto.Encod
 	switch version {
 	case pasetoV4:
 		if usePublicKey {
-			codec, err = paseto.NewPublicV4DecoderFromPublicKey(publicKeyFile)
+			codec, err = paseto.NewPublicV4DecoderFromPublicKey(publicKeyFile, opts...)
 		} else {
-			codec, err = paseto.NewPublicV4EncoderFromPrivateKey(privateKeyFile)
+			codec, err = paseto.NewPublicV4EncoderFromPrivateKey(privateKeyFile, opts...)
 		}
 	case pasetoV3:
 		if usePublicKey {
-			codec, err = paseto.NewPublicV3DecoderFromPublicKey(publicKeyFile)
+			codec, err = paseto.NewPublicV3DecoderFromPublicKey(publicKeyFile, opts...)
 		} else {
-			codec, err = paseto.NewPublicV3EncoderFromPrivateKey(privateKeyFile)
+			codec, err = paseto.NewPublicV3EncoderFromPrivateKey(privateKeyFile, opts...)
 		}
 	case pasetoV2:
 		if usePublicKey {
-			codec, err = paseto.NewPublicV2DecoderFromPublicKey(publicKeyFile)
+			codec, err = paseto.NewPublicV2DecoderFromPublicKey(publicKeyFile, opts...)
 		} else {
-			codec, err = paseto.NewPublicV2EncoderFromPrivateKey(privateKeyFile)
+			codec, err = paseto.NewPublicV2EncoderFromPrivateKey(privateKeyFile, opts...)
 		}
 	default:
 		return nil, errUnsupportedPasetoVersion(version)
@@ -183,4 +187,30 @@ func pasetoVersionFlag(cmd *cobra.Command) string {
 		return pasetoV4
 	}
 	return version
+}
+
+// pasetoValidationOption reads the claims-validation flags shared by the paseto
+// decode subcommands.
+//
+// Validation is off by default, so a token can always be inspected regardless
+// of its timing claims; --clock-skew only matters once --validate-claims is on.
+func pasetoValidationOption(cmd *cobra.Command) paseto.Option {
+	validateClaims, _ := cmd.Flags().GetBool("validate-claims")
+	clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
+	return paseto.WithValidation(paseto.ValidationOptions{
+		ValidateClaims: validateClaims,
+		ClockSkew:      clockSkew,
+	})
+}
+
+// newLocalDecoder builds a decoder for local tokens, honouring the claims
+// validation flags.
+func newLocalDecoder(cmd *cobra.Command, version, keyHex string) (paseto.EncoderDecoder, error) {
+	return newLocalCodec(version, keyHex, pasetoValidationOption(cmd))
+}
+
+// newPublicDecoder builds a decoder for public tokens, honouring the claims
+// validation flags.
+func newPublicDecoder(cmd *cobra.Command, version, privateKeyFile, publicKeyFile string) (paseto.EncoderDecoder, error) {
+	return newPublicCodec(version, privateKeyFile, publicKeyFile, pasetoValidationOption(cmd))
 }

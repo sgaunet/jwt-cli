@@ -155,8 +155,9 @@ Run `jwt-cli paseto genkeys <version>` to print the exact OpenSSL commands for a
 given version.
 
 > **Note:** decoding verifies the token's signature or authentication tag, but
-> does **not** validate time-based claims — an expired token still decodes, so
-> its contents can be inspected.
+> does **not** validate time-based claims by default — an expired token still
+> decodes, so its contents can be inspected. Pass `--validate-claims` to enforce
+> them.
 
 ### Local (symmetric) tokens
 
@@ -228,6 +229,32 @@ or a Unix timestamp, and are stored in the RFC 3339 form PASETO requires:
 $ jwt-cli paseto encode local --key "$KEY" --payload '{ "exp": "2030-01-01T00:00:00Z" }'
 $ jwt-cli paseto encode local --key "$KEY" --payload '{ "exp": 1893456000 }'
 ```
+
+### PASETO validation flags
+
+`paseto decode` accepts the same `--validate-claims` and `--clock-skew` flags as
+`decode`, with the same defaults and meaning — see
+[JWT validation flags](#jwt-validation-flags):
+
+```bash
+# Expired token: decodes fine by default
+$ jwt-cli paseto decode local --key "$KEY" --token "$TOKEN"
+{
+  "email": "myemail@me.com",
+  "exp": "2025-01-01T00:00:00Z"
+}
+
+# The same token, with validation enabled
+$ jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims
+decoding failed: claims validation failed: token has expired (exp 2025-01-01T00:00:00Z)
+
+# Accept a token that expired less than five minutes ago
+$ jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims --clock-skew 5m
+```
+
+Only `exp` and `nbf` are enforced, and only when the claim is present: a token
+carrying neither still decodes with `--validate-claims`. `iat` and `aud` are
+never enforced.
 
 ### JSON output
 

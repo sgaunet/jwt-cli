@@ -5,6 +5,8 @@ import (
 )
 
 // createPasetoDecodeLocalCommand builds the "paseto decode local" command.
+//
+//nolint:funlen // Long help and guidance text dominate this function
 func createPasetoDecodeLocalCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   pasetoPurposeLocal,
@@ -15,12 +17,20 @@ The same key used to encode the token is required to decode it.
 
 Claims Validation:
   The token's authentication tag is verified, but time-based claims are NOT
-  validated: an expired token still decodes successfully.`,
+  validated by default: an expired token still decodes successfully. Pass
+  --validate-claims to reject expired (exp) or not-yet-valid (nbf) tokens, and
+  --clock-skew to allow tolerance for clock differences.`,
 		Example: `  # Decode a v4 local token
   jwt-cli paseto decode local --key "$KEY" --token "v4.local.xxxxx"
 
   # Decode a v3 local token
   jwt-cli paseto decode local --version v3 --key "$KEY" --token "$TOKEN"
+
+  # Reject the token if it has expired
+  jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims
+
+  # Same, tolerating five minutes of clock difference
+  jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims --clock-skew 5m
 
   # Extract a single claim
   jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" | jq -r '.user'`,
@@ -53,7 +63,7 @@ Example usage:
 Tip: The token is the string produced by 'jwt-cli paseto encode local'.`)
 			}
 
-			decoder, err := newLocalCodec(version, key)
+			decoder, err := newLocalDecoder(cmd, version, key)
 			if err != nil {
 				return userError(err.Error())
 			}

@@ -19,13 +19,15 @@ func errPrivateKeyRequired() error {
 // A value built from a public key can only decode; Encode reports
 // ErrInvalidKey in that case.
 type PublicV4Encoder struct {
+	validator
+
 	privateKey *paseto.V4AsymmetricSecretKey
 	publicKey  paseto.V4AsymmetricPublicKey
 }
 
 // NewPublicV4EncoderFromPrivateKey creates a PASETO V4 public encoder/decoder
 // from an Ed25519 private key file, in PKCS#8 PEM or raw form.
-func NewPublicV4EncoderFromPrivateKey(privateKeyFile string) (*PublicV4Encoder, error) {
+func NewPublicV4EncoderFromPrivateKey(privateKeyFile string, opts ...Option) (*PublicV4Encoder, error) {
 	keyBytes, err := loadEd25519PrivateKey(privateKeyFile)
 	if err != nil {
 		return nil, err
@@ -39,12 +41,13 @@ func NewPublicV4EncoderFromPrivateKey(privateKeyFile string) (*PublicV4Encoder, 
 	return &PublicV4Encoder{
 		privateKey: &privateKey,
 		publicKey:  privateKey.Public(),
+		validator:  newValidator(opts),
 	}, nil
 }
 
 // NewPublicV4DecoderFromPublicKey creates a PASETO V4 public decoder from an
 // Ed25519 public key file, in PKIX PEM or raw form.
-func NewPublicV4DecoderFromPublicKey(publicKeyFile string) (*PublicV4Encoder, error) {
+func NewPublicV4DecoderFromPublicKey(publicKeyFile string, opts ...Option) (*PublicV4Encoder, error) {
 	keyBytes, err := loadEd25519PublicKey(publicKeyFile)
 	if err != nil {
 		return nil, err
@@ -57,12 +60,13 @@ func NewPublicV4DecoderFromPublicKey(publicKeyFile string) (*PublicV4Encoder, er
 
 	return &PublicV4Encoder{
 		publicKey: publicKey,
+		validator: newValidator(opts),
 	}, nil
 }
 
 // NewPublicV4EncoderFromHex creates a PASETO V4 public encoder/decoder from a
 // hex-encoded Ed25519 private key.
-func NewPublicV4EncoderFromHex(privateKeyHex string) (*PublicV4Encoder, error) {
+func NewPublicV4EncoderFromHex(privateKeyHex string, opts ...Option) (*PublicV4Encoder, error) {
 	keyBytes, err := hex.DecodeString(privateKeyHex)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidKey, err)
@@ -80,6 +84,7 @@ func NewPublicV4EncoderFromHex(privateKeyHex string) (*PublicV4Encoder, error) {
 	return &PublicV4Encoder{
 		privateKey: &privateKey,
 		publicKey:  privateKey.Public(),
+		validator:  newValidator(opts),
 	}, nil
 }
 
@@ -97,13 +102,14 @@ func (p *PublicV4Encoder) Encode(payload string) (string, error) {
 
 // Decode verifies a v4.public token and returns its claims as indented JSON.
 //
-// The token's signature is verified, but no claims validation is performed:
-// expired tokens decode successfully.
+// The token's signature is verified. Claims are validated only when the
+// decoder was built WithValidation; by default an expired token decodes
+// successfully.
 func (p *PublicV4Encoder) Decode(tokenString string) (string, error) {
-	parser := paseto.NewParserWithoutExpiryCheck()
+	parser := p.parser()
 	token, err := parser.ParseV4Public(p.publicKey, tokenString, nil)
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidToken, err)
+		return "", wrapDecodeError(err)
 	}
 	return claimsJSON(token)
 }
@@ -113,6 +119,8 @@ func (p *PublicV4Encoder) Decode(tokenString string) (string, error) {
 // A value built from a public key can only decode; Encode reports
 // ErrInvalidKey in that case.
 type PublicV3Encoder struct {
+	validator
+
 	privateKey *paseto.V3AsymmetricSecretKey
 	publicKey  paseto.V3AsymmetricPublicKey
 }
@@ -123,7 +131,7 @@ type PublicV3Encoder struct {
 // The file may be a SEC 1 "EC PRIVATE KEY" PEM block (as produced by
 // "openssl ecparam -genkey"), a PKCS#8 "PRIVATE KEY" PEM block (as produced by
 // "openssl genpkey"), or 48 raw key bytes.
-func NewPublicV3EncoderFromPrivateKey(privateKeyFile string) (*PublicV3Encoder, error) {
+func NewPublicV3EncoderFromPrivateKey(privateKeyFile string, opts ...Option) (*PublicV3Encoder, error) {
 	ecKey, rawBytes, err := loadECDSAP384PrivateKey(privateKeyFile)
 	if err != nil {
 		return nil, err
@@ -145,13 +153,14 @@ func NewPublicV3EncoderFromPrivateKey(privateKeyFile string) (*PublicV3Encoder, 
 	return &PublicV3Encoder{
 		privateKey: &privateKey,
 		publicKey:  privateKey.Public(),
+		validator:  newValidator(opts),
 	}, nil
 }
 
 // NewPublicV3DecoderFromPublicKey creates a PASETO V3 public decoder from a
 // NIST P-384 public key file, in PKIX PEM form (as produced by
 // "openssl ec -pubout") or as 49 raw compressed-point bytes.
-func NewPublicV3DecoderFromPublicKey(publicKeyFile string) (*PublicV3Encoder, error) {
+func NewPublicV3DecoderFromPublicKey(publicKeyFile string, opts ...Option) (*PublicV3Encoder, error) {
 	ecKey, rawBytes, err := loadECDSAP384PublicKey(publicKeyFile)
 	if err != nil {
 		return nil, err
@@ -170,6 +179,7 @@ func NewPublicV3DecoderFromPublicKey(publicKeyFile string) (*PublicV3Encoder, er
 
 	return &PublicV3Encoder{
 		publicKey: publicKey,
+		validator: newValidator(opts),
 	}, nil
 }
 
@@ -187,13 +197,14 @@ func (p *PublicV3Encoder) Encode(payload string) (string, error) {
 
 // Decode verifies a v3.public token and returns its claims as indented JSON.
 //
-// The token's signature is verified, but no claims validation is performed:
-// expired tokens decode successfully.
+// The token's signature is verified. Claims are validated only when the
+// decoder was built WithValidation; by default an expired token decodes
+// successfully.
 func (p *PublicV3Encoder) Decode(tokenString string) (string, error) {
-	parser := paseto.NewParserWithoutExpiryCheck()
+	parser := p.parser()
 	token, err := parser.ParseV3Public(p.publicKey, tokenString, nil)
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidToken, err)
+		return "", wrapDecodeError(err)
 	}
 	return claimsJSON(token)
 }
@@ -203,13 +214,15 @@ func (p *PublicV3Encoder) Decode(tokenString string) (string, error) {
 // A value built from a public key can only decode; Encode reports
 // ErrInvalidKey in that case.
 type PublicV2Encoder struct {
+	validator
+
 	privateKey *paseto.V2AsymmetricSecretKey
 	publicKey  paseto.V2AsymmetricPublicKey
 }
 
 // NewPublicV2EncoderFromPrivateKey creates a PASETO V2 public encoder/decoder
 // from an Ed25519 private key file, in PKCS#8 PEM or raw form.
-func NewPublicV2EncoderFromPrivateKey(privateKeyFile string) (*PublicV2Encoder, error) {
+func NewPublicV2EncoderFromPrivateKey(privateKeyFile string, opts ...Option) (*PublicV2Encoder, error) {
 	keyBytes, err := loadEd25519PrivateKey(privateKeyFile)
 	if err != nil {
 		return nil, err
@@ -223,12 +236,13 @@ func NewPublicV2EncoderFromPrivateKey(privateKeyFile string) (*PublicV2Encoder, 
 	return &PublicV2Encoder{
 		privateKey: &privateKey,
 		publicKey:  privateKey.Public(),
+		validator:  newValidator(opts),
 	}, nil
 }
 
 // NewPublicV2DecoderFromPublicKey creates a PASETO V2 public decoder from an
 // Ed25519 public key file, in PKIX PEM or raw form.
-func NewPublicV2DecoderFromPublicKey(publicKeyFile string) (*PublicV2Encoder, error) {
+func NewPublicV2DecoderFromPublicKey(publicKeyFile string, opts ...Option) (*PublicV2Encoder, error) {
 	keyBytes, err := loadEd25519PublicKey(publicKeyFile)
 	if err != nil {
 		return nil, err
@@ -241,6 +255,7 @@ func NewPublicV2DecoderFromPublicKey(publicKeyFile string) (*PublicV2Encoder, er
 
 	return &PublicV2Encoder{
 		publicKey: publicKey,
+		validator: newValidator(opts),
 	}, nil
 }
 
@@ -259,13 +274,14 @@ func (p *PublicV2Encoder) Encode(payload string) (string, error) {
 
 // Decode verifies a v2.public token and returns its claims as indented JSON.
 //
-// The token's signature is verified, but no claims validation is performed:
-// expired tokens decode successfully.
+// The token's signature is verified. Claims are validated only when the
+// decoder was built WithValidation; by default an expired token decodes
+// successfully.
 func (p *PublicV2Encoder) Decode(tokenString string) (string, error) {
-	parser := paseto.NewParserWithoutExpiryCheck()
+	parser := p.parser()
 	token, err := parser.ParseV2Public(p.publicKey, tokenString)
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrInvalidToken, err)
+		return "", wrapDecodeError(err)
 	}
 	return claimsJSON(token)
 }
