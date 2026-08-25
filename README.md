@@ -352,8 +352,13 @@ This project is using :
 * [docker buildx](https://github.com/docker/buildx)
 * docker manifest
 * [goreleaser](https://goreleaser.com/)
+* [vhs](https://github.com/charmbracelet/vhs) — records the demo GIF above
 
 The docker image is only created to simplify the copy of jwt-cli in another docker image.
+
+The demo GIF is scripted in [doc/demo.tape](doc/demo.tape). Regenerate it with `task demo`,
+which builds the binary first and then renders `doc/demo.gif`. Rendering also needs `ttyd`
+and `ffmpeg` on the PATH.
 
 
 # Create keys
