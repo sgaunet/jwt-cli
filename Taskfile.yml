@@ -36,6 +36,8 @@ tasks:
 
   demo:
     desc: "Generate demo.gif"
+    # The tape puts the repo root on PATH, so the binary has to exist first.
+    deps: [binary]
     cmds:
       - vhs doc/demo.tape
 

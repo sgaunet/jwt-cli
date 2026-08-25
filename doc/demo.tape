@@ -1,72 +1,52 @@
-# VHS documentation
+# jwt-cli demo — regenerate with: task demo
 #
-# Output:
-#   Output <path>.gif               Create a GIF output at the given <path>
-#   Output <path>.mp4               Create an MP4 output at the given <path>
-#   Output <path>.webm              Create a WebM output at the given <path>
-#
-# Settings:
-#   Set FontSize <number>           Set the font size of the terminal
-#   Set FontFamily <string>         Set the font family of the terminal
-#   Set Height <number>             Set the height of the terminal
-#   Set Width <number>              Set the width of the terminal
-#   Set LetterSpacing <float>       Set the font letter spacing (tracking)
-#   Set LineHeight <float>          Set the font line height
-#   Set Theme <string>              Set the theme of the terminal (JSON)
-#   Set Padding <number>            Set the padding of the terminal
-#   Set Framerate <number>          Set the framerate of the recording
-#   Set PlaybackSpeed <float>       Set the playback speed of the recording
-#
-# Sleep:
-#   Sleep <time>                    Sleep for a set amount of <time> in seconds
-#
-# Type:
-#   Type[@<time>] "<characters>"    Type <characters> into the terminal with a
-#                                   <time> delay between each character
-#
-# Keys:
-#   Backspace[@<time>] [number]     Press the Backspace key
-#   Down[@<time>] [number]          Press the Down key
-#   Enter[@<time>] [number]         Press the Enter key
-#   Space[@<time>] [number]         Press the Space key
-#   Tab[@<time>] [number]           Press the Tab key
-#   Left[@<time>] [number]          Press the Left Arrow key
-#   Right[@<time>] [number]         Press the Right Arrow key
-#   Up[@<time>] [number]            Press the Up Arrow key
-#   Down[@<time>] [number]          Press the Down Arrow key
-#   Ctrl+<key>                      Press the Control key + <key> (e.g. Ctrl+C)
-#
-# Display:
-#   Hide                            Hide the subsequent commands from the output
-#   Show                            Show the subsequent commands in the output
-
-Require jwt-cli
+# Every command below is self-contained: no key files, no fixtures from tests/.
+# That matters because *pem, *.key and *.pub are gitignored, so a fresh clone
+# has no key material and any tape depending on it would render a broken demo.
 
 Output doc/demo.gif
 
+Set Shell "bash"
 Set FontSize 18
 Set Width 1200
-Set Height 600
+Set Height 640
+Set Padding 20
+Set Theme "Catppuccin Mocha"
+Set TypingSpeed 25ms
 
-Type "# create JWT token with encode subcommand"
-Enter
-Sleep 500ms
-Type `jwt-cli encode rs256 --pk tests/RS256.key --p '{ "email": "my@email.com" }' | tee /tmp/key`
-Enter
-Sleep 500ms
-Type "# Decode JWT token with decode subcommand"
-Enter
-Sleep 500ms  
-Type `jwt-cli decode rs256 --pk tests/RS256.key --t "$(cat /tmp/key)"`
-Enter
-Sleep 1500ms
-Type "# jwt-cli handles many methods"
-Enter
-Sleep 500ms
-Type "jwt-cli encode --help"
-Enter
-Sleep 500ms
+Hide
+Type "export PATH=$PWD:$PATH" Enter
+Type "export PS1='$ '" Enter
+Type "clear" Enter
+Show
 
-Type "# END"
-Enter
-Sleep 4000ms
+Type "# jwt-cli — encode and decode JWT and PASETO tokens" Enter
+Sleep 1s
+
+Type "# 1. Sign a JWT with HS256" Enter
+Sleep 500ms
+Type "SECRET='this-is-a-valid-32-byte-secret!!'" Enter
+Sleep 300ms
+Type `TOKEN=$(jwt-cli encode hs256 --payload '{"email":"demo@example.com"}' --secret "$SECRET")` Enter
+Sleep 500ms
+Type "echo $TOKEN" Enter
+Sleep 2s
+
+Type "# 2. Decode it back — the signature is verified first" Enter
+Sleep 500ms
+Type `jwt-cli decode hs256 --token "$TOKEN" --secret "$SECRET"` Enter
+Sleep 2s
+
+Type "# 3. A wrong secret is rejected" Enter
+Sleep 500ms
+Type `jwt-cli decode hs256 --token "$TOKEN" --secret "this-is-a-DIFFERENT-32-byte-key!!"` Enter
+Sleep 2500ms
+
+Type "# 4. PASETO v4 too — here with --json output" Enter
+Sleep 500ms
+Type "KEY=$(openssl rand -hex 32)" Enter
+Sleep 300ms
+Type `PTOKEN=$(jwt-cli paseto encode local --key "$KEY" --payload '{"email":"demo@example.com"}')` Enter
+Sleep 500ms
+Type `jwt-cli paseto decode local --json --key "$KEY" --token "$PTOKEN"` Enter
+Sleep 3s
