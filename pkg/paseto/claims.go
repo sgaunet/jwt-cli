@@ -20,14 +20,17 @@ const (
 )
 
 // parsePayload decodes a JSON payload into a claim map, rejecting anything that
-// is not a JSON object.
+// is not a JSON object. A successful unmarshal into map[string]any is itself
+// the validity check: malformed JSON and well-formed non-objects both fail here.
 func parsePayload(payload string) (map[string]any, error) {
-	if err := validateJSONPayload(payload); err != nil {
-		return nil, err
-	}
 	var data map[string]any
 	if err := json.Unmarshal([]byte(payload), &data); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidPayload, err)
+	}
+	// A literal "null" unmarshals into a nil map without error, so it needs its
+	// own rejection to keep the promise made above.
+	if data == nil {
+		return nil, fmt.Errorf("%w: payload must be a JSON object", ErrInvalidPayload)
 	}
 	return data, nil
 }

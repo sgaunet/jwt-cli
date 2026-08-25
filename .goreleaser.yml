@@ -5,6 +5,9 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    flags:
+      # Strips local build paths, so the same source yields the same binary.
+      - -trimpath
     ldflags:
       - -s -w
       - -X github.com/sgaunet/jwt-cli/cmd.version={{.Version}}
