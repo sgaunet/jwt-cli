@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/sgaunet/jwt-cli/pkg/paseto"
 )
 
 // CommandOutput represents the structured output format for all commands.
@@ -24,6 +26,10 @@ type CommandOutput struct {
 
 	// Token holds the encoded JWT token string
 	Token string `json:"token,omitempty"`
+
+	// Footer holds a decoded PASETO token's footer, which the format
+	// authenticates but keeps outside the claim set. Empty for JWT.
+	Footer string `json:"footer,omitempty"`
 
 	// Error holds the error message if Success is false
 	Error string `json:"error,omitempty"`
@@ -100,6 +106,11 @@ func outputHumanReadable(out CommandOutput) {
 			fmt.Fprintf(os.Stderr, "failed to encode claims: %s\n", err)
 		}
 	}
+	// Only a PASETO token can carry a footer, and only when it has one, so this
+	// line never appears for JWT or for the footerless tokens jwt-cli produces.
+	if out.Footer != "" {
+		fmt.Printf("footer: %s\n", out.Footer)
+	}
 }
 
 // reportedError marks an error whose message output() has already rendered, so
@@ -161,6 +172,26 @@ func outputRecipe(data any, lines []string) {
 // outputToken emits a freshly encoded token, honouring --json.
 func outputToken(token string) {
 	output(CommandOutput{Success: true, Token: token})
+}
+
+// outputPasetoClaims emits a decoded PASETO token's claims and, when it carries
+// one, its footer, honouring --json.
+//
+// PASETO authenticates the footer but keeps it outside the claim set, so it is
+// reported as its own field rather than merged into the claims: a token with a
+// claim legitimately named "footer" would otherwise have it overwritten. A
+// footerless token produces exactly the output outputClaims would.
+func outputPasetoClaims(decoded paseto.DecodedToken) {
+	if len(decoded.Footer) == 0 {
+		outputClaims(decoded.Claims)
+		return
+	}
+
+	var claimsData any
+	if err := json.Unmarshal([]byte(decoded.Claims), &claimsData); err != nil {
+		claimsData = decoded.Claims
+	}
+	output(CommandOutput{Success: true, Claims: claimsData, Footer: string(decoded.Footer)})
 }
 
 // outputClaims emits decoded claims, honouring --json.

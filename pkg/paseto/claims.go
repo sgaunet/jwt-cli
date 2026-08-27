@@ -145,11 +145,27 @@ func newTokenFromPayload(payload string) (paseto.Token, error) {
 	return token, nil
 }
 
-// claimsJSON renders a decoded token's claims as indented JSON.
-func claimsJSON(token *paseto.Token) (string, error) {
+// DecodedToken is the result of a successful decode: a token's claims and its
+// footer, which PASETO authenticates but keeps outside the claim set.
+type DecodedToken struct {
+	// Claims is the claim set as indented JSON.
+	Claims string
+	// Footer is the token's authenticated footer, nil when it carries none.
+	// PASETO puts it inside the pre-auth encoding for every version, so a
+	// modified or stripped footer breaks verification.
+	Footer []byte
+}
+
+// decodeResult renders a decoded token's claims as indented JSON and carries its
+// footer alongside them.
+//
+// The footer is deliberately kept out of the claims map rather than merged into
+// it: a token carrying a claim legitimately named "footer" would otherwise have
+// it overwritten, which is the same silent data loss one level down.
+func decodeResult(token *paseto.Token) (DecodedToken, error) {
 	jsonBytes, err := json.MarshalIndent(token.Claims(), "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal claims: %w", err)
+		return DecodedToken{}, fmt.Errorf("failed to marshal claims: %w", err)
 	}
-	return string(jsonBytes), nil
+	return DecodedToken{Claims: string(jsonBytes), Footer: token.Footer()}, nil
 }

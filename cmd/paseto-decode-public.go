@@ -74,11 +74,11 @@ Tip: The token is the string produced by 'jwt-cli paseto encode public'.`)
 				return userError(err.Error())
 			}
 
-			claims, err := decoder.Decode(token)
+			decoded, err := decoder.DecodeWithFooter(token)
 			if err != nil {
 				return userErrorf("decoding failed: %v", err)
 			}
-			outputClaims(claims)
+			outputPasetoClaims(decoded)
 			return nil
 		},
 	}
