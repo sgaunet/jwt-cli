@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
+	"time"
+
 	"github.com/spf13/cobra"
 )
 
@@ -58,6 +62,35 @@ const (
 	//nolint:gosec // G101: help text, not a credential
 	usageTokenPaseto = "PASETO token to decode and verify"
 )
+
+// errNegativeClockSkew is the sentinel behind every negative --clock-skew
+// report. Use errors.Is to test for it.
+//
+//nolint:revive,staticcheck // User-facing error message with proper formatting
+var errNegativeClockSkew = errors.New(`Error: --clock-skew must not be negative`)
+
+// clockSkewFlag reads --clock-skew, rejecting a negative duration.
+//
+// A negative value does not widen the validity window, it narrows it: the token
+// would have to remain valid that far into the future. Nothing an operator
+// reaching for a skew tolerance means, and it produced the confusing result of
+// "token is expired" for a token that had not expired, so it is refused rather
+// than silently honoured.
+func clockSkewFlag(cmd *cobra.Command) (time.Duration, error) {
+	skew, _ := cmd.Flags().GetDuration(flagClockSkew)
+	if skew < 0 {
+		//nolint:revive,staticcheck // User-facing error message with proper formatting
+		return 0, fmt.Errorf(`%w: got %s
+
+A skew tolerance widens the window a token is accepted in, so it must be zero or
+positive.
+
+Example usage:
+  jwt-cli decode hs256 --token "$TOKEN" --secret "$SECRET" --validate-claims --clock-skew 5m`,
+			errNegativeClockSkew, skew)
+	}
+	return skew, nil
+}
 
 // flagWithFallback reads a flag, falling back to its deprecated short alias.
 func flagWithFallback(cmd *cobra.Command, name, deprecated string) string {

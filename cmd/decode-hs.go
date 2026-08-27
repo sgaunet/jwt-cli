@@ -17,7 +17,10 @@ func createHSDecodeCommand(_ /* alg */, use, short, long, example string, decode
 			token := flagWithFallback(cmd, flagToken, aliasToken)
 			allowWeakSecret, _ := cmd.Flags().GetBool(flagAllowWeakSecret)
 			validateClaims, _ := cmd.Flags().GetBool(flagValidateClaims)
-			clockSkew, _ := cmd.Flags().GetDuration(flagClockSkew)
+			clockSkew, err := clockSkewFlag(cmd)
+			if err != nil {
+				return userError(err.Error())
+			}
 
 			if secret == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting

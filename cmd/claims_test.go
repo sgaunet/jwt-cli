@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -120,6 +121,52 @@ func TestHSDecodeCommand_ClaimsValidation(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestNegativeClockSkewRejected covers a value that was accepted and silently
+// did the opposite of what it looks like.
+//
+// A negative skew narrows the acceptance window instead of widening it, so a
+// token that had not expired was reported as expired - a confusing result for
+// what is most likely a typo.
+func TestNegativeClockSkewRejected(t *testing.T) {
+	now := time.Now().Unix()
+	token := encodeHSTokenForTest(t, fmt.Sprintf(`{"user":"alice","exp":%d}`, now+3600))
+
+	t.Run("jwt decode", func(t *testing.T) {
+		_, err := executeCommand(newHSDecodeCommandForTest(),
+			"--token", token, "--secret", hs256Secret,
+			"--validate-claims", "--clock-skew", "-5m")
+		if err == nil {
+			t.Fatal("Expected a negative clock skew to be rejected")
+		}
+		if !errors.Is(err, errNegativeClockSkew) && !strings.Contains(err.Error(), "must not be negative") {
+			t.Errorf("Expected a negative-skew error, got: %v", err)
+		}
+	})
+
+	t.Run("paseto decode", func(t *testing.T) {
+		cmd := createPasetoDecodeLocalCommand()
+		_, err := executeCommand(cmd,
+			"--key", pasetoTestKey, "--token", "v4.local.irrelevant",
+			"--validate-claims", "--clock-skew", "-5m")
+		if err == nil {
+			t.Fatal("Expected a negative clock skew to be rejected")
+		}
+		if !strings.Contains(err.Error(), "must not be negative") {
+			t.Errorf("Expected a negative-skew error, got: %v", err)
+		}
+	})
+
+	t.Run("zero and positive are accepted", func(t *testing.T) {
+		for _, skew := range []string{"0", "5m"} {
+			if _, err := executeCommand(newHSDecodeCommandForTest(),
+				"--token", token, "--secret", hs256Secret,
+				"--validate-claims", "--clock-skew", skew); err != nil {
+				t.Errorf("Expected --clock-skew %s to be accepted, got: %v", skew, err)
+			}
+		}
+	})
 }
 
 // TestHSEncodeCommand_NullPayloadRejected covers the payload that used to

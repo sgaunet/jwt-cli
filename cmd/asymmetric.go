@@ -163,8 +163,11 @@ func createAsymmetricDecodeCommand(
 			publicKeyFile := flagWithFallback(cmd, flagPublicKey, aliasPublicKey)
 			token := flagWithFallback(cmd, flagToken, aliasToken)
 			validateClaims, _ := cmd.Flags().GetBool(flagValidateClaims)
-			clockSkew, _ := cmd.Flags().GetDuration(flagClockSkew)
 			allowWeakKey := weakKeyOptOut(cmd)
+			clockSkew, skewErr := clockSkewFlag(cmd)
+			if skewErr != nil {
+				return userError(skewErr.Error())
+			}
 
 			if privateKeyFile == "" && publicKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
