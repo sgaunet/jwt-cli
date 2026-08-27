@@ -6,17 +6,18 @@ import (
 )
 
 func createHSDecodeCommand(_ /* alg */, use, short, long, example string, decoderWithValidation func([]byte, bool, cryptojwt.ValidationOptions) cryptojwt.EncoderDecoder) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     use,
 		Short:   short,
 		Long:    long,
 		Example: example,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			secret := flagWithFallback(cmd, "secret", "s")
-			token := flagWithFallback(cmd, "token", "t")
-			allowWeakSecret, _ := cmd.Flags().GetBool("allow-weak-secret")
-			validateClaims, _ := cmd.Flags().GetBool("validate-claims")
-			clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
+			secret := flagWithFallback(cmd, flagSecret, aliasSecret)
+			token := flagWithFallback(cmd, flagToken, aliasToken)
+			allowWeakSecret, _ := cmd.Flags().GetBool(flagAllowWeakSecret)
+			validateClaims, _ := cmd.Flags().GetBool(flagValidateClaims)
+			clockSkew, _ := cmd.Flags().GetDuration(flagClockSkew)
 
 			if secret == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -57,6 +58,8 @@ Tip: The token is the three-part string (header.payload.signature) produced by t
 			return nil
 		},
 	}
+	registerHSDecodeFlags(cmd)
+	return cmd
 }
 
 var decodeHS256Cmd = createHSDecodeCommand(

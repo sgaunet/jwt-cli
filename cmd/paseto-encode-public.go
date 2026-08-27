@@ -8,7 +8,7 @@ import (
 //
 //nolint:funlen // Long help and guidance text dominate this function
 func createPasetoEncodePublicCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   pasetoPurposePublic,
 		Short: "Encode a PASETO public (asymmetric) token",
 		Long: `Encode a JSON payload into a PASETO public token using asymmetric signing.
@@ -30,9 +30,10 @@ Key Requirements:
 
   # Store the token in a variable
   TOKEN=$(jwt-cli paseto encode public --private-key paseto-v4-private.pem --payload '{"user":"alice"}')`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			privateKeyFile := flagWithFallback(cmd, "private-key", "pk")
-			payload := flagWithFallback(cmd, "payload", "p")
+			privateKeyFile := flagWithFallback(cmd, flagPrivateKey, aliasPrivateKey)
+			payload := flagWithFallback(cmd, flagPayload, aliasPayload)
 			version := pasetoVersionFlag(cmd)
 
 			if privateKeyFile == "" {
@@ -73,6 +74,8 @@ Tip: Payload must be valid JSON. The registered claims exp, nbf and iat accept
 			return nil
 		},
 	}
+	registerPasetoEncodePublicFlags(cmd)
+	return cmd
 }
 
 var pasetoEncodePublicCmd = createPasetoEncodePublicCommand()

@@ -36,7 +36,6 @@ func firstJSON(t *testing.T, out string) CommandOutput {
 func encodePasetoLocal(t *testing.T, args ...string) string {
 	t.Helper()
 	cmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(cmd)
 	out, err := executeCommand(cmd, args...)
 	if err != nil {
 		t.Fatalf("Failed to encode: %v", err)
@@ -79,7 +78,6 @@ func TestPasetoDecodeLocalCommand_RoundTrip(t *testing.T) {
 			)
 
 			cmd := createPasetoDecodeLocalCommand()
-			registerPasetoDecodeFlags(cmd)
 			out, err := executeCommand(cmd,
 				"--version", version,
 				"--key", pasetoTestKey,
@@ -97,7 +95,6 @@ func TestPasetoDecodeLocalCommand_RoundTrip(t *testing.T) {
 
 func TestPasetoEncodeLocalCommand_MissingKey(t *testing.T) {
 	cmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--payload", validPayload)
 	if err == nil {
@@ -110,7 +107,6 @@ func TestPasetoEncodeLocalCommand_MissingKey(t *testing.T) {
 
 func TestPasetoEncodeLocalCommand_MissingPayload(t *testing.T) {
 	cmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--key", pasetoTestKey)
 	if err == nil {
@@ -123,7 +119,6 @@ func TestPasetoEncodeLocalCommand_MissingPayload(t *testing.T) {
 
 func TestPasetoDecodeLocalCommand_MissingToken(t *testing.T) {
 	cmd := createPasetoDecodeLocalCommand()
-	registerPasetoDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--key", pasetoTestKey)
 	if err == nil {
@@ -136,7 +131,6 @@ func TestPasetoDecodeLocalCommand_MissingToken(t *testing.T) {
 
 func TestPasetoLocalCommand_UnsupportedVersion(t *testing.T) {
 	cmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--version", "v9",
@@ -163,7 +157,6 @@ func TestPasetoEncodeLocalCommand_InvalidKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := createPasetoEncodeLocalCommand()
-			registerPasetoEncodeFlags(cmd)
 
 			_, err := executeCommand(cmd, "--key", tt.key, "--payload", validPayload)
 			if err == nil {
@@ -178,7 +171,6 @@ func TestPasetoEncodeLocalCommand_InvalidKey(t *testing.T) {
 
 func TestPasetoEncodeLocalCommand_InvalidPayload(t *testing.T) {
 	cmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--key", pasetoTestKey, "--payload", invalidJSON)
 	if err == nil {
@@ -193,7 +185,6 @@ func TestPasetoDecodeLocalCommand_WrongKey(t *testing.T) {
 	token := encodePasetoLocal(t, "--key", pasetoTestKey, "--payload", validPayload)
 
 	cmd := createPasetoDecodeLocalCommand()
-	registerPasetoDecodeFlags(cmd)
 	otherKey := "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
 
 	_, err := executeCommand(cmd, "--key", otherKey, "--token", token)
@@ -207,7 +198,6 @@ func TestPasetoDecodeLocalCommand_WrongKey(t *testing.T) {
 
 func TestPasetoDecodeLocalCommand_MalformedToken(t *testing.T) {
 	cmd := createPasetoDecodeLocalCommand()
-	registerPasetoDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--key", pasetoTestKey, "--token", "not.a.token")
 	if err == nil {
@@ -222,7 +212,6 @@ func TestPasetoLocalCommand_DeprecatedFlags(t *testing.T) {
 	// The short forms were the only names this command originally accepted, so
 	// they must keep working alongside the canonical long names.
 	cmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	out, err := executeCommand(cmd, "--key", pasetoTestKey, "--p", validPayload)
 	if err != nil {
@@ -231,7 +220,6 @@ func TestPasetoLocalCommand_DeprecatedFlags(t *testing.T) {
 	token := extractToken(t, out, "v4.local.")
 
 	decodeCmd := createPasetoDecodeLocalCommand()
-	registerPasetoDecodeFlags(decodeCmd)
 	if _, err := executeCommand(decodeCmd, "--key", pasetoTestKey, "--t", token); err != nil {
 		t.Fatalf("Expected deprecated --t to work, got: %v", err)
 	}
@@ -244,7 +232,6 @@ func TestPasetoLocalCommand_JSONOutput(t *testing.T) {
 	defer func() { jsonOutput = oldJSON }()
 
 	encodeCmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(encodeCmd)
 	out, err := executeCommand(encodeCmd, "--key", pasetoTestKey, "--payload", validPayload)
 	if err != nil {
 		t.Fatalf("Failed to encode: %v", err)
@@ -259,7 +246,6 @@ func TestPasetoLocalCommand_JSONOutput(t *testing.T) {
 	}
 
 	decodeCmd := createPasetoDecodeLocalCommand()
-	registerPasetoDecodeFlags(decodeCmd)
 	out, err = executeCommand(decodeCmd, "--key", pasetoTestKey, "--token", encoded.Token)
 	if err != nil {
 		t.Fatalf("Failed to decode: %v", err)
@@ -284,7 +270,6 @@ func TestPasetoLocalCommand_JSONErrorEnvelope(t *testing.T) {
 	defer func() { jsonOutput = oldJSON }()
 
 	cmd := createPasetoEncodeLocalCommand()
-	registerPasetoEncodeFlags(cmd)
 	out, err := executeCommand(cmd, "--key", "deadbeef", "--payload", validPayload)
 	if err == nil {
 		t.Fatal("Expected error for invalid key, got nil")
@@ -312,7 +297,6 @@ func TestPasetoDecodeLocalCommand_ValidateClaims(t *testing.T) {
 
 	t.Run("expired token decodes by default", func(t *testing.T) {
 		cmd := createPasetoDecodeLocalCommand()
-		registerPasetoDecodeFlags(cmd)
 
 		out, err := executeCommand(cmd, "--key", pasetoTestKey, "--token", token)
 		if err != nil {
@@ -325,7 +309,6 @@ func TestPasetoDecodeLocalCommand_ValidateClaims(t *testing.T) {
 
 	t.Run("expired token is rejected with --validate-claims", func(t *testing.T) {
 		cmd := createPasetoDecodeLocalCommand()
-		registerPasetoDecodeFlags(cmd)
 
 		var err error
 		stderr := captureStderr(t, func() {
@@ -346,7 +329,6 @@ func TestPasetoDecodeLocalCommand_ValidateClaims(t *testing.T) {
 		)
 
 		cmd := createPasetoDecodeLocalCommand()
-		registerPasetoDecodeFlags(cmd)
 		out, err := executeCommand(cmd,
 			"--key", pasetoTestKey,
 			"--token", recent,

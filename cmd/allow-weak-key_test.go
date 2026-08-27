@@ -52,7 +52,6 @@ func TestRSEncodeCommand_WeakKeyRejected(t *testing.T) {
 			privateKey, _ := generateRSAKeyPairWithBits(t, testWeakRSAKeySize)
 
 			cmd := createAsymmetricEncodeCommand(rsKeyVocab, tt.algorithm, "Test", "Test", "Test", tt.encoder)
-			registerEncodeFlags(cmd)
 
 			_, err := executeCommand(cmd, "--payload", validPayload, "--private-key", privateKey)
 			if err == nil {
@@ -67,7 +66,6 @@ func TestRSEncodeCommand_WeakKeyRejected(t *testing.T) {
 			privateKey, _ := generateRSAKeyPairWithBits(t, testWeakRSAKeySize)
 
 			cmd := createAsymmetricEncodeCommand(rsKeyVocab, tt.algorithm, "Test", "Test", "Test", tt.encoder)
-			registerEncodeFlags(cmd)
 
 			output, err := executeCommand(cmd,
 				"--payload", validPayload,
@@ -92,7 +90,6 @@ func TestRSDecodeCommand_WeakKeyRejected(t *testing.T) {
 			privateKey, publicKey := generateRSAKeyPairWithBits(t, testWeakRSAKeySize)
 
 			encCmd := createAsymmetricEncodeCommand(rsKeyVocab, tt.algorithm, "Test", "Test", "Test", tt.encoder)
-			registerEncodeFlags(encCmd)
 			tokenOutput, err := executeCommand(encCmd,
 				"--payload", validPayload,
 				"--private-key", privateKey,
@@ -109,14 +106,12 @@ func TestRSDecodeCommand_WeakKeyRejected(t *testing.T) {
 			} {
 				decCmd := createAsymmetricDecodeCommand(
 					rsKeyVocab, tt.algorithm, "Test", "Test", "Test", tt.pubKeyDecoder, tt.privKeyDecoder)
-				registerDecodeFlags(decCmd)
 				if _, err := executeCommand(decCmd, "--token", token, keyFlag.flag, keyFlag.path); err == nil {
 					t.Errorf("Expected %s decode to reject a 1024-bit key", keyFlag.flag)
 				}
 
 				decCmd = createAsymmetricDecodeCommand(
 					rsKeyVocab, tt.algorithm, "Test", "Test", "Test", tt.pubKeyDecoder, tt.privKeyDecoder)
-				registerDecodeFlags(decCmd)
 				output, err := executeCommand(decCmd,
 					"--token", token, keyFlag.flag, keyFlag.path, "--allow-weak-key")
 				if err != nil {
@@ -130,28 +125,56 @@ func TestRSDecodeCommand_WeakKeyRejected(t *testing.T) {
 	}
 }
 
-// TestESCommands_IgnoreAllowWeakKey documents that --allow-weak-key is a no-op
-// for ECDSA: the curve fixes the key size, so there is nothing to override.
-func TestESCommands_IgnoreAllowWeakKey(t *testing.T) {
+// TestESCommands_RejectAllowWeakKey pins that --allow-weak-key does not exist on
+// the ECDSA commands. An ECDSA key size is fixed by the curve the algorithm
+// names, so there is nothing for the flag to override; it used to be accepted
+// and silently ignored, which told an operator their opt-out had taken effect.
+func TestESCommands_RejectAllowWeakKey(t *testing.T) {
 	privateKey, publicKey := generateECDSAKeyPair(t, elliptic.P256())
 
 	encCmd := createAsymmetricEncodeCommand(
 		esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
-	registerEncodeFlags(encCmd)
-	tokenOutput, err := executeCommand(encCmd,
+	_, err := executeCommand(encCmd,
 		"--payload", validPayload, "--private-key", privateKey, "--allow-weak-key")
-	if err != nil {
-		t.Fatalf("Expected ES256 encode to ignore --allow-weak-key, got: %v", err)
+	if err == nil {
+		t.Fatal("Expected ES256 encode to reject --allow-weak-key, got no error")
+	}
+	if !strings.Contains(err.Error(), "unknown flag") {
+		t.Errorf("Expected an unknown-flag error, got: %v", err)
 	}
 
 	decCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
 		ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation),
 		ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
-	registerDecodeFlags(decCmd)
-	output, err := executeCommand(decCmd,
-		"--token", strings.TrimSpace(tokenOutput), "--public-key", publicKey, "--allow-weak-key")
+	_, err = executeCommand(decCmd,
+		"--token", "irrelevant", "--public-key", publicKey, "--allow-weak-key")
+	if err == nil {
+		t.Fatal("Expected ES256 decode to reject --allow-weak-key, got no error")
+	}
+	if !strings.Contains(err.Error(), "unknown flag") {
+		t.Errorf("Expected an unknown-flag error, got: %v", err)
+	}
+}
+
+// TestESCommands_RoundTripWithoutWeakKeyFlag keeps the ECDSA happy path covered
+// now that TestESCommands_RejectAllowWeakKey no longer exercises it.
+func TestESCommands_RoundTripWithoutWeakKeyFlag(t *testing.T) {
+	privateKey, publicKey := generateECDSAKeyPair(t, elliptic.P256())
+
+	encCmd := createAsymmetricEncodeCommand(
+		esKeyVocab, "es256", "Test", "Test", "Test", ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
+	tokenOutput, err := executeCommand(encCmd, "--payload", validPayload, "--private-key", privateKey)
 	if err != nil {
-		t.Fatalf("Expected ES256 decode to ignore --allow-weak-key, got: %v", err)
+		t.Fatalf("Expected ES256 encode to succeed, got: %v", err)
+	}
+
+	decCmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
+		ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation),
+		ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
+	output, err := executeCommand(decCmd,
+		"--token", strings.TrimSpace(tokenOutput), "--public-key", publicKey)
+	if err != nil {
+		t.Fatalf("Expected ES256 decode to succeed, got: %v", err)
 	}
 	if !strings.Contains(output, "1234567890") {
 		t.Errorf("Expected claims to round-trip, got: %s", output)

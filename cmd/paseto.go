@@ -182,7 +182,7 @@ func newPublicCodec(version, privateKeyFile, publicKeyFile string, opts ...paset
 
 // pasetoVersionFlag reads the --version flag, defaulting to v4 when unset.
 func pasetoVersionFlag(cmd *cobra.Command) string {
-	version, _ := cmd.Flags().GetString("version")
+	version, _ := cmd.Flags().GetString(flagVersion)
 	if version == "" {
 		return pasetoV4
 	}
@@ -195,8 +195,8 @@ func pasetoVersionFlag(cmd *cobra.Command) string {
 // Validation is off by default, so a token can always be inspected regardless
 // of its timing claims; --clock-skew only matters once --validate-claims is on.
 func pasetoValidationOption(cmd *cobra.Command) paseto.Option {
-	validateClaims, _ := cmd.Flags().GetBool("validate-claims")
-	clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
+	validateClaims, _ := cmd.Flags().GetBool(flagValidateClaims)
+	clockSkew, _ := cmd.Flags().GetDuration(flagClockSkew)
 	return paseto.WithValidation(paseto.ValidationOptions{
 		ValidateClaims: validateClaims,
 		ClockSkew:      clockSkew,

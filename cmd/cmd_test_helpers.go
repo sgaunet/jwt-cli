@@ -55,47 +55,6 @@ func executeCommand(cmd *cobra.Command, args ...string) (string, error) {
 	return capturedOutput.String() + buf.String(), nil
 }
 
-// registerEncodeFlags registers all encoding-related flags on a command.
-// This mimics the flag registration done in root.go for encode commands.
-//
-//nolint:unused // Shared test helper used across multiple test files
-func registerEncodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("payload", "p", "", "JSON payload")
-	cmd.Flags().StringP("secret", "s", "", "HMAC secret")
-	cmd.Flags().String("private-key", "", "path to RSA/ECDSA private key file")
-	cmd.Flags().Bool("allow-weak-secret", false, "allow weak secrets")
-	cmd.Flags().Bool("allow-weak-key", false, "allow RSA keys below 2048 bits")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("p", "", "")
-	_ = cmd.Flags().MarkDeprecated("p", "use --payload or -p instead")
-	cmd.Flags().String("s", "", "")
-	_ = cmd.Flags().MarkDeprecated("s", "use --secret or -s instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-}
-
-// registerDecodeFlags registers all decoding-related flags on a command.
-// This mimics the flag registration done in root.go for decode commands.
-//
-//nolint:unused // Shared test helper used across multiple test files
-func registerDecodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("token", "t", "", "JWT token to decode")
-	cmd.Flags().StringP("secret", "s", "", "HMAC secret")
-	cmd.Flags().String("private-key", "", "path to RSA/ECDSA private key file")
-	cmd.Flags().String("public-key", "", "path to RSA/ECDSA public key file")
-	cmd.Flags().Bool("allow-weak-secret", false, "allow weak secrets")
-	cmd.Flags().Bool("allow-weak-key", false, "allow RSA keys below 2048 bits")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("t", "", "")
-	_ = cmd.Flags().MarkDeprecated("t", "use --token or -t instead")
-	cmd.Flags().String("s", "", "")
-	_ = cmd.Flags().MarkDeprecated("s", "use --secret or -s instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-	cmd.Flags().String("pubk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pubk", "use --public-key instead")
-}
-
 // createTempFile creates a temporary file with given content.
 // The file is created in t.TempDir() and will be automatically cleaned up.
 //
@@ -280,43 +239,6 @@ const (
 	// weakSecret is a secret that doesn't meet minimum length requirements.
 	weakSecret = "short"
 )
-
-// registerPasetoEncodeFlags registers the flags a "paseto encode" subcommand
-// reads from its parent, so tests can execute the subcommand standalone.
-//
-//nolint:unused // Shared test helper used across multiple test files
-func registerPasetoEncodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("payload", "p", "", "JSON payload to encode")
-	cmd.Flags().String("private-key", "", "path to private key file")
-	cmd.Flags().String("key", "", "hex-encoded symmetric key")
-	cmd.Flags().String("version", pasetoV4, "PASETO version")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("p", "", "")
-	_ = cmd.Flags().MarkDeprecated("p", "use --payload or -p instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-}
-
-// registerPasetoDecodeFlags registers the flags a "paseto decode" subcommand
-// reads from its parent, so tests can execute the subcommand standalone.
-//
-//nolint:unused // Shared test helper used across multiple test files
-func registerPasetoDecodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("token", "t", "", "PASETO token to decode")
-	cmd.Flags().String("private-key", "", "path to private key file")
-	cmd.Flags().String("public-key", "", "path to public key file")
-	cmd.Flags().String("key", "", "hex-encoded symmetric key")
-	cmd.Flags().String("version", pasetoV4, "PASETO version")
-	cmd.Flags().Bool("validate-claims", false, "validate PASETO time-based claims")
-	cmd.Flags().Duration("clock-skew", 0, "clock skew tolerance for claims validation")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("t", "", "")
-	_ = cmd.Flags().MarkDeprecated("t", "use --token or -t instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-	cmd.Flags().String("pubk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pubk", "use --public-key instead")
-}
 
 // generateEd25519KeyPair generates a test Ed25519 key pair for PASETO v2/v4
 // public tokens and returns the private and public key file paths in PEM form.

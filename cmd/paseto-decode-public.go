@@ -8,7 +8,7 @@ import (
 //
 //nolint:funlen // Long help and guidance text dominate this function
 func createPasetoDecodePublicCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   pasetoPurposePublic,
 		Short: "Decode a PASETO public (asymmetric) token",
 		Long: `Decode and verify a PASETO public token using its signing key pair.
@@ -35,10 +35,11 @@ Claims Validation:
 
   # Same, tolerating five minutes of clock difference
   jwt-cli paseto decode public --public-key paseto-v4-public.pem --token "$TOKEN" --validate-claims --clock-skew 5m`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			privateKeyFile := flagWithFallback(cmd, "private-key", "pk")
-			publicKeyFile := flagWithFallback(cmd, "public-key", "pubk")
-			token := flagWithFallback(cmd, "token", "t")
+			privateKeyFile := flagWithFallback(cmd, flagPrivateKey, aliasPrivateKey)
+			publicKeyFile := flagWithFallback(cmd, flagPublicKey, aliasPublicKey)
+			token := flagWithFallback(cmd, flagToken, aliasToken)
 			version := pasetoVersionFlag(cmd)
 
 			if privateKeyFile == "" && publicKeyFile == "" {
@@ -81,6 +82,8 @@ Tip: The token is the string produced by 'jwt-cli paseto encode public'.`)
 			return nil
 		},
 	}
+	registerPasetoDecodePublicFlags(cmd)
+	return cmd
 }
 
 var pasetoDecodePublicCmd = createPasetoDecodePublicCommand()
