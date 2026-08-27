@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"aidanwoods.dev/go-paseto"
+	"github.com/sgaunet/jwt-cli/internal/claimtime"
 )
 
 // Registered PASETO claim names that receive dedicated handling.
@@ -51,8 +52,14 @@ func parseClaimTime(claim string, value any) (time.Time, error) {
 		}
 		return t, nil
 	case float64:
-		// encoding/json decodes every JSON number into a float64.
-		return time.Unix(int64(v), 0).UTC(), nil
+		// encoding/json decodes every JSON number into a float64, and narrowing
+		// one outside int64 range is implementation-defined, so it is bounded
+		// rather than allowed to wrap into a nonsense instant.
+		t, err := claimtime.FromSeconds(v)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("%w: %q %w", ErrInvalidClaim, claim, err)
+		}
+		return t, nil
 	default:
 		return time.Time{}, fmt.Errorf(
 			"%w: %q must be an RFC 3339 timestamp or a Unix timestamp, got %T",

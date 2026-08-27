@@ -171,6 +171,12 @@ func readECDSAPrivateKey(privateKeyFile string) (crypto.PrivateKey, crypto.Publi
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: error reading private key file: %w", ErrInvalidKey, err)
 	}
+	// Before the block-type check below: a legacy OpenSSL-encrypted EC key keeps
+	// the ordinary "EC PRIVATE KEY" type and carries Proc-Type/DEK-Info headers,
+	// so it passes that check and fails inside x509 with a raw ASN.1 error.
+	if err := checkKeyNotEncrypted(contentKeyFile); err != nil {
+		return nil, nil, err
+	}
 	block, _ := pem.Decode(contentKeyFile)
 	if block == nil {
 		return nil, nil, fmt.Errorf("%w: unable to load key: PEM block is nil", ErrInvalidKey)
@@ -206,6 +212,9 @@ func (j *esjwtDecoderWithPublicKeyFile) Decode(token string) (string, error) {
 	publicKey, err := keyfile.Read(j.publicKeyFile)
 	if err != nil {
 		return "", fmt.Errorf("%w: error reading public key file: %w", ErrInvalidKey, err)
+	}
+	if err := checkKeyNotEncrypted(publicKey); err != nil {
+		return "", err
 	}
 	key, err := jwt.ParseECPublicKeyFromPEM(publicKey)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/sgaunet/jwt-cli/internal/keyfile"
+	"github.com/sgaunet/jwt-cli/internal/pemkey"
 )
 
 // PEM block types understood by the key loaders.
@@ -42,9 +43,17 @@ func readKeyFile(file, role string) ([]byte, error) {
 
 // decodePEM returns the first PEM block in keyBytes, or nil if the input is not
 // PEM encoded (in which case it is treated as raw key material).
-func decodePEM(keyBytes []byte) *pem.Block {
+//
+// A password-protected block is rejected here rather than left to x509, which
+// sees only ciphertext and reports a corrupt ASN.1 structure. The (nil, nil)
+// result for non-PEM input is load-bearing: the P-384 loaders fall back to raw
+// key bytes on it.
+func decodePEM(keyBytes []byte) (*pem.Block, error) {
+	if err := pemkey.Check(keyBytes); err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrInvalidKey, err)
+	}
 	block, _ := pem.Decode(keyBytes)
-	return block
+	return block, nil
 }
 
 // loadEd25519PrivateKey loads an Ed25519 private key used by PASETO V2 and V4
@@ -55,7 +64,10 @@ func loadEd25519PrivateKey(file string) (ed25519.PrivateKey, error) {
 		return nil, err
 	}
 
-	block := decodePEM(keyBytes)
+	block, err := decodePEM(keyBytes)
+	if err != nil {
+		return nil, err
+	}
 	if block == nil {
 		// Not PEM encoded: treat the file as raw key material.
 		if len(keyBytes) != ed25519.PrivateKeySize {
@@ -88,7 +100,10 @@ func loadEd25519PublicKey(file string) (ed25519.PublicKey, error) {
 		return nil, err
 	}
 
-	block := decodePEM(keyBytes)
+	block, err := decodePEM(keyBytes)
+	if err != nil {
+		return nil, err
+	}
 	if block == nil {
 		// Not PEM encoded: treat the file as raw key material.
 		if len(keyBytes) != ed25519.PublicKeySize {
@@ -128,7 +143,10 @@ func loadECDSAP384PrivateKey(file string) (*ecdsa.PrivateKey, []byte, error) {
 		return nil, nil, err
 	}
 
-	block := decodePEM(keyBytes)
+	block, err := decodePEM(keyBytes)
+	if err != nil {
+		return nil, nil, err
+	}
 	if block == nil {
 		return nil, keyBytes, nil
 	}
@@ -180,7 +198,10 @@ func loadECDSAP384PublicKey(file string) (*ecdsa.PublicKey, []byte, error) {
 		return nil, nil, err
 	}
 
-	block := decodePEM(keyBytes)
+	block, err := decodePEM(keyBytes)
+	if err != nil {
+		return nil, nil, err
+	}
 	if block == nil {
 		return nil, keyBytes, nil
 	}

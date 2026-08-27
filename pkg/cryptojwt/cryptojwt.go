@@ -30,10 +30,10 @@
 // # Errors
 //
 // Failures are reported through the sentinel errors ErrInvalidPayload,
-// ErrInvalidToken, ErrInvalidKey, ErrWeakSecret, ErrWeakKey and
-// ErrUnsupportedAlgorithm. Use errors.Is to test for them. Each error also
-// wraps the underlying cause, so errors.Is against os.ErrNotExist or the jwt
-// package's own errors keeps working on the same value.
+// ErrInvalidToken, ErrInvalidKey, ErrWeakSecret, ErrWeakKey,
+// ErrUnsupportedAlgorithm and ErrClaimOutOfRange. Use errors.Is to test for
+// them. Each error also wraps the underlying cause, so errors.Is against
+// os.ErrNotExist or the jwt package's own errors keeps working on the same value.
 //
 // # Usage Examples
 //
@@ -100,6 +100,9 @@ var (
 	// ErrUnsupportedAlgorithm indicates a signing method this package does not
 	// handle.
 	ErrUnsupportedAlgorithm = errors.New("unsupported algorithm")
+	// ErrClaimOutOfRange indicates a numeric time claim (exp, nbf or iat) whose
+	// value cannot be represented as a Unix timestamp.
+	ErrClaimOutOfRange = errors.New("claim out of range")
 )
 
 // ValidationOptions configures JWT claims validation behavior.
@@ -197,6 +200,9 @@ func (d *decoder) DecodeJWT(secret any, signingMethod jwt.SigningMethod, token s
 	_, err := parser.ParseWithClaims(token, claims, func(_ *jwt.Token) (any, error) {
 		return secret, nil
 	})
+	if rangeErr := d.checkTimeClaimRange(claims, err); rangeErr != nil {
+		return "", rangeErr
+	}
 	if err != nil {
 		return "", fmt.Errorf("%w: failed to parse token: %w", ErrInvalidToken, err)
 	}

@@ -89,6 +89,32 @@ func TestRegisteredClaims(t *testing.T) {
 		}
 	})
 
+	// Regression: encoding/json hands every JSON number over as a float64, and
+	// narrowing one outside int64 range is implementation-defined, so these used
+	// to be minted into a token naming an arbitrary wrapped instant.
+	t.Run("out-of-range numeric time claims are rejected", func(t *testing.T) {
+		for _, payload := range []string{
+			`{"exp": 9223372036854775807}`,
+			`{"exp": 1e30}`,
+			`{"nbf": -9e18}`,
+			`{"iat": 1e300}`,
+		} {
+			_, err := encoder.Encode(payload)
+			if err == nil {
+				t.Fatalf("Expected error for payload %s", payload)
+			}
+			if !errors.Is(err, paseto.ErrInvalidClaim) {
+				t.Errorf("Expected ErrInvalidClaim for %s, got: %v", payload, err)
+			}
+		}
+	})
+
+	t.Run("in-range numeric time claims still encode", func(t *testing.T) {
+		if _, err := encoder.Encode(`{"exp": 2200000000}`); err != nil {
+			t.Errorf("Expected a plausible timestamp to be accepted, got: %v", err)
+		}
+	})
+
 	t.Run("non-string registered claims are rejected", func(t *testing.T) {
 		for _, payload := range []string{
 			`{"iss": 123}`,
