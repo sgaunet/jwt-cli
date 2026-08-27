@@ -5,6 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
+
+	"github.com/sgaunet/jwt-cli/pkg/paseto"
 )
 
 // CommandOutput represents the structured output format for all commands.
@@ -13,7 +17,8 @@ type CommandOutput struct {
 	// Success indicates whether the operation completed successfully
 	Success bool `json:"success"`
 
-	// Data holds generic output data (rarely used, reserved for future extensions)
+	// Data holds structured output that is neither a token nor a claim set,
+	// currently the key-generation recipes emitted by genkeys
 	Data any `json:"data,omitempty"`
 
 	// Claims holds the decoded JWT claims/payload
@@ -22,8 +27,44 @@ type CommandOutput struct {
 	// Token holds the encoded JWT token string
 	Token string `json:"token,omitempty"`
 
+	// Footer holds a decoded PASETO token's footer, which the format
+	// authenticates but keeps outside the claim set. Empty for JWT.
+	Footer string `json:"footer,omitempty"`
+
 	// Error holds the error message if Success is false
 	Error string `json:"error,omitempty"`
+}
+
+// jsonFlagArg is the long form of --json as it appears in os.Args.
+const jsonFlagArg = "--json"
+
+// wantsJSONOutput reports whether raw arguments ask for JSON output.
+//
+// Cobra abandons a command at the first flag it cannot parse, and reports an
+// unknown command before binding any flag at all, so in those cases --json never
+// reaches jsonOutput and a failure would be rendered as plain text - breaking
+// the promise output() makes. Execute() consults this on the failure path to
+// recover the intent from the arguments themselves.
+//
+// pflag's rules are mirrored: "--" ends flag parsing, and the last occurrence
+// wins. An unparseable value is ignored, since Cobra reports that itself.
+func wantsJSONOutput(args []string) bool {
+	want := false
+	for _, arg := range args {
+		if arg == "--" {
+			break
+		}
+		if arg == jsonFlagArg {
+			want = true
+			continue
+		}
+		if value, ok := strings.CutPrefix(arg, jsonFlagArg+"="); ok {
+			if parsed, err := strconv.ParseBool(value); err == nil {
+				want = parsed
+			}
+		}
+	}
+	return want
 }
 
 // output writes the command result to stdout in either JSON or human-readable format.
@@ -65,6 +106,11 @@ func outputHumanReadable(out CommandOutput) {
 			fmt.Fprintf(os.Stderr, "failed to encode claims: %s\n", err)
 		}
 	}
+	// Only a PASETO token can carry a footer, and only when it has one, so this
+	// line never appears for JWT or for the footerless tokens jwt-cli produces.
+	if out.Footer != "" {
+		fmt.Printf("footer: %s\n", out.Footer)
+	}
 }
 
 // reportedError marks an error whose message output() has already rendered, so
@@ -105,9 +151,47 @@ func reportError(err error) {
 	output(CommandOutput{Success: false, Error: err.Error()})
 }
 
+// outputRecipe emits a key-generation recipe, honouring --json.
+//
+// The human-readable form is the recipe lines verbatim, one per line, because
+// callers pipe it into a shell - the integration suite runs
+// eval "$(jwt-cli paseto genkeys v3 | grep '^openssl' | tail -2)". That text is
+// therefore a compatibility surface and must not change. Under --json the same
+// recipe is emitted as structured data instead, with the comment lines dropped:
+// a machine consumer wants the commands, not the commentary.
+func outputRecipe(data any, lines []string) {
+	if jsonOutput {
+		output(CommandOutput{Success: true, Data: data})
+		return
+	}
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+}
+
 // outputToken emits a freshly encoded token, honouring --json.
 func outputToken(token string) {
 	output(CommandOutput{Success: true, Token: token})
+}
+
+// outputPasetoClaims emits a decoded PASETO token's claims and, when it carries
+// one, its footer, honouring --json.
+//
+// PASETO authenticates the footer but keeps it outside the claim set, so it is
+// reported as its own field rather than merged into the claims: a token with a
+// claim legitimately named "footer" would otherwise have it overwritten. A
+// footerless token produces exactly the output outputClaims would.
+func outputPasetoClaims(decoded paseto.DecodedToken) {
+	if len(decoded.Footer) == 0 {
+		outputClaims(decoded.Claims)
+		return
+	}
+
+	var claimsData any
+	if err := json.Unmarshal([]byte(decoded.Claims), &claimsData); err != nil {
+		claimsData = decoded.Claims
+	}
+	output(CommandOutput{Success: true, Claims: claimsData, Footer: string(decoded.Footer)})
 }
 
 // outputClaims emits decoded claims, honouring --json.

@@ -51,18 +51,26 @@ func (l *LocalV4Encoder) Encode(payload string) (string, error) {
 	return token.V4Encrypt(l.key, nil), nil
 }
 
-// Decode decrypts a v4.local token and returns its claims as indented JSON.
+// DecodeWithFooter decrypts a v4.local token and returns its claims as
+// indented JSON, along with the token's authenticated footer.
 //
 // The token's authentication tag is verified. Claims are validated only when
 // the encoder was built WithValidation; by default an expired token decodes
 // successfully.
-func (l *LocalV4Encoder) Decode(tokenString string) (string, error) {
+func (l *LocalV4Encoder) DecodeWithFooter(tokenString string) (DecodedToken, error) {
 	parser := l.parser()
 	token, err := parser.ParseV4Local(l.key, tokenString, nil)
 	if err != nil {
-		return "", wrapDecodeError(err)
+		return DecodedToken{}, wrapDecodeError(err)
 	}
-	return claimsJSON(token)
+	return decodeResult(token)
+}
+
+// Decode verifies the token and returns its claims as indented JSON,
+// discarding any footer. Use DecodeWithFooter to see the footer too.
+func (l *LocalV4Encoder) Decode(tokenString string) (string, error) {
+	decoded, err := l.DecodeWithFooter(tokenString)
+	return decoded.Claims, err
 }
 
 // LocalV3Encoder encodes and decodes PASETO V3 local (symmetric) tokens.
@@ -100,18 +108,26 @@ func (l *LocalV3Encoder) Encode(payload string) (string, error) {
 	return token.V3Encrypt(l.key, nil), nil
 }
 
-// Decode decrypts a v3.local token and returns its claims as indented JSON.
+// DecodeWithFooter decrypts a v3.local token and returns its claims as
+// indented JSON, along with the token's authenticated footer.
 //
 // The token's authentication tag is verified. Claims are validated only when
 // the encoder was built WithValidation; by default an expired token decodes
 // successfully.
-func (l *LocalV3Encoder) Decode(tokenString string) (string, error) {
+func (l *LocalV3Encoder) DecodeWithFooter(tokenString string) (DecodedToken, error) {
 	parser := l.parser()
 	token, err := parser.ParseV3Local(l.key, tokenString, nil)
 	if err != nil {
-		return "", wrapDecodeError(err)
+		return DecodedToken{}, wrapDecodeError(err)
 	}
-	return claimsJSON(token)
+	return decodeResult(token)
+}
+
+// Decode verifies the token and returns its claims as indented JSON,
+// discarding any footer. Use DecodeWithFooter to see the footer too.
+func (l *LocalV3Encoder) Decode(tokenString string) (string, error) {
+	decoded, err := l.DecodeWithFooter(tokenString)
+	return decoded.Claims, err
 }
 
 // LocalV2Encoder encodes and decodes PASETO V2 local (symmetric) tokens.
@@ -150,16 +166,24 @@ func (l *LocalV2Encoder) Encode(payload string) (string, error) {
 	return token.V2Encrypt(l.key), nil
 }
 
-// Decode decrypts a v2.local token and returns its claims as indented JSON.
+// DecodeWithFooter decrypts a v2.local token and returns its claims as
+// indented JSON, along with the token's authenticated footer.
 //
 // The token's authentication tag is verified. Claims are validated only when
 // the encoder was built WithValidation; by default an expired token decodes
 // successfully.
-func (l *LocalV2Encoder) Decode(tokenString string) (string, error) {
+func (l *LocalV2Encoder) DecodeWithFooter(tokenString string) (DecodedToken, error) {
 	parser := l.parser()
 	token, err := parser.ParseV2Local(l.key, tokenString)
 	if err != nil {
-		return "", wrapDecodeError(err)
+		return DecodedToken{}, wrapDecodeError(err)
 	}
-	return claimsJSON(token)
+	return decodeResult(token)
+}
+
+// Decode verifies the token and returns its claims as indented JSON,
+// discarding any footer. Use DecodeWithFooter to see the footer too.
+func (l *LocalV2Encoder) Decode(tokenString string) (string, error) {
+	decoded, err := l.DecodeWithFooter(tokenString)
+	return decoded.Claims, err
 }

@@ -21,7 +21,6 @@ func pasetoKeyPair(t *testing.T, version string) (string, string) {
 func encodePasetoPublic(t *testing.T, version, privateKey string) string {
 	t.Helper()
 	cmd := createPasetoEncodePublicCommand()
-	registerPasetoEncodeFlags(cmd)
 	out, err := executeCommand(cmd,
 		"--version", version,
 		"--private-key", privateKey,
@@ -56,7 +55,6 @@ func TestPasetoPublicCommand_RoundTrip(t *testing.T) {
 
 			t.Run("decode with public key", func(t *testing.T) {
 				cmd := createPasetoDecodePublicCommand()
-				registerPasetoDecodeFlags(cmd)
 				out, err := executeCommand(cmd,
 					"--version", tt.version,
 					"--public-key", publicKey,
@@ -72,7 +70,6 @@ func TestPasetoPublicCommand_RoundTrip(t *testing.T) {
 
 			t.Run("decode with private key", func(t *testing.T) {
 				cmd := createPasetoDecodePublicCommand()
-				registerPasetoDecodeFlags(cmd)
 				out, err := executeCommand(cmd,
 					"--version", tt.version,
 					"--private-key", privateKey,
@@ -95,7 +92,6 @@ func TestPasetoDecodePublicCommand_PublicKeyPrecedence(t *testing.T) {
 	token := encodePasetoPublic(t, pasetoV4, privateKey)
 
 	cmd := createPasetoDecodePublicCommand()
-	registerPasetoDecodeFlags(cmd)
 	out, err := executeCommand(cmd,
 		"--public-key", publicKey,
 		"--private-key", privateKey,
@@ -111,7 +107,6 @@ func TestPasetoDecodePublicCommand_PublicKeyPrecedence(t *testing.T) {
 
 func TestPasetoEncodePublicCommand_MissingPrivateKey(t *testing.T) {
 	cmd := createPasetoEncodePublicCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--payload", validPayload)
 	if err == nil {
@@ -124,7 +119,6 @@ func TestPasetoEncodePublicCommand_MissingPrivateKey(t *testing.T) {
 
 func TestPasetoDecodePublicCommand_MissingKeys(t *testing.T) {
 	cmd := createPasetoDecodePublicCommand()
-	registerPasetoDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--token", "v4.public.abc")
 	if err == nil {
@@ -137,7 +131,6 @@ func TestPasetoDecodePublicCommand_MissingKeys(t *testing.T) {
 
 func TestPasetoPublicCommand_NonExistentKeyFile(t *testing.T) {
 	cmd := createPasetoEncodePublicCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--private-key", getNonExistentPath(t),
@@ -166,7 +159,6 @@ func TestPasetoPublicCommand_InvalidPEM(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := createPasetoEncodePublicCommand()
-			registerPasetoEncodeFlags(cmd)
 
 			_, err := executeCommand(cmd,
 				"--private-key", tt.keyFile(t),
@@ -187,7 +179,6 @@ func TestPasetoPublicCommand_WrongCurveForV3(t *testing.T) {
 	privateKey, _ := generateEd25519KeyPair(t)
 
 	cmd := createPasetoEncodePublicCommand()
-	registerPasetoEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--version", pasetoV3,
@@ -208,7 +199,6 @@ func TestPasetoDecodePublicCommand_WrongKey(t *testing.T) {
 	token := encodePasetoPublic(t, pasetoV4, privateKey)
 
 	cmd := createPasetoDecodePublicCommand()
-	registerPasetoDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd, "--public-key", otherPublicKey, "--token", token)
 	if err == nil {
@@ -223,7 +213,6 @@ func TestPasetoPublicCommand_DeprecatedFlags(t *testing.T) {
 	privateKey, publicKey := generateEd25519KeyPair(t)
 
 	encodeCmd := createPasetoEncodePublicCommand()
-	registerPasetoEncodeFlags(encodeCmd)
 	out, err := executeCommand(encodeCmd, "--pk", privateKey, "--p", validPayload)
 	if err != nil {
 		t.Fatalf("Expected deprecated --pk/--p to work, got: %v", err)
@@ -241,7 +230,6 @@ func TestPasetoPublicCommand_DeprecatedFlags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := createPasetoDecodePublicCommand()
-			registerPasetoDecodeFlags(cmd)
 			if _, err := executeCommand(cmd, tt.args...); err != nil {
 				t.Fatalf("Expected deprecated flags to work, got: %v", err)
 			}
@@ -259,7 +247,10 @@ func TestPasetoGenkeysCommands(t *testing.T) {
 	}{
 		{"v4 genkeys", createPasetoGenkeysCommand(pasetoV4, "Ed25519", ed25519GenkeysLong(pasetoV4), ed25519GenkeysRecipe(pasetoV4)),
 			[]string{"Ed25519", "paseto-v4-private.pem", "paseto-v4-public.pem"}},
-		{"v3 genkeys", createPasetoGenkeysCommand(pasetoV3, "P-384", "long", []string{"openssl ecparam -genkey -name secp384r1 -noout -out paseto-v3-private.pem", "openssl ec -in paseto-v3-private.pem -pubout -out paseto-v3-public.pem"}),
+		{"v3 genkeys", createPasetoGenkeysCommand(pasetoV3, "P-384", "long", pasetoKeyRecipe{
+			privateKeyCommand: "openssl ecparam -genkey -name secp384r1 -noout -out paseto-v3-private.pem",
+			publicKeyCommand:  "openssl ec -in paseto-v3-private.pem -pubout -out paseto-v3-public.pem",
+		}),
 			[]string{"secp384r1", "paseto-v3-private.pem", "paseto-v3-public.pem"}},
 		{"v2 genkeys", createPasetoGenkeysCommand(pasetoV2, "Ed25519", ed25519GenkeysLong(pasetoV2), ed25519GenkeysRecipe(pasetoV2)),
 			[]string{"Ed25519", "paseto-v2-private.pem", "paseto-v2-public.pem"}},
@@ -290,7 +281,6 @@ func TestPasetoDecodePublicCommand_ValidateClaims(t *testing.T) {
 			privateKey, publicKey := pasetoKeyPair(t, version)
 
 			encode := createPasetoEncodePublicCommand()
-			registerPasetoEncodeFlags(encode)
 			out, err := executeCommand(encode,
 				"--version", version,
 				"--private-key", privateKey,
@@ -302,7 +292,6 @@ func TestPasetoDecodePublicCommand_ValidateClaims(t *testing.T) {
 			token := strings.TrimSpace(out)
 
 			cmd := createPasetoDecodePublicCommand()
-			registerPasetoDecodeFlags(cmd)
 			stderr := captureStderr(t, func() {
 				_, err = executeCommand(cmd,
 					"--version", version,
@@ -319,7 +308,6 @@ func TestPasetoDecodePublicCommand_ValidateClaims(t *testing.T) {
 			}
 
 			cmd = createPasetoDecodePublicCommand()
-			registerPasetoDecodeFlags(cmd)
 			out, err = executeCommand(cmd,
 				"--version", version,
 				"--public-key", publicKey,

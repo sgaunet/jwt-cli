@@ -27,7 +27,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createHSEncodeCommand("HS256", "hs256", "Test", "Test", "Test",
 					cryptojwt.NewHS256EncoderWithOptions)
-				registerEncodeFlags(cmd)
 				return cmd, []string{"--payload", validPayload}
 			},
 			want: "secret is required",
@@ -37,7 +36,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createHSEncodeCommand("HS256", "hs256", "Test", "Test", "Test",
 					cryptojwt.NewHS256EncoderWithOptions)
-				registerEncodeFlags(cmd)
 				return cmd, []string{"--secret", hs256Secret}
 			},
 			want: "payload is required",
@@ -47,7 +45,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createHSDecodeCommand("HS256", "hs256", "Test", "Test", "Test",
 					cryptojwt.NewHS256DecoderWithValidation)
-				registerDecodeFlags(cmd)
 				return cmd, []string{"--token", "header.payload.signature"}
 			},
 			want: "secret is required",
@@ -57,7 +54,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createHSDecodeCommand("HS256", "hs256", "Test", "Test", "Test",
 					cryptojwt.NewHS256DecoderWithValidation)
-				registerDecodeFlags(cmd)
 				return cmd, []string{"--secret", hs256Secret}
 			},
 			want: "token is required",
@@ -67,7 +63,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createAsymmetricEncodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 					cryptojwt.NewRS256EncoderWithOptions)
-				registerEncodeFlags(cmd)
 				return cmd, []string{"--payload", validPayload}
 			},
 			want: "private key file is required",
@@ -78,7 +73,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 				cmd := createAsymmetricDecodeCommand(rsKeyVocab, "rs256", "Test", "Test", "Test",
 					cryptojwt.NewRS256DecoderWithPublicKeyFileAndOptions,
 					cryptojwt.NewRS256DecoderWithPrivateKeyFileAndOptions)
-				registerDecodeFlags(cmd)
 				return cmd, []string{"--token", "header.payload.signature"}
 			},
 			want: "key file is required",
@@ -88,7 +82,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 			build: func(_ *testing.T) (*cobra.Command, []string) {
 				cmd := createAsymmetricEncodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
 					ignoreWeakKeyEncoder(cryptojwt.NewES256Encoder))
-				registerEncodeFlags(cmd)
 				return cmd, []string{"--payload", validPayload}
 			},
 			want: "private key file is required",
@@ -101,7 +94,6 @@ func TestValidationErrorsAreReported(t *testing.T) {
 				cmd := createAsymmetricDecodeCommand(esKeyVocab, "es256", "Test", "Test", "Test",
 					ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPublicKeyFileAndValidation),
 					ignoreWeakKeyDecoder(cryptojwt.NewES256DecoderWithPrivateKeyFileAndValidation))
-				registerDecodeFlags(cmd)
 				return cmd, []string{"--public-key", publicKey}
 			},
 			want: "token is required",
@@ -135,7 +127,6 @@ func TestValidationErrorJSONOutput(t *testing.T) {
 
 	cmd := createHSEncodeCommand("HS256", "hs256", "Test", "Test", "Test",
 		cryptojwt.NewHS256EncoderWithOptions)
-	registerEncodeFlags(cmd)
 
 	out, err := executeCommand(cmd, "--payload", validPayload)
 	if err == nil {

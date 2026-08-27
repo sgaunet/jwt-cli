@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"aidanwoods.dev/go-paseto"
+	"github.com/sgaunet/jwt-cli/internal/claimtime"
 )
 
 // Registered PASETO claim names that receive dedicated handling.
@@ -51,8 +52,14 @@ func parseClaimTime(claim string, value any) (time.Time, error) {
 		}
 		return t, nil
 	case float64:
-		// encoding/json decodes every JSON number into a float64.
-		return time.Unix(int64(v), 0).UTC(), nil
+		// encoding/json decodes every JSON number into a float64, and narrowing
+		// one outside int64 range is implementation-defined, so it is bounded
+		// rather than allowed to wrap into a nonsense instant.
+		t, err := claimtime.FromSeconds(v)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("%w: %q %w", ErrInvalidClaim, claim, err)
+		}
+		return t, nil
 	default:
 		return time.Time{}, fmt.Errorf(
 			"%w: %q must be an RFC 3339 timestamp or a Unix timestamp, got %T",
@@ -145,11 +152,27 @@ func newTokenFromPayload(payload string) (paseto.Token, error) {
 	return token, nil
 }
 
-// claimsJSON renders a decoded token's claims as indented JSON.
-func claimsJSON(token *paseto.Token) (string, error) {
+// DecodedToken is the result of a successful decode: a token's claims and its
+// footer, which PASETO authenticates but keeps outside the claim set.
+type DecodedToken struct {
+	// Claims is the claim set as indented JSON.
+	Claims string
+	// Footer is the token's authenticated footer, nil when it carries none.
+	// PASETO puts it inside the pre-auth encoding for every version, so a
+	// modified or stripped footer breaks verification.
+	Footer []byte
+}
+
+// decodeResult renders a decoded token's claims as indented JSON and carries its
+// footer alongside them.
+//
+// The footer is deliberately kept out of the claims map rather than merged into
+// it: a token carrying a claim legitimately named "footer" would otherwise have
+// it overwritten, which is the same silent data loss one level down.
+func decodeResult(token *paseto.Token) (DecodedToken, error) {
 	jsonBytes, err := json.MarshalIndent(token.Claims(), "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal claims: %w", err)
+		return DecodedToken{}, fmt.Errorf("failed to marshal claims: %w", err)
 	}
-	return string(jsonBytes), nil
+	return DecodedToken{Claims: string(jsonBytes), Footer: token.Footer()}, nil
 }

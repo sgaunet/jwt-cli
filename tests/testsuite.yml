@@ -781,7 +781,9 @@ testcases:
   steps:
   - type: exec
     script: |
-      head -c 2M /dev/urandom > oversized-key.pem
+      # 2 MiB spelled in bytes: BSD head (macOS) rejects the GNU "2M" suffix,
+      # which left the file empty and the assertion below chasing a PEM error.
+      head -c 2097152 /dev/urandom > oversized-key.pem
       cd ..
       go run . encode rs256 --private-key tests/oversized-key.pem --payload '{ "email": "{{.EMAIL}}" }'
     assertions:
@@ -876,6 +878,350 @@ testcases:
       KEY=$(openssl rand -hex 32)
       TOKEN=$(go run . paseto encode local --key "$KEY" --payload '{ "email": "{{.EMAIL}}" }')
       go run . paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+# ---------------------------------------------------------------------------
+# CLI contract.
+#
+# Nothing above pinned any of this, which is how a mistyped algorithm came to
+# exit 0 with help text on stdout: a scripted `cmd || exit 1` passed while
+# verifying nothing.
+#
+# These cases neither produce nor consume token vars, so they are safe at the
+# end of the suite alongside the negative paths.
+# ---------------------------------------------------------------------------
+
+- name: invalid_encode_algorithm_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode hs257
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring invalid argument
+    - result.systemerr ShouldContainSubstring hs257
+
+- name: invalid_decode_algorithm_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . decode hs257
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring invalid argument
+    - result.systemerr ShouldContainSubstring hs257
+
+- name: invalid_genkeys_algorithm_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . genkeys bogus
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring invalid argument
+    - result.systemerr ShouldContainSubstring bogus
+
+- name: invalid_paseto_subcommand_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto bogus
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring invalid argument
+    - result.systemerr ShouldContainSubstring bogus
+
+- name: invalid_paseto_purpose_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto encode bogus
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring invalid argument
+    - result.systemerr ShouldContainSubstring bogus
+
+- name: invalid_paseto_genkeys_version_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto genkeys v9
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring invalid argument
+    - result.systemerr ShouldContainSubstring v9
+
+# Naming no subcommand stays a help-and-exit-0 case: a bare group is how the
+# algorithms are discovered. Only a word that matches no subcommand is an error.
+- name: bare_encode_group_prints_help
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode
+    assertions:
+    - result.code ShouldEqual 0
+    - 'result.systemout ShouldContainSubstring Available Commands:'
+    - result.systemout ShouldContainSubstring hs256
+
+# The unknown-command path at the root must keep erroring: it relies on rootCmd
+# having no Args validator, which is why one was not added there.
+- name: unknown_top_level_command_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . deocde
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring unknown command
+
+- name: trailing_positional_argument_rejected
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="my-32-byte-secret-key-for-hs2560"
+      go run . encode hs256 --payload '{ "email": "{{.EMAIL}}" }' --secret "$SECRET" extra-arg
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring unknown command
+    - result.systemerr ShouldContainSubstring extra-arg
+
+- name: cross_family_flag_rejected
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode rs256 --private-key tests/RS256-private.pem \
+        --payload '{ "email": "{{.EMAIL}}" }' --secret irrelevant
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring unknown flag
+
+# An ECDSA key size is fixed by the curve, so the ES commands do not offer the
+# flag at all rather than accepting it and ignoring it.
+- name: es_allow_weak_key_rejected
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode es256 --private-key tests/ES256-private.pem \
+        --payload '{ "email": "{{.EMAIL}}" }' --allow-weak-key
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring unknown flag
+
+# ---------------------------------------------------------------------------
+# --json on failure paths.
+#
+# These assert on systemout, not systemerr: in JSON mode the envelope goes to
+# stdout so a caller can parse one stream.
+# ---------------------------------------------------------------------------
+
+- name: invalid_algorithm_json_envelope
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . --json encode hs257
+    assertions:
+    - result.code ShouldNotEqual 0
+    - 'result.systemout ShouldContainSubstring "success":'
+    - 'result.systemout ShouldContainSubstring "error":'
+    - result.systemout ShouldContainSubstring invalid argument
+
+# Regression test: pflag abandons parsing at the first unknown flag, so --json
+# after one was never bound and the failure came back as plain text.
+- name: unknown_flag_before_json_still_json
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . encode hs256 --bogus-flag x --json
+    assertions:
+    - result.code ShouldNotEqual 0
+    - 'result.systemout ShouldContainSubstring "success":'
+    - 'result.systemout ShouldContainSubstring "error":'
+    - result.systemout ShouldContainSubstring unknown flag
+
+- name: unknown_command_with_json_is_json
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . bogus --json
+    assertions:
+    - result.code ShouldNotEqual 0
+    - 'result.systemout ShouldContainSubstring "success":'
+    - 'result.systemout ShouldContainSubstring "error":'
+
+# ---------------------------------------------------------------------------
+# Claims validation gaps.
+# ---------------------------------------------------------------------------
+
+# --validate-claims advertised "(exp, nbf, iat)" but never checked iat.
+- name: decode_future_iat_with_validate_claims_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="my-32-byte-secret-key-for-hs2560"
+      IAT=$(( $(date +%s) + 3600 ))
+      TOKEN=$(go run . encode hs256 --payload "{ \"email\": \"{{.EMAIL}}\", \"iat\": $IAT }" --secret "$SECRET")
+      go run . decode hs256 --token "$TOKEN" --secret "$SECRET" --validate-claims
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring token used before issued
+
+- name: decode_future_iat_within_clock_skew_succeeds
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="my-32-byte-secret-key-for-hs2560"
+      IAT=$(( $(date +%s) + 30 ))
+      TOKEN=$(go run . encode hs256 --payload "{ \"email\": \"{{.EMAIL}}\", \"iat\": $IAT }" --secret "$SECRET")
+      go run . decode hs256 --token "$TOKEN" --secret "$SECRET" --validate-claims --clock-skew 5m
+    assertions:
+    - result.code ShouldEqual 0
+    - result.systemout ShouldContainSubstring {{.EMAIL}}
+
+- name: decode_with_negative_clock_skew_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="my-32-byte-secret-key-for-hs2560"
+      EXP=$(( $(date +%s) + 3600 ))
+      TOKEN=$(go run . encode hs256 --payload "{ \"email\": \"{{.EMAIL}}\", \"exp\": $EXP }" --secret "$SECRET")
+      go run . decode hs256 --token "$TOKEN" --secret "$SECRET" --validate-claims --clock-skew -5m
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring must not be negative
+
+- name: paseto_decode_with_negative_clock_skew_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      KEY=$(openssl rand -hex 32)
+      TOKEN=$(go run . paseto encode local --key "$KEY" --payload '{ "email": "{{.EMAIL}}" }')
+      go run . paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims --clock-skew -5m
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring must not be negative
+
+# A literal "null" unmarshals into a nil map without error, so it used to be
+# signed into a token whose payload segment was the four bytes "null".
+- name: encode_null_payload_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="my-32-byte-secret-key-for-hs2560"
+      go run . encode hs256 --payload 'null' --secret "$SECRET"
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring payload must be a JSON object
+
+- name: decode_out_of_range_exp_fails
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      SECRET="my-32-byte-secret-key-for-hs2560"
+      TOKEN=$(go run . encode hs256 --payload '{ "email": "{{.EMAIL}}", "exp": 9223372036854775807 }' --secret "$SECRET")
+      go run . decode hs256 --token "$TOKEN" --secret "$SECRET" --validate-claims
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring claim out of range
+    - result.systemerr ShouldNotContainSubstring expired
+
+# ---------------------------------------------------------------------------
+# Key handling.
+# ---------------------------------------------------------------------------
+
+# An encrypted key used to surface as a raw ASN.1 structure error, which reads
+# like a corrupt file.
+- name: encode_with_encrypted_private_key_fails
+  steps:
+  - type: exec
+    script: |
+      openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out plain-key.pem 2>/dev/null
+      openssl pkcs8 -topk8 -in plain-key.pem -out encrypted-key.pem -passout pass:hunter2 2>/dev/null
+      cd ..
+      go run . encode rs256 --private-key tests/encrypted-key.pem --payload '{ "email": "{{.EMAIL}}" }'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring password-protected
+    - result.systemerr ShouldNotContainSubstring asn1
+
+- name: encode_with_legacy_encrypted_private_key_fails
+  steps:
+  - type: exec
+    script: |
+      openssl ecparam -genkey -name prime256v1 -noout -out plain-ec-key.pem 2>/dev/null
+      openssl ec -in plain-ec-key.pem -aes256 -out legacy-encrypted-key.pem -passout pass:hunter2 2>/dev/null
+      cd ..
+      go run . encode es256 --private-key tests/legacy-encrypted-key.pem --payload '{ "email": "{{.EMAIL}}" }'
+    assertions:
+    - result.code ShouldNotEqual 0
+    - result.systemerr ShouldContainSubstring password-protected
+
+# ---------------------------------------------------------------------------
+# genkeys --json.
+#
+# README promised every command supported --json; both genkeys trees ignored it.
+# The plain-text form is a compatibility surface (the eval cases above depend on
+# it), so the JSON form is additive only.
+# ---------------------------------------------------------------------------
+
+- name: genkeys_json_output
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . genkeys rs256 --json
+    assertions:
+    - result.code ShouldEqual 0
+    - 'result.systemout ShouldContainSubstring "success":'
+    - 'result.systemout ShouldContainSubstring "algorithm":'
+    - result.systemout ShouldContainSubstring rs256
+    - 'result.systemout ShouldContainSubstring "commands"'
+
+- name: paseto_genkeys_json_output
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      go run . paseto genkeys v3 --json
+    assertions:
+    - result.code ShouldEqual 0
+    - 'result.systemout ShouldContainSubstring "local_key_command"'
+    - 'result.systemout ShouldContainSubstring "public_key_commands"'
+    # The commentary belongs to the printed form only.
+    - result.systemout ShouldNotContainSubstring Generate private key
+
+# The JWT recipes had no end-to-end coverage, unlike the PASETO ones above.
+- name: genkeys_es256_recipe_works
+  steps:
+  - type: exec
+    script: |
+      cd ..
+      cd tests
+      eval "$(go run .. genkeys es256)"
+      cd ..
+      TOKEN=$(go run . encode es256 --private-key tests/ES256-private.pem --payload '{ "email": "{{.EMAIL}}" }')
+      go run . decode es256 --token "$TOKEN" --public-key tests/ES256-public.pem
     assertions:
     - result.code ShouldEqual 0
     - result.systemout ShouldContainSubstring {{.EMAIL}}

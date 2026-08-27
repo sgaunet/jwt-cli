@@ -6,15 +6,16 @@ import (
 )
 
 func createHSEncodeCommand(_ /* alg */, use, short, long, example string, encoderWithOpts func([]byte, bool) cryptojwt.EncoderDecoder) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     use,
 		Short:   short,
 		Long:    long,
 		Example: example,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			secret := flagWithFallback(cmd, "secret", "s")
-			payload := flagWithFallback(cmd, "payload", "p")
-			allowWeakSecret, _ := cmd.Flags().GetBool("allow-weak-secret")
+			secret := flagWithFallback(cmd, flagSecret, aliasSecret)
+			payload := flagWithFallback(cmd, flagPayload, aliasPayload)
+			allowWeakSecret, _ := cmd.Flags().GetBool(flagAllowWeakSecret)
 
 			if secret == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -49,6 +50,8 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 			return nil
 		},
 	}
+	registerHSEncodeFlags(cmd)
+	return cmd
 }
 
 var encodeHS256Cmd = createHSEncodeCommand(

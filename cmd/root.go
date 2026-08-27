@@ -61,146 +61,74 @@ Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
 // command has printed yet - Cobra's flag-parse and unknown-command errors - are
 // reported here so they are not silently swallowed.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		reportError(err)
-		os.Exit(1)
+	err := rootCmd.Execute()
+	if err == nil {
+		return
 	}
+	// Those same Cobra errors are raised before --json has been bound: parsing
+	// stops at the first flag it cannot handle, and an unknown command is
+	// reported before any flag is read. Recover the intent from the raw
+	// arguments so the failure is still an envelope rather than plain text.
+	//
+	// Only the failure path consults this, and it only ever turns JSON on. A
+	// --json that was really some other flag's value therefore cannot change the
+	// output of a command that succeeded.
+	if !jsonOutput && wantsJSONOutput(os.Args[1:]) {
+		jsonOutput = true
+	}
+	reportError(err)
+	os.Exit(1)
 }
 
-//nolint:funlen // init function requires many statements for command setup
 func init() {
-	// Global flags for all commands
+	// --json is the only persistent flag. Every other flag is declared by the
+	// leaf command that reads it, in flags.go, so that passing a flag from
+	// another algorithm family is an error rather than a silent no-op.
 	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "output in JSON format")
+	// Keep Cobra's generated "completion" command available.
+	rootCmd.CompletionOptions.DisableDefaultCmd = false
+
+	registerJWTCommands()
+	registerPasetoCommands()
+}
+
+// registerJWTCommands wires the JWT encode, decode and genkeys trees onto root.
+func registerJWTCommands() {
+	requireValidSubcommand(encodeCmd)
+	requireValidSubcommand(decodeCmd)
+	requireValidSubcommand(genkeysCmd)
 
 	rootCmd.AddCommand(encodeCmd)
-	rootCmd.CompletionOptions.DisableDefaultCmd = false
-	encodeCmd.PersistentFlags().StringP("payload", "p", "", "JSON payload to encode into JWT (e.g., '{\"user\":\"alice\"}')")
-	encodeCmd.PersistentFlags().String("private-key", "", "path to RSA/ECDSA private key file in PEM format")
-	encodeCmd.PersistentFlags().StringP("secret", "s", "", "HMAC secret for signing (minimum 32 bytes for HS256, 48 bytes for HS384, 64 bytes for HS512)")
-	encodeCmd.PersistentFlags().Bool("allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
-	encodeCmd.PersistentFlags().Bool("allow-weak-key", false,
-		"allow RSA keys below 2048 bits for RSA algorithms (for testing purposes only)")
-	_ = encodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
-	_ = encodeCmd.MarkPersistentFlagFilename("payload", "json")
-	// Backward compatibility: add deprecated aliases for old flag names
-	encodeCmd.PersistentFlags().String("p", "", "")
-	_ = encodeCmd.PersistentFlags().MarkDeprecated("p", "use --payload or -p instead")
-	encodeCmd.PersistentFlags().String("s", "", "")
-	_ = encodeCmd.PersistentFlags().MarkDeprecated("s", "use --secret or -s instead")
-	encodeCmd.PersistentFlags().String("pk", "", "")
-	_ = encodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
-
-	// encode subcommands
-	encodeCmd.AddCommand(encodeRS256Cmd)
-	encodeCmd.AddCommand(encodeRS384Cmd)
-	encodeCmd.AddCommand(encodeRS512Cmd)
-	encodeCmd.AddCommand(encodeES256Cmd)
-	encodeCmd.AddCommand(encodeES384Cmd)
-	encodeCmd.AddCommand(encodeES512Cmd)
-	encodeCmd.AddCommand(encodeHS256Cmd)
-	encodeCmd.AddCommand(encodeHS384Cmd)
-	encodeCmd.AddCommand(encodeHS512Cmd)
+	encodeCmd.AddCommand(
+		encodeRS256Cmd, encodeRS384Cmd, encodeRS512Cmd,
+		encodeES256Cmd, encodeES384Cmd, encodeES512Cmd,
+		encodeHS256Cmd, encodeHS384Cmd, encodeHS512Cmd,
+	)
 
 	rootCmd.AddCommand(decodeCmd)
-	decodeCmd.PersistentFlags().String("private-key", "", "path to RSA/ECDSA private key file in PEM format")
-	decodeCmd.PersistentFlags().String("public-key", "", "path to RSA/ECDSA public key file in PEM format")
-	decodeCmd.PersistentFlags().StringP("token", "t", "", "JWT token to decode and verify")
-	decodeCmd.PersistentFlags().StringP("secret", "s", "", "HMAC secret for verification (minimum 32 bytes for HS256, 48 bytes for HS384, 64 bytes for HS512)")
-	decodeCmd.PersistentFlags().Bool("allow-weak-secret", false, "allow weak secrets for HMAC algorithms (for testing purposes only)")
-	decodeCmd.PersistentFlags().Bool("allow-weak-key", false,
-		"allow RSA keys below 2048 bits for RSA algorithms (for testing purposes only)")
-	decodeCmd.PersistentFlags().Bool("validate-claims", false, "validate JWT time-based claims (exp, nbf, iat) - reject expired or not-yet-valid tokens")
-	decodeCmd.PersistentFlags().Duration("clock-skew", 0, "clock skew tolerance for claims validation (e.g., 5m, 30s)")
-	_ = decodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
-	_ = decodeCmd.MarkPersistentFlagFilename("public-key", "pem", "key")
-	_ = decodeCmd.MarkPersistentFlagFilename("token", "jwt", "txt")
-	// Backward compatibility: add deprecated aliases for old flag names
-	decodeCmd.PersistentFlags().String("pk", "", "")
-	_ = decodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
-	decodeCmd.PersistentFlags().String("pubk", "", "")
-	_ = decodeCmd.PersistentFlags().MarkDeprecated("pubk", "use --public-key instead")
-	decodeCmd.PersistentFlags().String("t", "", "")
-	_ = decodeCmd.PersistentFlags().MarkDeprecated("t", "use --token or -t instead")
-	decodeCmd.PersistentFlags().String("s", "", "")
-	_ = decodeCmd.PersistentFlags().MarkDeprecated("s", "use --secret or -s instead")
+	decodeCmd.AddCommand(
+		decodeRS256Cmd, decodeRS384Cmd, decodeRS512Cmd,
+		decodeES256Cmd, decodeES384Cmd, decodeES512Cmd,
+		decodeHS256Cmd, decodeHS384Cmd, decodeHS512Cmd,
+	)
 
-	// decode subcommands
-	decodeCmd.AddCommand(decodeRS256Cmd)
-	decodeCmd.AddCommand(decodeRS384Cmd)
-	decodeCmd.AddCommand(decodeRS512Cmd)
-	decodeCmd.AddCommand(decodeES256Cmd)
-	decodeCmd.AddCommand(decodeES384Cmd)
-	decodeCmd.AddCommand(decodeES512Cmd)
-	decodeCmd.AddCommand(decodeHS256Cmd)
-	decodeCmd.AddCommand(decodeHS384Cmd)
-	decodeCmd.AddCommand(decodeHS512Cmd)
-
-	// genkeys
 	rootCmd.AddCommand(genkeysCmd)
-	genkeysCmd.AddCommand(genkeysES256Cmd)
-	genkeysCmd.AddCommand(genkeysES384Cmd)
-	genkeysCmd.AddCommand(genkeysES512Cmd)
-	genkeysCmd.AddCommand(genkeysRS256Cmd)
-	genkeysCmd.AddCommand(genkeysRS384Cmd)
-	genkeysCmd.AddCommand(genkeysRS512Cmd)
+	genkeysCmd.AddCommand(
+		genkeysES256Cmd, genkeysES384Cmd, genkeysES512Cmd,
+		genkeysRS256Cmd, genkeysRS384Cmd, genkeysRS512Cmd,
+	)
+}
 
-	// paseto
+// registerPasetoCommands wires the PASETO tree onto root.
+func registerPasetoCommands() {
+	requireValidSubcommand(pasetoCmd)
+	requireValidSubcommand(pasetoEncodeCmd)
+	requireValidSubcommand(pasetoDecodeCmd)
+	requireValidSubcommand(pasetoGenkeysCmd)
+
 	rootCmd.AddCommand(pasetoCmd)
-	pasetoCmd.AddCommand(pasetoEncodeCmd)
-	pasetoCmd.AddCommand(pasetoDecodeCmd)
-	pasetoCmd.AddCommand(pasetoGenkeysCmd)
-
-	pasetoEncodeCmd.PersistentFlags().StringP("payload", "p", "",
-		"JSON payload to encode into the PASETO token (e.g., '{\"user\":\"alice\"}')")
-	pasetoEncodeCmd.PersistentFlags().String("private-key", "",
-		"path to Ed25519 (v2/v4) or P-384 (v3) private key file, PEM or raw")
-	pasetoEncodeCmd.PersistentFlags().String("key", "",
-		"hex-encoded 32-byte symmetric key for local tokens")
-	pasetoEncodeCmd.PersistentFlags().String("version", pasetoV4,
-		"PASETO version (v2, v3, v4)")
-	_ = pasetoEncodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
-	_ = pasetoEncodeCmd.MarkPersistentFlagFilename("payload", "json")
-	// Backward compatibility: add deprecated aliases for old flag names
-	pasetoEncodeCmd.PersistentFlags().String("p", "", "")
-	_ = pasetoEncodeCmd.PersistentFlags().MarkDeprecated("p", "use --payload or -p instead")
-	pasetoEncodeCmd.PersistentFlags().String("pk", "", "")
-	_ = pasetoEncodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
-
-	pasetoDecodeCmd.PersistentFlags().StringP("token", "t", "",
-		"PASETO token to decode and verify")
-	pasetoDecodeCmd.PersistentFlags().String("private-key", "",
-		"path to Ed25519 (v2/v4) or P-384 (v3) private key file, PEM or raw")
-	pasetoDecodeCmd.PersistentFlags().String("public-key", "",
-		"path to Ed25519 (v2/v4) or P-384 (v3) public key file, PEM or raw")
-	pasetoDecodeCmd.PersistentFlags().String("key", "",
-		"hex-encoded 32-byte symmetric key for local tokens")
-	pasetoDecodeCmd.PersistentFlags().String("version", pasetoV4,
-		"PASETO version (v2, v3, v4)")
-	pasetoDecodeCmd.PersistentFlags().Bool("validate-claims", false,
-		"validate PASETO time-based claims (exp, nbf) - reject expired or not-yet-valid tokens")
-	pasetoDecodeCmd.PersistentFlags().Duration("clock-skew", 0,
-		"clock skew tolerance for claims validation (e.g., 5m, 30s)")
-	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("private-key", "pem", "key")
-	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("public-key", "pem", "key")
-	_ = pasetoDecodeCmd.MarkPersistentFlagFilename("token", "paseto", "txt")
-	// Backward compatibility: add deprecated aliases for old flag names
-	pasetoDecodeCmd.PersistentFlags().String("t", "", "")
-	_ = pasetoDecodeCmd.PersistentFlags().MarkDeprecated("t", "use --token or -t instead")
-	pasetoDecodeCmd.PersistentFlags().String("pk", "", "")
-	_ = pasetoDecodeCmd.PersistentFlags().MarkDeprecated("pk", "use --private-key instead")
-	pasetoDecodeCmd.PersistentFlags().String("pubk", "", "")
-	_ = pasetoDecodeCmd.PersistentFlags().MarkDeprecated("pubk", "use --public-key instead")
-
-	// paseto encode subcommands
-	pasetoEncodeCmd.AddCommand(pasetoEncodeLocalCmd)
-	pasetoEncodeCmd.AddCommand(pasetoEncodePublicCmd)
-
-	// paseto decode subcommands
-	pasetoDecodeCmd.AddCommand(pasetoDecodeLocalCmd)
-	pasetoDecodeCmd.AddCommand(pasetoDecodePublicCmd)
-
-	// paseto genkeys subcommands
-	pasetoGenkeysCmd.AddCommand(pasetoGenkeysV2Cmd)
-	pasetoGenkeysCmd.AddCommand(pasetoGenkeysV3Cmd)
-	pasetoGenkeysCmd.AddCommand(pasetoGenkeysV4Cmd)
+	pasetoCmd.AddCommand(pasetoEncodeCmd, pasetoDecodeCmd, pasetoGenkeysCmd)
+	pasetoEncodeCmd.AddCommand(pasetoEncodeLocalCmd, pasetoEncodePublicCmd)
+	pasetoDecodeCmd.AddCommand(pasetoDecodeLocalCmd, pasetoDecodePublicCmd)
+	pasetoGenkeysCmd.AddCommand(pasetoGenkeysV2Cmd, pasetoGenkeysV3Cmd, pasetoGenkeysV4Cmd)
 }

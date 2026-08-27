@@ -20,8 +20,9 @@
 // that floor for testing only.
 //
 // Claims Validation: Always validate standard JWT claims (exp, nbf, iat) in
-// production. The decoder provides parsed claims but does not automatically
-// validate expiration or time-based claims.
+// production. The decoder provides parsed claims but does not validate
+// time-based claims unless ValidationOptions.ValidateClaims is set, in which
+// case exp, nbf and iat are all enforced.
 //
 // Key Management: For RSA and ECDSA algorithms, protect private keys with
 // appropriate file permissions and never commit them to version control.
@@ -29,10 +30,10 @@
 // # Errors
 //
 // Failures are reported through the sentinel errors ErrInvalidPayload,
-// ErrInvalidToken, ErrInvalidKey, ErrWeakSecret, ErrWeakKey and
-// ErrUnsupportedAlgorithm. Use errors.Is to test for them. Each error also
-// wraps the underlying cause, so errors.Is against os.ErrNotExist or the jwt
-// package's own errors keeps working on the same value.
+// ErrInvalidToken, ErrInvalidKey, ErrWeakSecret, ErrWeakKey,
+// ErrUnsupportedAlgorithm and ErrClaimOutOfRange. Use errors.Is to test for
+// them. Each error also wraps the underlying cause, so errors.Is against
+// os.ErrNotExist or the jwt package's own errors keeps working on the same value.
 //
 // # Usage Examples
 //
@@ -99,15 +100,22 @@ var (
 	// ErrUnsupportedAlgorithm indicates a signing method this package does not
 	// handle.
 	ErrUnsupportedAlgorithm = errors.New("unsupported algorithm")
+	// ErrClaimOutOfRange indicates a numeric time claim (exp, nbf or iat) whose
+	// value cannot be represented as a Unix timestamp.
+	ErrClaimOutOfRange = errors.New("claim out of range")
 )
 
 // ValidationOptions configures JWT claims validation behavior.
 type ValidationOptions struct {
 	// ValidateClaims enables validation of time-based JWT claims (exp, nbf, iat).
 	// When false, tokens are accepted regardless of expiration or timing claims.
+	// A claim that is absent is never enforced, and iat is rejected only when it
+	// lies in the future: a token issued in the past is always accepted.
 	ValidateClaims bool
 	// ClockSkew allows tolerance for clock differences between systems.
-	// Applied to exp and nbf validation. Default is 0 (no tolerance).
+	// Applied to exp, nbf and iat validation. Default is 0 (no tolerance).
+	// A negative value tightens the window instead of widening it; the jwt-cli
+	// decode commands refuse one.
 	ClockSkew time.Duration
 }
 
@@ -140,6 +148,13 @@ func (e *encoder) EncodeJWT(secret any, signingMethod jwt.SigningMethod, payload
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrInvalidPayload, err)
 	}
+	// A literal "null" unmarshals into a nil map without error, so it needs its
+	// own rejection: signing it would produce a token whose payload segment is
+	// the four bytes "null" rather than the JSON object RFC 7519 section 4
+	// requires, and which decodes back as {}.
+	if claims == nil {
+		return "", fmt.Errorf("%w: payload must be a JSON object", ErrInvalidPayload)
+	}
 	// Create token
 	token := jwt.NewWithClaims(signingMethod, claims)
 	// Generate encoded token and send it as response.
@@ -162,10 +177,17 @@ func (d *decoder) DecodeJWT(secret any, signingMethod jwt.SigningMethod, token s
 	// Configure parser based on validation options
 	var parser *jwt.Parser
 	if d.validationOpts.ValidateClaims {
-		// Enable claims validation with optional clock skew
+		// Enable claims validation with optional clock skew.
+		//
+		// WithIssuedAt turns on the iat rule, which golang-jwt leaves off by
+		// default: without it a token dated in the future is accepted even
+		// though ValidateClaims covers exp, nbf and iat. WithLeeway applies to
+		// iat as well, so ClockSkew still absorbs an issuer whose clock runs
+		// ahead.
 		parser = jwt.NewParser(
 			validMethods,
 			jwt.WithLeeway(d.validationOpts.ClockSkew),
+			jwt.WithIssuedAt(),
 		)
 	} else {
 		// Disable claims validation for backward compatibility
@@ -178,6 +200,9 @@ func (d *decoder) DecodeJWT(secret any, signingMethod jwt.SigningMethod, token s
 	_, err := parser.ParseWithClaims(token, claims, func(_ *jwt.Token) (any, error) {
 		return secret, nil
 	})
+	if rangeErr := d.checkTimeClaimRange(claims, err); rangeErr != nil {
+		return "", rangeErr
+	}
 	if err != nil {
 		return "", fmt.Errorf("%w: failed to parse token: %w", ErrInvalidToken, err)
 	}

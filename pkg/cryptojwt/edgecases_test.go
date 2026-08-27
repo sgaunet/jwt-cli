@@ -587,6 +587,12 @@ func TestInvalidJSONStructures(t *testing.T) {
 			name:    "just a boolean",
 			payload: `true`,
 		},
+		{
+			// encoding/json unmarshals "null" into a nil map without an error,
+			// so this one used to slip through and get signed.
+			name:    "just a null literal",
+			payload: `null`,
+		},
 	}
 
 	for _, tt := range tests {

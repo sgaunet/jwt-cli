@@ -45,7 +45,6 @@ func TestHSEncodeCommand_Success(t *testing.T) {
 				"Test example",
 				tt.constructor,
 			)
-			registerEncodeFlags(cmd)
 
 			output, err := executeCommand(cmd,
 				"--payload", validPayload,
@@ -80,7 +79,6 @@ func TestHSEncodeCommand_ComplexPayload(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	output, err := executeCommand(cmd,
 		"--payload", complexPayload,
@@ -107,7 +105,6 @@ func TestHSEncodeCommand_MissingSecret(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--payload", validPayload,
@@ -133,7 +130,6 @@ func TestHSEncodeCommand_MissingPayload(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--secret", hs256Secret,
@@ -159,7 +155,6 @@ func TestHSEncodeCommand_InvalidJSON(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--payload", invalidJSON,
@@ -215,7 +210,6 @@ func TestHSEncodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				tt.constructor,
 			)
-			registerEncodeFlags(cmd)
 
 			// Test without --allow-weak-secret flag (should fail)
 			_, err := executeCommand(cmd,
@@ -241,7 +235,6 @@ func TestHSEncodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				tt.constructor,
 			)
-			registerEncodeFlags(cmd)
 
 			// Test with --allow-weak-secret flag (should succeed)
 			output, err := executeCommand(cmd,
@@ -273,7 +266,6 @@ func TestHSEncodeCommand_DeprecatedPayloadFlag(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	// Test deprecated --p flag (long form deprecated)
 	output, err := executeCommand(cmd,
@@ -302,7 +294,6 @@ func TestHSEncodeCommand_DeprecatedSecretFlag(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	// Test deprecated --s flag (long form deprecated)
 	output, err := executeCommand(cmd,
@@ -330,7 +321,6 @@ func TestHSEncodeCommand_MixedFlags(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	// Mix new and deprecated flags
 	output, err := executeCommand(cmd,
@@ -358,7 +348,6 @@ func TestHSEncodeCommand_EmptyPayload(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--payload", "",
@@ -384,7 +373,6 @@ func TestHSEncodeCommand_EmptySecret(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--payload", validPayload,

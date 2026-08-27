@@ -8,7 +8,7 @@ import (
 //
 //nolint:funlen // Long help and guidance text dominate this function
 func createPasetoDecodeLocalCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   pasetoPurposeLocal,
 		Short: "Decode a PASETO local (symmetric) token",
 		Long: `Decode and verify a PASETO local token using its symmetric key.
@@ -34,9 +34,10 @@ Claims Validation:
 
   # Extract a single claim
   jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" | jq -r '.user'`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			key, _ := cmd.Flags().GetString("key")
-			token := flagWithFallback(cmd, "token", "t")
+			key, _ := cmd.Flags().GetString(flagKey)
+			token := flagWithFallback(cmd, flagToken, aliasToken)
 			version := pasetoVersionFlag(cmd)
 
 			if key == "" {
@@ -68,14 +69,16 @@ Tip: The token is the string produced by 'jwt-cli paseto encode local'.`)
 				return userError(err.Error())
 			}
 
-			claims, err := decoder.Decode(token)
+			decoded, err := decoder.DecodeWithFooter(token)
 			if err != nil {
 				return userErrorf("decoding failed: %v", err)
 			}
-			outputClaims(claims)
+			outputPasetoClaims(decoded)
 			return nil
 		},
 	}
+	registerPasetoDecodeLocalFlags(cmd)
+	return cmd
 }
 
 var pasetoDecodeLocalCmd = createPasetoDecodeLocalCommand()

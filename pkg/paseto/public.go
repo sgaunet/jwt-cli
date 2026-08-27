@@ -100,18 +100,26 @@ func (p *PublicV4Encoder) Encode(payload string) (string, error) {
 	return token.V4Sign(*p.privateKey, nil), nil
 }
 
-// Decode verifies a v4.public token and returns its claims as indented JSON.
+// DecodeWithFooter verifies a v4.public token and returns its claims as
+// indented JSON, along with the token's authenticated footer.
 //
 // The token's signature is verified. Claims are validated only when the
 // decoder was built WithValidation; by default an expired token decodes
 // successfully.
-func (p *PublicV4Encoder) Decode(tokenString string) (string, error) {
+func (p *PublicV4Encoder) DecodeWithFooter(tokenString string) (DecodedToken, error) {
 	parser := p.parser()
 	token, err := parser.ParseV4Public(p.publicKey, tokenString, nil)
 	if err != nil {
-		return "", wrapDecodeError(err)
+		return DecodedToken{}, wrapDecodeError(err)
 	}
-	return claimsJSON(token)
+	return decodeResult(token)
+}
+
+// Decode verifies the token and returns its claims as indented JSON,
+// discarding any footer. Use DecodeWithFooter to see the footer too.
+func (p *PublicV4Encoder) Decode(tokenString string) (string, error) {
+	decoded, err := p.DecodeWithFooter(tokenString)
+	return decoded.Claims, err
 }
 
 // PublicV3Encoder encodes and decodes PASETO V3 public (NIST P-384) tokens.
@@ -195,18 +203,26 @@ func (p *PublicV3Encoder) Encode(payload string) (string, error) {
 	return token.V3Sign(*p.privateKey, nil), nil
 }
 
-// Decode verifies a v3.public token and returns its claims as indented JSON.
+// DecodeWithFooter verifies a v3.public token and returns its claims as
+// indented JSON, along with the token's authenticated footer.
 //
 // The token's signature is verified. Claims are validated only when the
 // decoder was built WithValidation; by default an expired token decodes
 // successfully.
-func (p *PublicV3Encoder) Decode(tokenString string) (string, error) {
+func (p *PublicV3Encoder) DecodeWithFooter(tokenString string) (DecodedToken, error) {
 	parser := p.parser()
 	token, err := parser.ParseV3Public(p.publicKey, tokenString, nil)
 	if err != nil {
-		return "", wrapDecodeError(err)
+		return DecodedToken{}, wrapDecodeError(err)
 	}
-	return claimsJSON(token)
+	return decodeResult(token)
+}
+
+// Decode verifies the token and returns its claims as indented JSON,
+// discarding any footer. Use DecodeWithFooter to see the footer too.
+func (p *PublicV3Encoder) Decode(tokenString string) (string, error) {
+	decoded, err := p.DecodeWithFooter(tokenString)
+	return decoded.Claims, err
 }
 
 // PublicV2Encoder encodes and decodes PASETO V2 public (Ed25519) tokens.
@@ -272,16 +288,24 @@ func (p *PublicV2Encoder) Encode(payload string) (string, error) {
 	return token.V2Sign(*p.privateKey), nil
 }
 
-// Decode verifies a v2.public token and returns its claims as indented JSON.
+// DecodeWithFooter verifies a v2.public token and returns its claims as
+// indented JSON, along with the token's authenticated footer.
 //
 // The token's signature is verified. Claims are validated only when the
 // decoder was built WithValidation; by default an expired token decodes
 // successfully.
-func (p *PublicV2Encoder) Decode(tokenString string) (string, error) {
+func (p *PublicV2Encoder) DecodeWithFooter(tokenString string) (DecodedToken, error) {
 	parser := p.parser()
 	token, err := parser.ParseV2Public(p.publicKey, tokenString)
 	if err != nil {
-		return "", wrapDecodeError(err)
+		return DecodedToken{}, wrapDecodeError(err)
 	}
-	return claimsJSON(token)
+	return decodeResult(token)
+}
+
+// Decode verifies the token and returns its claims as indented JSON,
+// discarding any footer. Use DecodeWithFooter to see the footer too.
+func (p *PublicV2Encoder) Decode(tokenString string) (string, error) {
+	decoded, err := p.DecodeWithFooter(tokenString)
+	return decoded.Claims, err
 }

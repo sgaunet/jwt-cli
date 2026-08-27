@@ -29,7 +29,7 @@ var pasetoVersions = []string{pasetoV2, pasetoV3, pasetoV4}
 
 // pasetoCmd represents the paseto command.
 var pasetoCmd = &cobra.Command{
-	Use:   "paseto",
+	Use:   "paseto <command>",
 	Short: "Encode and decode PASETO tokens",
 	Long: `Encode and decode PASETO (Platform-Agnostic SEcurity TOkens).
 
@@ -59,7 +59,7 @@ Claims Validation:
 
 // pasetoEncodeCmd represents the paseto encode command.
 var pasetoEncodeCmd = &cobra.Command{
-	Use:       pasetoVerbEncode,
+	Use:       pasetoVerbEncode + " <purpose>",
 	Short:     "Encode a PASETO token",
 	Long:      `Encode a JSON payload into a PASETO local (symmetric) or public (asymmetric) token.`,
 	ValidArgs: []string{pasetoPurposeLocal, pasetoPurposePublic},
@@ -67,7 +67,7 @@ var pasetoEncodeCmd = &cobra.Command{
 
 // pasetoDecodeCmd represents the paseto decode command.
 var pasetoDecodeCmd = &cobra.Command{
-	Use:   pasetoVerbDecode,
+	Use:   pasetoVerbDecode + " <purpose>",
 	Short: "Decode a PASETO token",
 	Long: `Decode and verify a PASETO local (symmetric) or public (asymmetric) token.
 
@@ -80,7 +80,7 @@ never enforced, and iat is never enforced.`,
 
 // pasetoGenkeysCmd represents the paseto genkeys command.
 var pasetoGenkeysCmd = &cobra.Command{
-	Use:   pasetoVerbGenkeys,
+	Use:   pasetoVerbGenkeys + " <version>",
 	Short: "Print commands to generate PASETO keys",
 	Long: `Print example OpenSSL commands to generate key pairs for PASETO public tokens.
 
@@ -182,7 +182,7 @@ func newPublicCodec(version, privateKeyFile, publicKeyFile string, opts ...paset
 
 // pasetoVersionFlag reads the --version flag, defaulting to v4 when unset.
 func pasetoVersionFlag(cmd *cobra.Command) string {
-	version, _ := cmd.Flags().GetString("version")
+	version, _ := cmd.Flags().GetString(flagVersion)
 	if version == "" {
 		return pasetoV4
 	}
@@ -194,23 +194,34 @@ func pasetoVersionFlag(cmd *cobra.Command) string {
 //
 // Validation is off by default, so a token can always be inspected regardless
 // of its timing claims; --clock-skew only matters once --validate-claims is on.
-func pasetoValidationOption(cmd *cobra.Command) paseto.Option {
-	validateClaims, _ := cmd.Flags().GetBool("validate-claims")
-	clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
+func pasetoValidationOption(cmd *cobra.Command) (paseto.Option, error) {
+	validateClaims, _ := cmd.Flags().GetBool(flagValidateClaims)
+	clockSkew, err := clockSkewFlag(cmd)
+	if err != nil {
+		return nil, err
+	}
 	return paseto.WithValidation(paseto.ValidationOptions{
 		ValidateClaims: validateClaims,
 		ClockSkew:      clockSkew,
-	})
+	}), nil
 }
 
 // newLocalDecoder builds a decoder for local tokens, honouring the claims
 // validation flags.
 func newLocalDecoder(cmd *cobra.Command, version, keyHex string) (paseto.EncoderDecoder, error) {
-	return newLocalCodec(version, keyHex, pasetoValidationOption(cmd))
+	validation, err := pasetoValidationOption(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return newLocalCodec(version, keyHex, validation)
 }
 
 // newPublicDecoder builds a decoder for public tokens, honouring the claims
 // validation flags.
 func newPublicDecoder(cmd *cobra.Command, version, privateKeyFile, publicKeyFile string) (paseto.EncoderDecoder, error) {
-	return newPublicCodec(version, privateKeyFile, publicKeyFile, pasetoValidationOption(cmd))
+	validation, err := pasetoValidationOption(cmd)
+	if err != nil {
+		return nil, err
+	}
+	return newPublicCodec(version, privateKeyFile, publicKeyFile, validation)
 }

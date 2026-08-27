@@ -55,45 +55,56 @@ func executeCommand(cmd *cobra.Command, args ...string) (string, error) {
 	return capturedOutput.String() + buf.String(), nil
 }
 
-// registerEncodeFlags registers all encoding-related flags on a command.
-// This mimics the flag registration done in root.go for encode commands.
+// executeRoot runs args through the real command tree and returns what reached
+// stdout, plus whatever error Execute produced.
+//
+// It exists because executeCommand cannot reach the exit-code paths: Cobra's
+// ExecuteC walks up to the root of any command that has a parent, and rootCmd's
+// args are nil there, so it parses os.Args - the go test binary's own flags -
+// instead of the args set on the child. Root is not runnable, so that returns
+// help text and a nil error, and an assertion on the child never runs.
+//
+// Use it for error paths only. rootCmd is a package-level singleton and Cobra
+// retains parsed flag values on a command, so a happy-path run here leaks state
+// into later tests.
 //
 //nolint:unused // Shared test helper used across multiple test files
-func registerEncodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("payload", "p", "", "JSON payload")
-	cmd.Flags().StringP("secret", "s", "", "HMAC secret")
-	cmd.Flags().String("private-key", "", "path to RSA/ECDSA private key file")
-	cmd.Flags().Bool("allow-weak-secret", false, "allow weak secrets")
-	cmd.Flags().Bool("allow-weak-key", false, "allow RSA keys below 2048 bits")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("p", "", "")
-	_ = cmd.Flags().MarkDeprecated("p", "use --payload or -p instead")
-	cmd.Flags().String("s", "", "")
-	_ = cmd.Flags().MarkDeprecated("s", "use --secret or -s instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-}
+func executeRoot(t *testing.T, args ...string) (string, error) {
+	t.Helper()
 
-// registerDecodeFlags registers all decoding-related flags on a command.
-// This mimics the flag registration done in root.go for decode commands.
-//
-//nolint:unused // Shared test helper used across multiple test files
-func registerDecodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("token", "t", "", "JWT token to decode")
-	cmd.Flags().StringP("secret", "s", "", "HMAC secret")
-	cmd.Flags().String("private-key", "", "path to RSA/ECDSA private key file")
-	cmd.Flags().String("public-key", "", "path to RSA/ECDSA public key file")
-	cmd.Flags().Bool("allow-weak-secret", false, "allow weak secrets")
-	cmd.Flags().Bool("allow-weak-key", false, "allow RSA keys below 2048 bits")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("t", "", "")
-	_ = cmd.Flags().MarkDeprecated("t", "use --token or -t instead")
-	cmd.Flags().String("s", "", "")
-	_ = cmd.Flags().MarkDeprecated("s", "use --secret or -s instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-	cmd.Flags().String("pubk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pubk", "use --public-key instead")
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(buf)
+	rootCmd.SetArgs(args)
+
+	t.Cleanup(func() {
+		// An empty but non-nil slice: a nil value is what makes Cobra fall back
+		// to os.Args again.
+		rootCmd.SetArgs([]string{})
+		// Hand the writers back to os.Stdout/os.Stderr. Leaving them pointed at
+		// this test's buffer would silently swallow the output of any later test
+		// that reaches rootCmd.
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		jsonOutput = false
+	})
+
+	err := rootCmd.Execute()
+
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	var captured bytes.Buffer
+	_, _ = captured.ReadFrom(r)
+
+	if err != nil {
+		return captured.String() + buf.String(), fmt.Errorf("root command execution failed: %w", err)
+	}
+	return captured.String() + buf.String(), nil
 }
 
 // createTempFile creates a temporary file with given content.
@@ -281,43 +292,6 @@ const (
 	weakSecret = "short"
 )
 
-// registerPasetoEncodeFlags registers the flags a "paseto encode" subcommand
-// reads from its parent, so tests can execute the subcommand standalone.
-//
-//nolint:unused // Shared test helper used across multiple test files
-func registerPasetoEncodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("payload", "p", "", "JSON payload to encode")
-	cmd.Flags().String("private-key", "", "path to private key file")
-	cmd.Flags().String("key", "", "hex-encoded symmetric key")
-	cmd.Flags().String("version", pasetoV4, "PASETO version")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("p", "", "")
-	_ = cmd.Flags().MarkDeprecated("p", "use --payload or -p instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-}
-
-// registerPasetoDecodeFlags registers the flags a "paseto decode" subcommand
-// reads from its parent, so tests can execute the subcommand standalone.
-//
-//nolint:unused // Shared test helper used across multiple test files
-func registerPasetoDecodeFlags(cmd *cobra.Command) {
-	cmd.Flags().StringP("token", "t", "", "PASETO token to decode")
-	cmd.Flags().String("private-key", "", "path to private key file")
-	cmd.Flags().String("public-key", "", "path to public key file")
-	cmd.Flags().String("key", "", "hex-encoded symmetric key")
-	cmd.Flags().String("version", pasetoV4, "PASETO version")
-	cmd.Flags().Bool("validate-claims", false, "validate PASETO time-based claims")
-	cmd.Flags().Duration("clock-skew", 0, "clock skew tolerance for claims validation")
-	// Deprecated flags for backward compatibility
-	cmd.Flags().String("t", "", "")
-	_ = cmd.Flags().MarkDeprecated("t", "use --token or -t instead")
-	cmd.Flags().String("pk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pk", "use --private-key instead")
-	cmd.Flags().String("pubk", "", "")
-	_ = cmd.Flags().MarkDeprecated("pubk", "use --public-key instead")
-}
-
 // generateEd25519KeyPair generates a test Ed25519 key pair for PASETO v2/v4
 // public tokens and returns the private and public key file paths in PEM form.
 //
@@ -389,6 +363,33 @@ func generateP384KeyPair(t *testing.T) (string, string) {
 //
 //nolint:unused // Shared test helper used across multiple test files
 const pasetoTestKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+// captureStdout runs fn with os.Stdout redirected and returns what it wrote.
+// The commands print with fmt.Println rather than cmd.OutOrStdout(), so this is
+// the only way to see their successful output and the --json envelope.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create pipe: %v", err)
+	}
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	fn()
+
+	if err := w.Close(); err != nil {
+		t.Fatalf("Failed to close pipe: %v", err)
+	}
+	var captured bytes.Buffer
+	if _, err := captured.ReadFrom(r); err != nil {
+		t.Fatalf("Failed to read captured stdout: %v", err)
+	}
+	return captured.String()
+}
 
 // captureStderr redirects os.Stderr for the duration of fn and returns whatever
 // was written to it.

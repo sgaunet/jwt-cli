@@ -41,8 +41,12 @@ import (
 type EncoderDecoder interface {
 	// Encode serialises the JSON payload into a PASETO token.
 	Encode(payload string) (string, error)
-	// Decode verifies the token and returns its claims as indented JSON.
+	// Decode verifies the token and returns its claims as indented JSON,
+	// discarding any footer.
 	Decode(token string) (string, error)
+	// DecodeWithFooter verifies the token and returns its claims together with
+	// its footer, which PASETO authenticates but keeps outside the claim set.
+	DecodeWithFooter(token string) (DecodedToken, error)
 }
 
 // Sentinel errors returned by this package. Use errors.Is to test for them.

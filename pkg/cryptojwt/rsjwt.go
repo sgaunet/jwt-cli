@@ -272,6 +272,9 @@ func readPrivateRSAKey(privateKeyFile string, allowWeakKey bool) (crypto.Private
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: error reading private key file: %w", ErrInvalidKey, err)
 	}
+	if err := checkKeyNotEncrypted(privateKey); err != nil {
+		return nil, nil, err
+	}
 	rsaPrivateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%w: error parsing RSA private key: %w", ErrInvalidKey, err)
@@ -287,6 +290,9 @@ func readPublicRSAKey(publicKeyFile string, allowWeakKey bool) (*rsa.PublicKey, 
 	publicKey, err := keyfile.Read(publicKeyFile)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error reading public key file: %w", ErrInvalidKey, err)
+	}
+	if err := checkKeyNotEncrypted(publicKey); err != nil {
+		return nil, err
 	}
 	key, err := jwt.ParseRSAPublicKeyFromPEM(publicKey)
 	if err != nil {

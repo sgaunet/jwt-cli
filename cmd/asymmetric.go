@@ -20,6 +20,11 @@ type asymmetricKeyVocab struct {
 	// decodeKeyTip appends an extra line to the decode "key required" tip, or is
 	// empty when the family has nothing to add.
 	decodeKeyTip string
+	// allowsWeakKeyOptOut reports whether the family's key size is a user choice.
+	// RSA keys can be any modulus size, so the RS commands offer
+	// --allow-weak-key; an ECDSA key size is fixed by the curve the algorithm
+	// names, so the ES commands do not register the flag and reject it as unknown.
+	allowsWeakKeyOptOut bool
 }
 
 // asymmetricEncoderFunc builds an encoder from a private key file. allowWeakKey
@@ -34,15 +39,19 @@ type asymmetricDecoderFunc func(
 ) cryptojwt.Decoder
 
 // ignoreWeakKeyEncoder adapts an encoder constructor that has no weak-key
-// opt-out. ECDSA key sizes are fixed by the curve the algorithm names, so there
-// is nothing for --allow-weak-key to override.
+// opt-out to the shared asymmetricEncoderFunc signature. ECDSA key sizes are
+// fixed by the curve the algorithm names, so the ES commands do not register
+// --allow-weak-key at all; this adapter only discards the parameter the shared
+// signature requires.
 func ignoreWeakKeyEncoder(f func(string) cryptojwt.Encoder) asymmetricEncoderFunc {
 	return func(privateKeyFile string, _ bool) cryptojwt.Encoder {
 		return f(privateKeyFile)
 	}
 }
 
-// ignoreWeakKeyDecoder adapts a decoder constructor that has no weak-key opt-out.
+// ignoreWeakKeyDecoder adapts a decoder constructor that has no weak-key
+// opt-out to the shared asymmetricDecoderFunc signature. See
+// ignoreWeakKeyEncoder.
 func ignoreWeakKeyDecoder(
 	f func(string, cryptojwt.ValidationOptions) cryptojwt.Decoder,
 ) asymmetricDecoderFunc {
@@ -60,6 +69,7 @@ var esKeyVocab = asymmetricKeyVocab{
      ES256 uses P-256 curve, ES384 uses P-384, ES512 uses P-521.`,
 	decodeKeyTip: `
      ES256 uses P-256 curve, ES384 uses P-384, ES512 uses P-521.`,
+	allowsWeakKeyOptOut: false,
 }
 
 // rsKeyVocab describes the RSA (RS256/384/512) commands.
@@ -69,7 +79,8 @@ var rsKeyVocab = asymmetricKeyVocab{
 	publicKeyPath:  "./keys/public.pem",
 	encodeKeyTip: `Tip: Keep your private key secure and never share it. RSA keys must be at
      least 2048 bits; pass --allow-weak-key to accept a shorter one for testing.`,
-	decodeKeyTip: "",
+	decodeKeyTip:        "",
+	allowsWeakKeyOptOut: true,
 }
 
 // createAsymmetricEncodeCommand builds an encode command for a private-key
@@ -80,15 +91,16 @@ func createAsymmetricEncodeCommand(
 	use, short, long, example string,
 	encoder asymmetricEncoderFunc,
 ) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     use,
 		Short:   short,
 		Long:    long,
 		Example: example,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			privateKeyFile := flagWithFallback(cmd, "private-key", "pk")
-			payload := flagWithFallback(cmd, "payload", "p")
-			allowWeakKey, _ := cmd.Flags().GetBool("allow-weak-key")
+			privateKeyFile := flagWithFallback(cmd, flagPrivateKey, aliasPrivateKey)
+			payload := flagWithFallback(cmd, flagPayload, aliasPayload)
+			allowWeakKey := weakKeyOptOut(cmd)
 
 			if privateKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -126,6 +138,8 @@ Tip: Payload must be valid JSON. Common claims include 'sub' (subject), 'exp' (e
 			return nil
 		},
 	}
+	registerAsymmetricEncodeFlags(cmd, v.allowsWeakKeyOptOut)
+	return cmd
 }
 
 // createAsymmetricDecodeCommand builds a decode command for a key-pair
@@ -138,18 +152,22 @@ func createAsymmetricDecodeCommand(
 	use, short, long, example string,
 	pubKeyDecoderWithValidation, privKeyDecoderWithValidation asymmetricDecoderFunc,
 ) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     use,
 		Short:   short,
 		Long:    long,
 		Example: example,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			privateKeyFile := flagWithFallback(cmd, "private-key", "pk")
-			publicKeyFile := flagWithFallback(cmd, "public-key", "pubk")
-			token := flagWithFallback(cmd, "token", "t")
-			validateClaims, _ := cmd.Flags().GetBool("validate-claims")
-			clockSkew, _ := cmd.Flags().GetDuration("clock-skew")
-			allowWeakKey, _ := cmd.Flags().GetBool("allow-weak-key")
+			privateKeyFile := flagWithFallback(cmd, flagPrivateKey, aliasPrivateKey)
+			publicKeyFile := flagWithFallback(cmd, flagPublicKey, aliasPublicKey)
+			token := flagWithFallback(cmd, flagToken, aliasToken)
+			validateClaims, _ := cmd.Flags().GetBool(flagValidateClaims)
+			allowWeakKey := weakKeyOptOut(cmd)
+			clockSkew, skewErr := clockSkewFlag(cmd)
+			if skewErr != nil {
+				return userError(skewErr.Error())
+			}
 
 			if privateKeyFile == "" && publicKeyFile == "" {
 				//nolint:revive,staticcheck // User-facing error message with proper formatting
@@ -201,4 +219,6 @@ Tip: The token is the three-part string (header.payload.signature) produced by t
 			return nil
 		},
 	}
+	registerAsymmetricDecodeFlags(cmd, v.allowsWeakKeyOptOut)
+	return cmd
 }

@@ -12,21 +12,21 @@
 jwt-cli is a utility to encode/decode JWT and PASETO tokens.
 
 ```
-Tool to encode/decode JWT and PASETO tokens
-
 Usage:
   jwt-cli [command]
 
 Available Commands:
+  completion  Generate the autocompletion script for the specified shell
   decode      decode JWT token
   encode      encode JWT token
-  genkeys     print commands example to generate keys for ES256, ES384, ES512, RS256, RS384, RS512
+  genkeys     Print commands to generate cryptographic keys
   help        Help about any command
-  paseto      PASETO token operations
-  version     print version of jwt-cli
+  paseto      Encode and decode PASETO tokens
+  version     Print version information
 
 Flags:
   -h, --help   help for jwt-cli
+      --json   output in JSON format
 
 Use "jwt-cli [command] --help" for more information about a command.
 ```
@@ -99,8 +99,9 @@ $ jwt-cli decode hs512 --secret "myAwesomeSecret" --token "eyJhbGciOiJIUzUxMiIsI
 
 ### `--validate-claims`
 
-Rejects a token whose `exp` has passed or whose `nbf` has not yet been reached.
-Off by default, so tokens can always be inspected regardless of their timing:
+Rejects a token whose `exp` has passed, whose `nbf` has not yet been reached, or
+whose `iat` lies in the future. Off by default, so tokens can always be
+inspected regardless of their timing:
 
 ```bash
 # Expired token: decodes fine by default, contents are still readable
@@ -115,15 +116,35 @@ $ jwt-cli decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims
 decoding failed: invalid token: failed to parse token: token has invalid claims: token is expired
 ```
 
+A claim that is absent is never enforced: a token carrying none of the three
+still decodes with `--validate-claims`.
+
+On the boundaries, following RFC 7519: a token is expired the moment the clock
+reaches `exp`, so `exp` itself is not a valid instant, while `nbf` is valid from
+`nbf` inclusive. `decode` and `paseto decode` use the same rule.
+
+If your issuer's clock runs ahead of this machine, a token can be rejected with
+`token used before issued` even though it is legitimate. `--clock-skew` is the
+remedy.
+
 ### `--clock-skew`
 
 Tolerance for clock differences between the issuer and this machine, applied to
-`exp` and `nbf`. Only meaningful together with `--validate-claims`; the default
-is `0`, meaning no tolerance. Takes a Go duration (`30s`, `5m`, `1h`):
+`exp`, `nbf` and `iat`. Only meaningful together with `--validate-claims`; the
+default is `0`, meaning no tolerance. Takes a Go duration (`30s`, `5m`, `1h`):
 
 ```bash
 # Accept a token that expired less than five minutes ago
 $ jwt-cli decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims --clock-skew 5m
+```
+
+The value must be zero or positive. A negative duration would narrow the
+acceptance window rather than widen it — the opposite of a tolerance — so it is
+refused instead of being honoured silently:
+
+```bash
+$ jwt-cli decode hs256 --secret "$SECRET" --token "$TOKEN" --validate-claims --clock-skew -5m
+Error: --clock-skew must not be negative: got -5m0s
 ```
 
 ### `--allow-weak-secret`
@@ -219,6 +240,7 @@ v3.public.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 Key files may be supplied as PEM (PKCS#8, or SEC 1 for v3) or as raw key bytes.
+Password-protected keys are rejected; decrypt them first.
 
 ### Registered claims
 
@@ -233,8 +255,14 @@ $ jwt-cli paseto encode local --key "$KEY" --payload '{ "exp": 1893456000 }'
 ### PASETO validation flags
 
 `paseto decode` accepts the same `--validate-claims` and `--clock-skew` flags as
-`decode`, with the same defaults and meaning — see
-[JWT validation flags](#jwt-validation-flags):
+`decode`, with the same defaults, the same `exp` and `nbf` boundaries, and the
+same refusal of a negative skew — see
+[JWT validation flags](#jwt-validation-flags).
+
+**The two differ in one respect:** `decode` also rejects a future-dated `iat`,
+and `paseto decode` does not. PASETO has no `iat` rule, so a token whose `iat`
+lies ahead of this machine's clock is rejected by `decode` and accepted by
+`paseto decode`.
 
 ```bash
 # Expired token: decodes fine by default
@@ -254,11 +282,13 @@ $ jwt-cli paseto decode local --key "$KEY" --token "$TOKEN" --validate-claims --
 
 Only `exp` and `nbf` are enforced, and only when the claim is present: a token
 carrying neither still decodes with `--validate-claims`. `iat` and `aud` are
-never enforced.
+never enforced here — unlike the JWT `decode` path, which does reject a
+future-dated `iat`.
 
 ### JSON output
 
-Like the JWT commands, every PASETO command supports `--json` for programmatic use:
+Like the JWT commands, every PASETO `encode` and `decode` command supports
+`--json` for programmatic use:
 
 ```bash
 $ jwt-cli paseto decode local --json --key "$KEY" --token "$TOKEN"
@@ -269,6 +299,51 @@ $ jwt-cli paseto decode local --json --key "$KEY" --token "$TOKEN"
   }
 }
 ```
+
+`paseto genkeys` prints shell commands for you to run and ignores `--json`, as
+`genkeys` does.
+
+If a decoded token carries a footer — PASETO authenticates it but keeps it
+outside the claim set — it is reported alongside the claims:
+
+```bash
+$ jwt-cli paseto decode local --key "$KEY" --token "$TOKEN_WITH_FOOTER"
+{
+  "email": "myemail@me.com"
+}
+footer: {"kid":"key-1"}
+```
+
+# Output and exit codes
+
+**Exit code 0 on success, 1 on any failure**, in both output modes. That holds
+for every failure class: an unknown command or flag, a mistyped algorithm, a
+trailing argument, a missing or unreadable or oversized or encrypted key, a weak
+secret or key, a malformed payload, a bad signature, an algorithm mismatch, and
+claims validation.
+
+In the default mode, results go to **stdout** and errors to **stderr**, so
+`jwt-cli encode … 2>/dev/null` yields a bare token and nothing else.
+
+With `--json`, one of three envelopes goes to **stdout** — including on failure,
+so a caller can parse a single stream:
+
+```json
+{ "success": true,  "token": "eyJhbGci..." }
+{ "success": true,  "claims": { "email": "myemail@me.com" } }
+{ "success": false, "error": "decoding failed: invalid token: ..." }
+```
+
+`genkeys` and `paseto genkeys` emit their recipe under a `data` key instead. Note
+that their plain-text output is meant to be piped into a shell
+(`eval "$(jwt-cli genkeys rs256)"`), so prefer that form in scripts.
+
+Two deliberate exceptions:
+
+- `version --json` emits a bare `{"version": …}` object rather than the envelope,
+  since build metadata is not a token result. It also accepts `-j`, which no
+  other command does.
+- `--help` output is plain text in both modes.
 
 # Shell Completion
 
@@ -364,7 +439,30 @@ and `ffmpeg` on the PATH.
 # Create keys
 
 RSA keys must be at least 2048 bits. The `encode`/`decode` commands reject a
-shorter key; pass `--allow-weak-key` to accept one for testing only.
+shorter key; pass `--allow-weak-key` to accept one for testing only. ECDSA key
+sizes are fixed by the curve the algorithm names, so the `es*` commands have no
+`--allow-weak-key` flag at all and reject it as an unknown flag.
+
+## What the key flags accept
+
+**Password-protected keys are rejected.** An encrypted key is a valid PEM block
+whose contents are ciphertext, so it cannot be parsed without the password, which
+jwt-cli does not prompt for. Decrypt it first — the error names the command to
+use, matching the key's own encoding:
+
+```bash
+$ jwt-cli encode rs256 --private-key encrypted.pem --payload '{ "email": "myemail@me.com" }'
+encoding failed: invalid key: key file is password-protected: PKCS#8 "ENCRYPTED PRIVATE KEY" block. Decrypt it first, e.g. openssl pkey -in key.pem -out key.decrypted.pem
+```
+
+**`--public-key` also accepts an X.509 certificate in PEM form**, lifting the
+public key out of it. Be aware that **no certificate validation of any kind is
+performed**: the validity window, issuer, chain and key usage are all ignored, so
+an expired or self-signed certificate verifies tokens exactly as a bare public
+key would. If those properties matter to you, check them separately.
+
+Key files are read under a 1 MiB size bound, so pointing a key flag at a large
+file or an endless device fails immediately rather than exhausting memory.
 
 ## RS256
 

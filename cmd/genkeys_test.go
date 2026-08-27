@@ -86,17 +86,37 @@ func TestGenkeysCommands_Output(t *testing.T) {
 	}
 }
 
-// TestGenkeysParentCommand_NoArgs tests parent genkeys command without algorithm
+// TestGenkeysParentCommand_NoArgs tests the parent genkeys command without an
+// algorithm: it should list the algorithms and succeed.
+//
+// It goes through executeRoot rather than executeCommand because the latter
+// cannot see this behaviour at all: Cobra walks up to the root of any command
+// with a parent, and rootCmd then parses os.Args - the go test binary's flags -
+// so the assertion would be about root's help, not genkeys'.
 func TestGenkeysParentCommand_NoArgs(t *testing.T) {
-	output, err := executeCommand(genkeysCmd)
-
+	output, err := executeRoot(t, "genkeys")
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
 
-	// Parent command should show help/usage
-	outputStr := strings.TrimSpace(output)
-	if outputStr == "" {
-		t.Error("Expected usage/help output")
+	if !strings.Contains(output, "Available Commands:") {
+		t.Errorf("Expected help listing the algorithms, got: %s", output)
+	}
+	for _, algorithm := range []string{"rs256", "es256"} {
+		if !strings.Contains(output, algorithm) {
+			t.Errorf("Expected help to mention %s, got: %s", algorithm, output)
+		}
+	}
+}
+
+// TestGenkeysParentCommand_UnknownAlgorithm pins that a word which is not an
+// algorithm fails, instead of printing help and exiting 0.
+func TestGenkeysParentCommand_UnknownAlgorithm(t *testing.T) {
+	_, err := executeRoot(t, "genkeys", "bogus")
+	if err == nil {
+		t.Fatal("Expected an error for an unknown algorithm, got none")
+	}
+	if !strings.Contains(err.Error(), "invalid argument") {
+		t.Errorf("Expected an invalid-argument error, got: %v", err)
 	}
 }

@@ -8,8 +8,10 @@ import (
 //
 // It is a factory rather than a package-level literal so that each test can
 // build a fresh instance: Cobra retains parsed flag values on a command.
+//
+//nolint:funlen // Long help and guidance text dominate this function
 func createPasetoEncodeLocalCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   pasetoPurposeLocal,
 		Short: "Encode a PASETO local (symmetric) token",
 		Long: `Encode a JSON payload into a PASETO local token using symmetric encryption.
@@ -28,9 +30,10 @@ Key Requirements:
 
   # Encode a v3 local token
   jwt-cli paseto encode local --version v3 --key "$KEY" --payload '{"user":"alice"}'`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			key, _ := cmd.Flags().GetString("key")
-			payload := flagWithFallback(cmd, "payload", "p")
+			key, _ := cmd.Flags().GetString(flagKey)
+			payload := flagWithFallback(cmd, flagPayload, aliasPayload)
 			version := pasetoVersionFlag(cmd)
 
 			if key == "" {
@@ -70,6 +73,8 @@ Tip: Payload must be valid JSON. The registered claims exp, nbf and iat accept
 			return nil
 		},
 	}
+	registerPasetoEncodeLocalFlags(cmd)
+	return cmd
 }
 
 var pasetoEncodeLocalCmd = createPasetoEncodeLocalCommand()

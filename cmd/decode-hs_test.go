@@ -50,7 +50,6 @@ func TestHSDecodeCommand_Success(t *testing.T) {
 				"Test",
 				tt.encoderConstructor,
 			)
-			registerEncodeFlags(encodeCmd)
 
 			tokenOutput, err := executeCommand(encodeCmd,
 				"--payload", validPayload,
@@ -70,7 +69,6 @@ func TestHSDecodeCommand_Success(t *testing.T) {
 				"Test",
 				tt.decoderConstructor,
 			)
-			registerDecodeFlags(decodeCmd)
 
 			output, err := executeCommand(decodeCmd,
 				"--token", token,
@@ -104,7 +102,6 @@ func TestHSDecodeCommand_MissingToken(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256DecoderWithValidation,
 	)
-	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--secret", hs256Secret,
@@ -130,7 +127,6 @@ func TestHSDecodeCommand_MissingSecret(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256DecoderWithValidation,
 	)
-	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoidmFsdWUifQ.invalid",
@@ -176,7 +172,6 @@ func TestHSDecodeCommand_InvalidToken(t *testing.T) {
 				"Test",
 				cryptojwt.NewHS256DecoderWithValidation,
 			)
-			registerDecodeFlags(cmd)
 
 			_, err := executeCommand(cmd,
 				"--token", tt.token,
@@ -201,7 +196,6 @@ func TestHSDecodeCommand_WrongSecret(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(encodeCmd)
 
 	tokenOutput, err := executeCommand(encodeCmd,
 		"--payload", validPayload,
@@ -221,7 +215,6 @@ func TestHSDecodeCommand_WrongSecret(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256DecoderWithValidation,
 	)
-	registerDecodeFlags(decodeCmd)
 
 	wrongSecret := "wrong-secret-that-is-32-bytes!!"
 	_, err = executeCommand(decodeCmd,
@@ -282,7 +275,6 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				tt.encoderConstructor,
 			)
-			registerEncodeFlags(encodeCmd)
 
 			tokenOutput, err := executeCommand(encodeCmd,
 				"--payload", validPayload,
@@ -303,7 +295,6 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				tt.decoderConstructor,
 			)
-			registerDecodeFlags(decodeCmd)
 
 			_, err = executeCommand(decodeCmd,
 				"--token", token,
@@ -325,7 +316,6 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				tt.encoderConstructor,
 			)
-			registerEncodeFlags(encodeCmd)
 
 			tokenOutput, err := executeCommand(encodeCmd,
 				"--payload", validPayload,
@@ -346,7 +336,6 @@ func TestHSDecodeCommand_WeakSecret(t *testing.T) {
 				"Test",
 				tt.decoderConstructor,
 			)
-			registerDecodeFlags(decodeCmd)
 
 			output, err := executeCommand(decodeCmd,
 				"--token", token,
@@ -378,7 +367,6 @@ func TestHSDecodeCommand_DeprecatedTokenFlag(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(encodeCmd)
 
 	tokenOutput, err := executeCommand(encodeCmd,
 		"--payload", validPayload,
@@ -398,7 +386,6 @@ func TestHSDecodeCommand_DeprecatedTokenFlag(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256DecoderWithValidation,
 	)
-	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd,
 		"--t", token,
@@ -427,7 +414,6 @@ func TestHSDecodeCommand_DeprecatedSecretFlag(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256EncoderWithOptions,
 	)
-	registerEncodeFlags(encodeCmd)
 
 	tokenOutput, err := executeCommand(encodeCmd,
 		"--payload", validPayload,
@@ -447,7 +433,6 @@ func TestHSDecodeCommand_DeprecatedSecretFlag(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256DecoderWithValidation,
 	)
-	registerDecodeFlags(decodeCmd)
 
 	output, err := executeCommand(decodeCmd,
 		"--token", token,
@@ -474,7 +459,6 @@ func TestHSDecodeCommand_EmptyToken(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256DecoderWithValidation,
 	)
-	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--token", "",
@@ -500,7 +484,6 @@ func TestHSDecodeCommand_EmptySecret(t *testing.T) {
 		"Test",
 		cryptojwt.NewHS256DecoderWithValidation,
 	)
-	registerDecodeFlags(cmd)
 
 	_, err := executeCommand(cmd,
 		"--token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoidmFsdWUifQ.test",
