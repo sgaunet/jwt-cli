@@ -247,7 +247,10 @@ func TestPasetoGenkeysCommands(t *testing.T) {
 	}{
 		{"v4 genkeys", createPasetoGenkeysCommand(pasetoV4, "Ed25519", ed25519GenkeysLong(pasetoV4), ed25519GenkeysRecipe(pasetoV4)),
 			[]string{"Ed25519", "paseto-v4-private.pem", "paseto-v4-public.pem"}},
-		{"v3 genkeys", createPasetoGenkeysCommand(pasetoV3, "P-384", "long", []string{"openssl ecparam -genkey -name secp384r1 -noout -out paseto-v3-private.pem", "openssl ec -in paseto-v3-private.pem -pubout -out paseto-v3-public.pem"}),
+		{"v3 genkeys", createPasetoGenkeysCommand(pasetoV3, "P-384", "long", pasetoKeyRecipe{
+			privateKeyCommand: "openssl ecparam -genkey -name secp384r1 -noout -out paseto-v3-private.pem",
+			publicKeyCommand:  "openssl ec -in paseto-v3-private.pem -pubout -out paseto-v3-public.pem",
+		}),
 			[]string{"secp384r1", "paseto-v3-private.pem", "paseto-v3-public.pem"}},
 		{"v2 genkeys", createPasetoGenkeysCommand(pasetoV2, "Ed25519", ed25519GenkeysLong(pasetoV2), ed25519GenkeysRecipe(pasetoV2)),
 			[]string{"Ed25519", "paseto-v2-private.pem", "paseto-v2-public.pem"}},

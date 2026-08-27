@@ -15,7 +15,8 @@ type CommandOutput struct {
 	// Success indicates whether the operation completed successfully
 	Success bool `json:"success"`
 
-	// Data holds generic output data (rarely used, reserved for future extensions)
+	// Data holds structured output that is neither a token nor a claim set,
+	// currently the key-generation recipes emitted by genkeys
 	Data any `json:"data,omitempty"`
 
 	// Claims holds the decoded JWT claims/payload
@@ -137,6 +138,24 @@ func reportError(err error) {
 		return
 	}
 	output(CommandOutput{Success: false, Error: err.Error()})
+}
+
+// outputRecipe emits a key-generation recipe, honouring --json.
+//
+// The human-readable form is the recipe lines verbatim, one per line, because
+// callers pipe it into a shell - the integration suite runs
+// eval "$(jwt-cli paseto genkeys v3 | grep '^openssl' | tail -2)". That text is
+// therefore a compatibility surface and must not change. Under --json the same
+// recipe is emitted as structured data instead, with the comment lines dropped:
+// a machine consumer wants the commands, not the commentary.
+func outputRecipe(data any, lines []string) {
+	if jsonOutput {
+		output(CommandOutput{Success: true, Data: data})
+		return
+	}
+	for _, line := range lines {
+		fmt.Println(line)
+	}
 }
 
 // outputToken emits a freshly encoded token, honouring --json.
