@@ -29,7 +29,7 @@ var pasetoVersions = []string{pasetoV2, pasetoV3, pasetoV4}
 
 // pasetoCmd represents the paseto command.
 var pasetoCmd = &cobra.Command{
-	Use:   "paseto",
+	Use:   "paseto <command>",
 	Short: "Encode and decode PASETO tokens",
 	Long: `Encode and decode PASETO (Platform-Agnostic SEcurity TOkens).
 
@@ -59,7 +59,7 @@ Claims Validation:
 
 // pasetoEncodeCmd represents the paseto encode command.
 var pasetoEncodeCmd = &cobra.Command{
-	Use:       pasetoVerbEncode,
+	Use:       pasetoVerbEncode + " <purpose>",
 	Short:     "Encode a PASETO token",
 	Long:      `Encode a JSON payload into a PASETO local (symmetric) or public (asymmetric) token.`,
 	ValidArgs: []string{pasetoPurposeLocal, pasetoPurposePublic},
@@ -67,7 +67,7 @@ var pasetoEncodeCmd = &cobra.Command{
 
 // pasetoDecodeCmd represents the paseto decode command.
 var pasetoDecodeCmd = &cobra.Command{
-	Use:   pasetoVerbDecode,
+	Use:   pasetoVerbDecode + " <purpose>",
 	Short: "Decode a PASETO token",
 	Long: `Decode and verify a PASETO local (symmetric) or public (asymmetric) token.
 
@@ -80,7 +80,7 @@ never enforced, and iat is never enforced.`,
 
 // pasetoGenkeysCmd represents the paseto genkeys command.
 var pasetoGenkeysCmd = &cobra.Command{
-	Use:   pasetoVerbGenkeys,
+	Use:   pasetoVerbGenkeys + " <version>",
 	Short: "Print commands to generate PASETO keys",
 	Long: `Print example OpenSSL commands to generate key pairs for PASETO public tokens.
 

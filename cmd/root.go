@@ -81,6 +81,10 @@ func init() {
 
 // registerJWTCommands wires the JWT encode, decode and genkeys trees onto root.
 func registerJWTCommands() {
+	requireValidSubcommand(encodeCmd)
+	requireValidSubcommand(decodeCmd)
+	requireValidSubcommand(genkeysCmd)
+
 	rootCmd.AddCommand(encodeCmd)
 	encodeCmd.AddCommand(
 		encodeRS256Cmd, encodeRS384Cmd, encodeRS512Cmd,
@@ -104,6 +108,11 @@ func registerJWTCommands() {
 
 // registerPasetoCommands wires the PASETO tree onto root.
 func registerPasetoCommands() {
+	requireValidSubcommand(pasetoCmd)
+	requireValidSubcommand(pasetoEncodeCmd)
+	requireValidSubcommand(pasetoDecodeCmd)
+	requireValidSubcommand(pasetoGenkeysCmd)
+
 	rootCmd.AddCommand(pasetoCmd)
 	pasetoCmd.AddCommand(pasetoEncodeCmd, pasetoDecodeCmd, pasetoGenkeysCmd)
 	pasetoEncodeCmd.AddCommand(pasetoEncodeLocalCmd, pasetoEncodePublicCmd)

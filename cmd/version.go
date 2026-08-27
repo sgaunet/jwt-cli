@@ -80,6 +80,7 @@ var versionCmd = &cobra.Command{
 
 Use --json flag for machine-readable output.
 Use --short flag for compact output (version only).`,
+	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, _ []string) {
 		info := getVersionInfo()
 
@@ -111,6 +112,12 @@ Use --short flag for compact output (version only).`,
 }
 
 func init() {
+	// This local --json deliberately shadows root's persistent one. Cobra lets a
+	// local flag win, so the package-level jsonOutput stays false and version
+	// keeps emitting a bare {"version":...} object rather than the
+	// {"success":true,...} envelope every other command uses. Build metadata is
+	// not a token result, and scripts already parse .version directly, so the
+	// shape is kept as-is; -j exists only here for the same reason.
 	versionCmd.Flags().BoolP("json", "j", false, "output in JSON format")
 	versionCmd.Flags().BoolP("short", "s", false, "output version only")
 	rootCmd.AddCommand(versionCmd)

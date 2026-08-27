@@ -55,6 +55,58 @@ func executeCommand(cmd *cobra.Command, args ...string) (string, error) {
 	return capturedOutput.String() + buf.String(), nil
 }
 
+// executeRoot runs args through the real command tree and returns what reached
+// stdout, plus whatever error Execute produced.
+//
+// It exists because executeCommand cannot reach the exit-code paths: Cobra's
+// ExecuteC walks up to the root of any command that has a parent, and rootCmd's
+// args are nil there, so it parses os.Args - the go test binary's own flags -
+// instead of the args set on the child. Root is not runnable, so that returns
+// help text and a nil error, and an assertion on the child never runs.
+//
+// Use it for error paths only. rootCmd is a package-level singleton and Cobra
+// retains parsed flag values on a command, so a happy-path run here leaks state
+// into later tests.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func executeRoot(t *testing.T, args ...string) (string, error) {
+	t.Helper()
+
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(buf)
+	rootCmd.SetArgs(args)
+
+	t.Cleanup(func() {
+		// An empty but non-nil slice: a nil value is what makes Cobra fall back
+		// to os.Args again.
+		rootCmd.SetArgs([]string{})
+		// Hand the writers back to os.Stdout/os.Stderr. Leaving them pointed at
+		// this test's buffer would silently swallow the output of any later test
+		// that reaches rootCmd.
+		rootCmd.SetOut(nil)
+		rootCmd.SetErr(nil)
+		jsonOutput = false
+	})
+
+	err := rootCmd.Execute()
+
+	_ = w.Close()
+	os.Stdout = oldStdout
+
+	var captured bytes.Buffer
+	_, _ = captured.ReadFrom(r)
+
+	if err != nil {
+		return captured.String() + buf.String(), fmt.Errorf("root command execution failed: %w", err)
+	}
+	return captured.String() + buf.String(), nil
+}
+
 // createTempFile creates a temporary file with given content.
 // The file is created in t.TempDir() and will be automatically cleaned up.
 //
@@ -311,6 +363,33 @@ func generateP384KeyPair(t *testing.T) (string, string) {
 //
 //nolint:unused // Shared test helper used across multiple test files
 const pasetoTestKey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+// captureStdout runs fn with os.Stdout redirected and returns what it wrote.
+// The commands print with fmt.Println rather than cmd.OutOrStdout(), so this is
+// the only way to see their successful output and the --json envelope.
+//
+//nolint:unused // Shared test helper used across multiple test files
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	oldStdout := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create pipe: %v", err)
+	}
+	os.Stdout = w
+	defer func() { os.Stdout = oldStdout }()
+
+	fn()
+
+	if err := w.Close(); err != nil {
+		t.Fatalf("Failed to close pipe: %v", err)
+	}
+	var captured bytes.Buffer
+	if _, err := captured.ReadFrom(r); err != nil {
+		t.Fatalf("Failed to read captured stdout: %v", err)
+	}
+	return captured.String()
+}
 
 // captureStderr redirects os.Stderr for the duration of fn and returns whatever
 // was written to it.

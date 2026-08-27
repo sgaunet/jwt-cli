@@ -8,7 +8,7 @@ import (
 
 // genkeysCmd represents the genkeys command.
 var genkeysCmd = &cobra.Command{
-	Use:   "genkeys",
+	Use:   "genkeys <algorithm>",
 	Short: "Print commands to generate cryptographic keys",
 	Long: `Print example commands to generate cryptographic key pairs for RSA and ECDSA algorithms.
 
@@ -26,6 +26,7 @@ Available algorithms:
 
   # Generate keys by running the output
   $(jwt-cli genkeys rs256)`,
+	ValidArgs: jwtAlgorithms,
 }
 
 var genkeysES256Cmd = &cobra.Command{
