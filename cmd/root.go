@@ -61,10 +61,23 @@ Use RSA or ECDSA for scenarios requiring public/private key pairs.`,
 // command has printed yet - Cobra's flag-parse and unknown-command errors - are
 // reported here so they are not silently swallowed.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		reportError(err)
-		os.Exit(1)
+	err := rootCmd.Execute()
+	if err == nil {
+		return
 	}
+	// Those same Cobra errors are raised before --json has been bound: parsing
+	// stops at the first flag it cannot handle, and an unknown command is
+	// reported before any flag is read. Recover the intent from the raw
+	// arguments so the failure is still an envelope rather than plain text.
+	//
+	// Only the failure path consults this, and it only ever turns JSON on. A
+	// --json that was really some other flag's value therefore cannot change the
+	// output of a command that succeeded.
+	if !jsonOutput && wantsJSONOutput(os.Args[1:]) {
+		jsonOutput = true
+	}
+	reportError(err)
+	os.Exit(1)
 }
 
 func init() {

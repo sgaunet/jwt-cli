@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
 // CommandOutput represents the structured output format for all commands.
@@ -24,6 +26,38 @@ type CommandOutput struct {
 
 	// Error holds the error message if Success is false
 	Error string `json:"error,omitempty"`
+}
+
+// jsonFlagArg is the long form of --json as it appears in os.Args.
+const jsonFlagArg = "--json"
+
+// wantsJSONOutput reports whether raw arguments ask for JSON output.
+//
+// Cobra abandons a command at the first flag it cannot parse, and reports an
+// unknown command before binding any flag at all, so in those cases --json never
+// reaches jsonOutput and a failure would be rendered as plain text - breaking
+// the promise output() makes. Execute() consults this on the failure path to
+// recover the intent from the arguments themselves.
+//
+// pflag's rules are mirrored: "--" ends flag parsing, and the last occurrence
+// wins. An unparseable value is ignored, since Cobra reports that itself.
+func wantsJSONOutput(args []string) bool {
+	want := false
+	for _, arg := range args {
+		if arg == "--" {
+			break
+		}
+		if arg == jsonFlagArg {
+			want = true
+			continue
+		}
+		if value, ok := strings.CutPrefix(arg, jsonFlagArg+"="); ok {
+			if parsed, err := strconv.ParseBool(value); err == nil {
+				want = parsed
+			}
+		}
+	}
+	return want
 }
 
 // output writes the command result to stdout in either JSON or human-readable format.
