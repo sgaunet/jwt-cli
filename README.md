@@ -166,6 +166,28 @@ The RSA equivalent is `--allow-weak-key`, described under [Create keys](#create-
 `--allow-weak-secret` and `--allow-weak-key` apply to both `encode` and
 `decode`. `--validate-claims` and `--clock-skew` are `decode` only.
 
+### Where flags go
+
+Every flag except `--json` belongs to the algorithm subcommand that reads it, so
+it has to be written after the algorithm:
+
+```bash
+$ jwt-cli encode --allow-weak-secret hs256 --payload '{ "a": 1 }' --secret "short"
+unknown flag: --allow-weak-secret
+
+Every flag except --json belongs to the subcommand that reads it, so
+--allow-weak-secret has to come after the subcommand name, not before it.
+
+  accepted by:  hs256, hs384, hs512
+  for example:  jwt-cli encode hs256 --allow-weak-secret ...
+
+$ jwt-cli encode hs256 --payload '{ "a": 1 }' --secret "short" --allow-weak-secret
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhIjoxfQ.Q7i7KkH4jyr2iViIrzSew-bELcSPTjCl2TU_n34QH80
+```
+
+Per-subcommand flags are what make a flag from another algorithm family an error
+rather than a silent no-op. `--json` is the one flag accepted at any position.
+
 ## PASETO Examples
 
 PASETO tokens come in two purposes: `local` (symmetric encryption) and `public`

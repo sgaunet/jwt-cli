@@ -85,6 +85,9 @@ func init() {
 	// leaf command that reads it, in flags.go, so that passing a flag from
 	// another algorithm family is an error rather than a silent no-op.
 	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "output in JSON format")
+	// Cobra resolves a FlagErrorFunc by walking up to the nearest parent that
+	// has one, so registering here covers every command in the tree.
+	rootCmd.SetFlagErrorFunc(misplacedFlagError)
 	// Keep Cobra's generated "completion" command available.
 	rootCmd.CompletionOptions.DisableDefaultCmd = false
 
