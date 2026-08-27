@@ -781,7 +781,9 @@ testcases:
   steps:
   - type: exec
     script: |
-      head -c 2M /dev/urandom > oversized-key.pem
+      # 2 MiB spelled in bytes: BSD head (macOS) rejects the GNU "2M" suffix,
+      # which left the file empty and the assertion below chasing a PEM error.
+      head -c 2097152 /dev/urandom > oversized-key.pem
       cd ..
       go run . encode rs256 --private-key tests/oversized-key.pem --payload '{ "email": "{{.EMAIL}}" }'
     assertions:
