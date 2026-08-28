@@ -19,18 +19,8 @@ builds:
       - windows
     goarch:
       - amd64
-      - arm
       - arm64
-    goarm:
-      - "6"
-      - "7"
-    ignore:
-      - goos: windows
-        goarch: arm
     id: lin
-    # hooks:
-    #   post:
-    #     - upx "{{ .Path }}"
 
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
@@ -77,8 +67,6 @@ dockers_v2:
     platforms:
       - linux/amd64
       - linux/arm64
-      - linux/arm/v6
-      - linux/arm/v7
     labels:
       "org.opencontainers.image.created": "{{ .Date }}"
       "org.opencontainers.image.title": "{{ .ProjectName }}"
