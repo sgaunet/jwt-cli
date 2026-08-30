@@ -5,3 +5,4 @@ log
 *pem
 *.pub
 *.key
+/govulncheck.sarif
