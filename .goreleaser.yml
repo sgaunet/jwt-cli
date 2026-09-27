@@ -43,6 +43,13 @@ homebrew_casks:
     directory: Casks
     binaries:
       - jwt-cli
+    # Unsigned binaries are quarantined by macOS Gatekeeper; strip the attribute.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}"]
+          end
     commit_author:
       name: sgaunet
       email: 1552102+sgaunet@users.noreply.github.com
