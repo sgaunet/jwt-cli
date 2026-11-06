@@ -46,9 +46,9 @@ homebrew_casks:
     # Unsigned binaries are quarantined by macOS Gatekeeper; strip the attribute.
     hooks:
       post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}"]
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}"]
           end
     commit_author:
       name: sgaunet
